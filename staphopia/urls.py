@@ -9,4 +9,6 @@ urlpatterns = patterns('',
     # url(r'^blog/', include('blog.urls')),
     url(r'^$', 'staphopia.views.index'),
     url(r'^admin/', include(admin.site.urls)),
+    url(r"^account/", include('account.urls')),
+    url(r"^account/", 'staphopia.views.login'),
 )

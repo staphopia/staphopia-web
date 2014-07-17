@@ -1,1 +1,3 @@
 Django
+django-user-accounts
+django-bootstrap3
