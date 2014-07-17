@@ -14,10 +14,10 @@ ALLOWED_HOSTS = []
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'staphopia_djangob',
+        'NAME': 'staphopia_django',
         'USER' : 'django',
         'PASSWORD' : 'ca1e0a1ac201e4',
-        'HOST' : 'staphopia-beanstalk.cpphjf4vstco.us-east-1.rds.amazonaws.com',
+        'HOST' : 'staphopia-django.cpphjf4vstco.us-east-1.rds.amazonaws.com',
         'PORT' : '5432',
     }
 }
