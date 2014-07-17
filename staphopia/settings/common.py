@@ -14,7 +14,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, "templates"),
 )
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
 
+STATICFILES_FINDERS = ( 
+    'django.contrib.staticfiles.finders.FileSystemFinder', 
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder', 
+) 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/

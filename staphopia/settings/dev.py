@@ -7,9 +7,6 @@ TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = ['0.0.0.0:80']
 
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
-)
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
