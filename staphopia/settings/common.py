@@ -48,14 +48,17 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'account.middleware.LocaleMiddleware',
+    'account.middleware.TimezoneMiddleware',
+)
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'account.context_processors.account',
 )
 
 ROOT_URLCONF = 'staphopia.urls'
 
 WSGI_APPLICATION = 'staphopia.wsgi.application'
-
-
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
