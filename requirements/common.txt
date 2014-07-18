@@ -1,2 +1,2 @@
 Django
-django-user-accounts=1.0c9
+django-user-accounts==1.0c9
