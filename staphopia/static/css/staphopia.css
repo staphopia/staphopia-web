@@ -1,0 +1,39 @@
+/*
+    Staphopia specific CSS
+*/
+
+/* ------------------------------------
+    Shared
+------------------------------------ */
+.navbar-right {
+    margin-right: 0em !important;
+}
+
+div.fix-navbar {
+    padding-top: 40px;
+}
+
+footer .copyright {
+    text-align: center;
+}
+
+/* ------------------------------------
+    index.html
+------------------------------------ */
+p {
+    line-height: 1.55em;
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+}
+
+p.indent {
+    text-indent: 2em;
+    text-align: justify;
+}
+
+img.embed {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #000000;
+}
+

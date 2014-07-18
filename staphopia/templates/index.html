@@ -1,163 +1,166 @@
 {% load staticfiles %}
 <!DOCTYPE html>
-<!--[if IE 8]> <html class="no-js lt-ie9" lang="en"> <![endif]-->
-<!--[if gt IE 8]> <!--> <html class="no-js" lang="en"> <!--<![endif]-->
-<head>
-    <!-- Defaults -->
-    <link rel="stylesheet" href="{% static "css/foundation.css" %}">
-    <!-- End Defaults -->
+    <!--[if IE 8]> <html class="no-js lt-ie9" lang="en"> <![endif]-->
+    <!--[if gt IE 8]> <!--> <html class="no-js" lang="en"> <!--<![endif]-->
+    <head>
+        <!-- Defaults -->
+        <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
+        <link rel="stylesheet" href="{% static "css/normalize.css" %}">
+        <link rel="stylesheet" href="{% static "css/staphopia.css" %}">
+        <!-- End Defaults -->
 
-    <title>Staphopia - Development</title>
-</head>
+        <title>Staphopia - Development</title>
+    </head>
     <body>
-
         <!-- Top Bar -->
-        <nav class="top-bar">
-            <ul class="title-area">
-                <!-- Title Area -->
-                <li class="name">
-                    <h1><a href="/">Staphopia&trade;<sub>Beta</sub></a></h1>
-                </li>
-                <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
-            </ul>
-
-            <section class="top-bar-section">
+        <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">
+                    <em>Staphopia&trade;<sub>v2</sub></em>
+                </a>
+            </div>
+            <div class="collapse navbar-collapse">
                 <!-- Left Nav Section -->
-                <ul class="left">
-                    <li class="divider"></li>
-                    <li><a href="/">Home</a></li>
-                    <li class="divider"></li>
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="#">Home</a></li>
                 </ul>
-
                 <!-- Right Nav Section -->
-                <ul class="right">
-                    <li class="divider"></li>
-                    <li><a href="/login/">Login</a></li>
-                    <li class="divider"></li>
+                <ul class="nav navbar-nav navbar-right" style="margin-right: 0px;">
+                    <li><a href="/account/login/">Login</a></li>
                 </ul>
-            </section>
-        </nav>
+            </div><!--/.nav-collapse -->
+        </div>
         <!-- End Top Bar -->
-
-
-        <!-- Main Page Content-->
-        <div class="row">
-            <div class="large-12 columns">
-                <h3>About Staphopia</h3>
-                <p class="indent">
-                    Staphopia is a database of information about the genomes of the bacterial pathogen <em>Staphylococcus 
-                    aureus</em>. Life-threatening Methicillin-resistant <em>S. aureus</em> (MRSA) infections strike across our 
-                    society, both in the community and hospital settings. In the past 3-4 years whole genome shotgun 
-                    sequencing of clinical isolates is becoming common, as technology improvements have reduced the cost 
-                    of producing genetic data. 
-                </p>
-            </div>
-        </div>  
-        <div class="row">
-            <div class="large-6 columns">
-                <img src="{% static "img/genomes.png" %}" style='border:1px solid #000000'/>
-                <br />
-                <img src="{% static "img/summary.png" %}" style='border:1px solid #000000'/>
-            </div>
-            <div class="large-6 columns">
-                <p class="indent">
-                    The introduction of 'bench top' instruments, including the 
-                    <a href="http://www.iontorrent.com/products-ion-pgm/" target="_blank" title="Ion Torrent PGM">
-                        Ion Torrent PGM
-                    </a>, 
-                    <a href="http://www.illumina.com/systems/miseq.ilmn" target="_blank" title="Illumina MiSeq">
-                        Illumina MiSeq
-                    </a> and the 
-                    <a href="http://www.gsjunior.com/" target="_blank" title="454 GS Junior">
-                        454 GS Junior
-                    </a>, has accelerated this trend. Staphopia aims to provide rapid analysis of whole-genome data with 
-                    the aim of producing useful <em>S. aureus</em>-specific results, such as genotype, antibiotic resistance and 
-                    virulence gene profiles. Staphopia was designed to be used by people not expert in genomics. 
-                </p>
-                <p class="indent">
-                    We are currently developing the beta version of the website.  In later updates we will allow users to 
-                    submit their own data to our pipeline as well as a number of additional features. The main genomes page 
-                    (currently displaying the results of analysis of more than 6,000 publicly available <em>S. aureus</em> projects 
-                    downloaded from the NCBI SRA website) allows users to search the genomes based on attributes such as 
-                    resistance genes. 
-                </p>
-                <p class="indent">
-                    Clicking on a genome entry brings up an individual page (<a href="http://www.staphopia.com/public_00823" target="_blank" title="View public_00823 in a new window/tab.">this genome</a>, for example), allowing the user 
-                    to explore the attributes predicted by our pipeline.
-                </p>
-                <p class="indent">
-                    If you would like to stay informed about the progress and improvements of Staphopia, please provide 
-                    your email address below.
-                    <div class="large-12 large-centered columns">
-                        <form onSubmit="joinMailList(); return false;">
-                            <div class="row collapse">
-                                <div class="large-10 columns">
-                                    <input id="email" class="left" type="email" placeholder="user@mymail.com" 
-                                           title="Please enter a valid email address." tabindex="1" required>
-                                </div>
-                                <div class="large-2 columns">
-                                    <a href="#" class="button prefix" onclick="joinMailList();">Join</a>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </p>
-
-                <p class="indent">
-                    Staphopia was created by Robert Petit and Tim Read at Emory University School of Medicine in Atlanta 
-                    Georgia, USA.  We would like to thank Colleen Kraft, King Jordan and Jim Heitner for help. In 
-                    putting together Staphopia, we acknowledge (and are grateful) for data from these sources: 
-                    <a href="http://www.ncbi.nlm.nih.gov/sra" target="_blank">NCBI SRA</a>, 
-                    <a href="http://gensc.org/gc_wiki/index.php/MIGS/MIMS" target="_blank">MIGS/MINS</a>, 
-                    <a href="http://saureus.mlst.net/" target="_blank"><i>S. aureus</i> MLST</a>, 
-                    <a href="http://ardb.cbcb.umd.edu/" target="_blank">ARDB</a>, 
-                    <a href="http://jac.oxfordjournals.org/content/63/5/877.long" target="_blank">StaphVar</a>, and 
-                    <a href="http://www.staphylococcus.net/" target="_blank">SCCmec</a>.
-                </p>
-            </div>
-        </div>  
         
-                
-        <div class="row">
-            <div class="large-12 columns">
+        <!-- Main Page Content-->
+        <div class="container fix-navbar">
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h3>About Staphopia</h3>
+                            <p class="indent">
+                                Staphopia is a database of information about the genomes of the bacterial pathogen <em>Staphylococcus 
+                                aureus</em>. Life-threatening Methicillin-resistant <em>S. aureus</em> (MRSA) infections strike across our 
+                                society, both in the community and hospital settings. In the past 3-4 years whole genome shotgun 
+                                sequencing of clinical isolates is becoming common, as technology improvements have reduced the cost 
+                                of producing genetic data. 
+                            </p>
+                        </div>
+                    </div> 
+            
+            
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p>
+                                <img class="embed" src="{% static "img/summary.png" %}" />
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="indent">
+                                The introduction of 'bench top' instruments, including the 
+                                <a href="http://www.iontorrent.com/products-ion-pgm/" target="_blank" title="Ion Torrent PGM">
+                                    Ion Torrent PGM
+                                </a>, 
+                                <a href="http://www.illumina.com/systems/miseq.ilmn" target="_blank" title="Illumina MiSeq">
+                                    Illumina MiSeq
+                                </a> and the 
+                                <a href="http://www.gsjunior.com/" target="_blank" title="454 GS Junior">
+                                    454 GS Junior
+                                </a>, has accelerated this trend. Staphopia aims to provide rapid analysis of whole-genome data with 
+                                the aim of producing useful <em>S. aureus</em>-specific results, such as genotype, antibiotic resistance and 
+                                virulence gene profiles. Staphopia was designed to be used by people not expert in genomics. 
+                            </p>
+                            <p class="indent">
+                                We are currently developing the beta version of the website.  In later updates we will allow users to 
+                                submit their own data to our pipeline as well as a number of additional features. The main genomes page 
+                                (currently displaying the results of analysis of more than 6,000 publicly available <em>S. aureus</em> projects 
+                                downloaded from the NCBI SRA website) allows users to search the genomes based on attributes such as 
+                                resistance genes. 
+                            </p>
+                            <p class="indent">
+                                Clicking on a genome entry brings up an individual page (<a href="http://www.staphopia.com/public_00823" target="_blank" title="View public_00823 in a new window/tab.">this genome</a>, for example), allowing the user 
+                                to explore the attributes predicted by our pipeline.
+                            </p>
+                        </div>
+                    </div>  
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <p class="indent">
+                                Staphopia was created by Robert Petit and Tim Read at Emory University School of Medicine in Atlanta 
+                                Georgia, USA.  We would like to thank Colleen Kraft, King Jordan and Jim Heitner for help. In 
+                                putting together Staphopia, we acknowledge (and are grateful) for data from these sources: 
+                                <a href="http://www.ncbi.nlm.nih.gov/sra" target="_blank">NCBI SRA</a>, 
+                                <a href="http://gensc.org/gc_wiki/index.php/MIGS/MIMS" target="_blank">MIGS/MINS</a>, 
+                                <a href="http://saureus.mlst.net/" target="_blank"><i>S. aureus</i> MLST</a>, 
+                                <a href="http://ardb.cbcb.umd.edu/" target="_blank">ARDB</a>, 
+                                <a href="http://jac.oxfordjournals.org/content/63/5/877.long" target="_blank">StaphVar</a>, and 
+                                <a href="http://www.staphylococcus.net/" target="_blank">SCCmec</a>.
+                            </p>
+                            
+                            <p class="indent">
+                                Thanks also to those researchers and institutions who have contributed published and unpublished 
+                                sequence public information in to the SRA databases. 
+                                <a href="top10.php" >View Top 10 Contributers</a>
+                            </p>
+                           
+                            <p class="indent">
+                                If you would like to stay informed about the progress and improvements of Staphopia, please provide 
+                                your email address below.
 
-                <p class="indent">
-                    Thanks also to those researchers and institutions who have contributed published and unpublished 
-                    sequence public information in to the SRA databases. 
-                    <a href="top10.php" >View Top 10 Contributers</a>
-                </p>
-                <p class="indent">
-                    Funding for this study from Emory University, Amazon AWS in Education Grant Program, and NIH grant 1R56AI091827-01A1
-                </p>
+                            </p>
+                            <p>
+                                <div class="row">
+                                    <div class="col-md-8 col-md-offset-2">
+                                    
+                                        <form onSubmit="joinMailList(); return false;">
+                                            <div class="row">
+                                                <div class="col-md-10 col-md-offset-1">
+                                                    <div class="input-group">
+                                                        <input id="email" class="form-control" type="email" placeholder="user@mymail.com" 
+                                                               title="Please enter a valid email address." tabindex="1" required>
+                                                        <span class="input-group-btn">
+                                                            <button class="btn btn-default" type="button">Join</button>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </p>
+                            
+                            <p class="indent">
+                                Funding for this study from Emory University, Amazon AWS in Education Grant Program, and NIH grant 1R56AI091827-01A1
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                
             </div>
         </div>
         <!-- End Main Content-->
-
-        <!-- Modal -->
-        <a href="#" data-reveal-id="email-modal" class="reveal-link" style="display:none !important;"></a>
-        <div id="email-modal" class="reveal-modal small">
-            <p class="response"></p>
-            <a class="close-reveal-modal">&#215;</a>
-        </div>
-        <!-- End Main Content-->
-
 
         <!-- Footer -->
-        <footer class="row">
+        <footer>
             <div class="large-12 large-centered columns">
                 <hr />
-                <div class="copyright">Copyright &#169; 2012-2013 Emory University. All rights reserved.</div>
+                <div class="copyright">Copyright &#169; 2012-2014 Emory University. All rights reserved.</div>
             </div>
         </footer>
         <!-- End Footer -->
 
-
         <!-- Javascipt -->
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script src="{% static "js/foundation.min.js" %}"></script>
-        <script>
-            $(document).foundation();
-        </script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="{% static "js/bootstrap.min.js" %}"></script>
         <!-- End Javascript -->
         
     </body>
