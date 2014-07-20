@@ -14,6 +14,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, "templates"),
 )
+TEMPLATE_LOADERS = (
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+)
+
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
@@ -39,6 +44,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'account',
+    'database',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -59,7 +65,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 AUTOLOAD_TEMPLATETAGS = (
-    'staphopia.templatetags.staphopia_tags',
+    'staphopia.templatetags.navbar',
+    'database.templatetags.top10',
 )
 
 ROOT_URLCONF = 'staphopia.urls'
@@ -70,11 +77,21 @@ WSGI_APPLICATION = 'staphopia.wsgi.application'
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
+
+
+DATABASES = {
+    'staphopia': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'staphopia',
+        'USER' : 'DeepThought',
+        'PASSWORD' : 'da208f6115574ef429684fa388b04fc958da12c7d2bd2c4d',
+        'HOST' : 'staphopiadev.cpphjf4vstco.us-east-1.rds.amazonaws.com',
+        'PORT' : '29466',
+    }
+}
+
+DATABASE_ROUTERS = ('database.routers.StaphopiaRouter',)

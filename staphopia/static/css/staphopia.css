@@ -65,3 +65,10 @@ textarea.form-control {
 button#submit {
     padding: 6px 36px;
 }
+
+/* ------------------------------------
+    top10.html
+------------------------------------ */
+table thead  td{
+    font-weight: bold; 
+}

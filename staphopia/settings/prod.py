@@ -19,6 +19,14 @@ DATABASES = {
         'PASSWORD' : 'ca1e0a1ac201e4',
         'HOST' : 'staphopia-django.cpphjf4vstco.us-east-1.rds.amazonaws.com',
         'PORT' : '5432',
+    },
+    'staphopia': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'staphopia',
+        'USER' : 'DeepThought',
+        'PASSWORD' : 'da208f6115574ef429684fa388b04fc958da12c7d2bd2c4d',
+        'HOST' : 'staphopiadev.cpphjf4vstco.us-east-1.rds.amazonaws.com',
+        'PORT' : '29466',
     }
 }
 

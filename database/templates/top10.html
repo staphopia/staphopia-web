@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block container %}
+    {% top10_table 'Top Contributors' 'Sequencing Center' 'sequencingcenter' %}
+    {% top10_table 'Top Sequence Types' 'Sequence Type' 'sequencetype' %}
+    {% top10_table 'Top Clonal Complexes' 'Clonal Complex' 'clonalcomplex' %}
+{% endblock %}
