@@ -9,6 +9,12 @@ from django.core.mail import send_mail, BadHeaderError
 def index(request):
     return render_to_response('index.html', {}, RequestContext(request))
     
+def top10(request):
+    return render_to_response('top10.html', {}, RequestContext(request))
+    
+def genomes(request):
+    return render_to_response('genomes.html', {}, RequestContext(request))
+    
 def login(request):
     return render_to_response('account/login.html')
     

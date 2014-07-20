@@ -12,7 +12,8 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r"^account/", include('account.urls')),
     url(r"^account/", 'staphopia.views.login'),
-    url(r'^contact/thankyou/', 'staphopia.views.thankyou'),
+    url(r'^top10/', 'staphopia.views.top10', name='top10'),
+    url(r'^genomes/', 'staphopia.views.genomes', name='genomes'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
 )
 
