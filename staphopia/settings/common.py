@@ -34,7 +34,6 @@ STATICFILES_FINDERS = (
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'CHANGETHISSECRETKEYITSNOTASECRETATTHEMOMENT'
 
-
 # Application definition
 INSTALLED_APPS = (
     'django.contrib.admin',
@@ -81,17 +80,5 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-
-
-DATABASES = {
-    'staphopia': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'staphopia',
-        'USER' : 'DeepThought',
-        'PASSWORD' : 'da208f6115574ef429684fa388b04fc958da12c7d2bd2c4d',
-        'HOST' : 'staphopiadev.cpphjf4vstco.us-east-1.rds.amazonaws.com',
-        'PORT' : '29466',
-    }
-}
 
 DATABASE_ROUTERS = ('database.routers.StaphopiaRouter',)

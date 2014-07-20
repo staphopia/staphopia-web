@@ -1,3 +1,4 @@
 *.py[cod]
 *.sqlite3
 fabfile/*
+staphopia/settings/aws.py

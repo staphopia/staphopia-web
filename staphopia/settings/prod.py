@@ -1,12 +1,10 @@
 from staphopia.settings.common import *
+from staphopia.settings.aws import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-
+DEBUG = True
 TEMPLATE_DEBUG = True
-
 ALLOWED_HOSTS = ['*']
-
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
