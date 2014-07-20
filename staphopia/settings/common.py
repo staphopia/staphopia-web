@@ -54,6 +54,12 @@ MIDDLEWARE_CLASSES = (
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'account.context_processors.account',
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.request',
+)
+
+AUTOLOAD_TEMPLATETAGS = (
+    'staphopia.templatetags.staphopia_tags',
 )
 
 ROOT_URLCONF = 'staphopia.urls'

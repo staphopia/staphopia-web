@@ -1,0 +1,40 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/normalize.css" %}">
+    <link rel="stylesheet" href="{% static "css/staphopia.css" %}">
+    {% block css %}{% endblock %}
+    <title>{% block title %}Staphopia{% endblock %}</title>
+</head>
+
+<body>
+    <!-- Top Bar -->
+    {% include 'base_navbar.html' %}
+    <!-- End Top Bar -->
+
+    <!-- Main Content-->
+    <div class="container fix-navbar">{% block container %}{% endblock %}
+    <!-- End Main Content-->
+    
+    <!-- Footer -->
+    <footer class="row">
+        <div class="col-md-10 col-md-offset-1">
+            <hr />
+            <div class="copyright">Copyright &#169; 2012-2014 Emory University. All rights reserved.</div>
+        </div>
+    </footer>
+    <!-- End Footer -->
+    </div>
+
+    <!-- Javascipt -->
+    {% block js %}
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="{% static "js/bootstrap.min.js" %}"></script>
+    {% endblock %}
+    <!-- End Javascript -->
+        
+</body>
+</html>

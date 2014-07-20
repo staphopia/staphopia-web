@@ -10,7 +10,7 @@
 }
 
 div.fix-navbar {
-    padding-top: 40px;
+    margin-top: 40px;
 }
 
 footer .copyright {
@@ -37,3 +37,31 @@ img.embed {
     border: 1px solid #000000;
 }
 
+/* ------------------------------------
+    contact.html
+------------------------------------ */
+div.panel {
+    margin-top: 20px;
+    margin-bottom: 0px;
+}
+
+div.form-group {
+    margin-bottom: 0px !important;
+    height: 49px;
+}
+
+label.text-right {
+    padding-right: 0px;
+}
+
+div.adjust-height {
+    height: 200px;
+}
+
+textarea.form-control {
+    height: 160px;
+}
+
+button#submit {
+    padding: 6px 36px;
+}
