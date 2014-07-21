@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block nav-contact %}active{% endblock %}
+
 {% block container %}
     <div class="row">
         <div>
@@ -10,7 +10,8 @@
                 feature requests you might have. 
             </p>
             <hr />
-            <form id="contactForm" class="custom" onSubmit="submitContact(); return false;">
+            <form id="contactForm" method="post">
+                {% csrf_token %}
                 <div class="form-group">
                     <label class="col-xs-2 col-md-2 control-label text-right" for="name">Name:</label>  
                     <div class="col-md-5 col-xs-10">

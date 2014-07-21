@@ -2,3 +2,4 @@
 *.sqlite3
 fabfile/*
 staphopia/settings/aws.py
+staphopia/settings/email.py
