@@ -17,7 +17,7 @@ def contact(request):
             sender = '{0} <{1}>'.format(form.cleaned_data['name'], 
                                         form.cleaned_data['email'])
             subject = '[Staphopia Contact] - ' + form.cleaned_data['subject']
-            message = ("This is an autmated reply from Staphopia, we'll try to "
+            message = ("This is an automated reply from Staphopia, we'll try to "
                        "answer you as quickly as possible.\n\n----------\n\n")
             message += form.cleaned_data['message']
             recipients = ['admin@staphopia.com', sender]
