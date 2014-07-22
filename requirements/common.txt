@@ -1,3 +1,4 @@
 Django
 MySQL-python==1.2.5
 South
+django-registration

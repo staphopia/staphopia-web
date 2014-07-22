@@ -31,6 +31,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'south',
     'database',
+    'registration',
 )
 
 
