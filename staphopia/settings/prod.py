@@ -1,14 +1,19 @@
 from staphopia.settings.common import *
 from staphopia.settings.aws import *
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-TEMPLATE_DEBUG = True
+'''-----------------------------------------------------------------------------
+SECURITY WARNING: don't run with debug turned on in production!
+-----------------------------------------------------------------------------'''
+DEBUG = False
+TEMPLATE_DEBUG = False
 ALLOWED_HOSTS = ['*']
 
-# Database
-# https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
+
+'''-----------------------------------------------------------------------------
+Database
+https://docs.djangoproject.com/en/1.6/ref/settings/#databases
+-----------------------------------------------------------------------------'''
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -28,9 +33,12 @@ DATABASES = {
     }
 }
 
-# Static files via Amazon S3 (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.6/howto/static-files/
 
+
+'''-----------------------------------------------------------------------------
+Static files via Amazon S3 (CSS, JavaScript, Images)
+https://docs.djangoproject.com/en/1.6/howto/static-files/
+-----------------------------------------------------------------------------'''
 INSTALLED_APPS += ('storages',)
 AWS_STORAGE_BUCKET_NAME = "staphopia-django"
 STATICFILES_STORAGE = 'storages.backends.s3boto.S3BotoStorage'

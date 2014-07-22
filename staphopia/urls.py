@@ -5,13 +5,8 @@ from staphopia.settings.common import *
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    # Examples:
-    # url(r'^$', 'staphopia.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
     url(r'^$', 'staphopia.views.index', name='home'),
     url(r'^admin/', include(admin.site.urls)),
-    url(r"^account/", include('account.urls')),
-    url(r"^account/", 'staphopia.views.login'),
     url(r'^top10/', 'database.views.top10', name='top10'),
     url(r'^genomes/', 'database.views.genomes', name='genomes'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
