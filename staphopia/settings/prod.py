@@ -1,5 +1,4 @@
 from staphopia.settings.common import *
-from staphopia.settings.aws import *
 
 '''-----------------------------------------------------------------------------
 SECURITY WARNING: don't run with debug turned on in production!
