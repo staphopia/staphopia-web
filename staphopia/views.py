@@ -3,7 +3,6 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 import registration.views
 
-import staphopia.forms
 from staphopia.models import ContactForm
 
 def index(request):
