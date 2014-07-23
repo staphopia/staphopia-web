@@ -26,14 +26,17 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
+    'django.contrib.humanize',
     'django.contrib.messages',
+    'django.contrib.sessions',
     'django.contrib.staticfiles',
     'south',
     'database',
     'registration',
 )
 
+# django-registration
+ACCOUNT_ACTIVATION_DAYS=7
 
 
 '''-----------------------------------------------------------------------------
@@ -112,3 +115,4 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+

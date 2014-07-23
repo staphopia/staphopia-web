@@ -1,0 +1,11 @@
+{% load humanize %}
+Hello!
+
+We received your Staphopia account registration request. Here is the link to complete the registration process:
+
+http://django.staphopia.com/accounts/activate/{{ activation_key }}/
+
+If you did not make this request, please disregard this message. The account will expire automatically in {{ expiration_days|apnumber }} days.
+
+Thank you, 
+The Staphopia Team

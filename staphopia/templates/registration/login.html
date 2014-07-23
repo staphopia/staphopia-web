@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Staphopia - Log in{% endblock %}
+
+{% block container %}
+
+
+    <div class="row">
+        <div>
+            <h3>Log In</h3>
+            <hr />
+            
+            {% if form.errors %}
+                <div class="alert alert-warning" role="alert">
+                <strong>Whoops! Try Again!</strong>
+                {% if form.username.errors or form.password.errors %}
+                    <p class="indent">Both Username and Password are required.</p>
+                {% else %}
+                    {% for field,error in form.errors.items %}
+                        <p class="indent">{{ error|join:"" }}</p>
+                    {% endfor %}
+                {% endif %}
+                </div>
+            {% endif %}
+            <hr />
+
+            <form method="post" action="?next={{ next|default:"/" }}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="col-xs-2 col-md-2 control-label text-right" for="id_username">Username:</label>  
+                    {% if form.username.errors %} <span class="error">{{ form.username.errors|join:", " }}</span>{% endif %}
+                    <div class="col-md-5 col-xs-10">
+                        <input id="id_username" maxlength="254" name="username" type="text" class="form-control input-md">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-2 col-md-2 control-label text-right" for="id_password">Password:</label>
+                    {% if form.password.errors %} <span class="error">{{ form.password.errors|join:", " }}</span>{% endif %}
+                    <div class="col-md-5 col-xs-10">
+                        <input id="id_password" name="password" type="password" class="form-control input-md">
+                    </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-xs-7 col-md-3 control-label" for="submit"></label>
+                  <div class="col-xs-2 col-md-2 col-md-offset-9">
+                    <button id="submit" name="submit" class="btn btn-primary">Log in</button>
+                  </div>
+                </div>
+            </form>
+            <p>
+                If you don't have an account, you can <a href="/accounts/register/">sign up</a> for one.
+            </p>
+        </div>
+    </div>
+{% endblock %}
