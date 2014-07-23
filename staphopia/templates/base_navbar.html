@@ -25,8 +25,33 @@
                 <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>
             </ul>
             <!-- Right Nav Section -->
-            <ul class="nav navbar-nav navbar-right" style="margin-right: 0px;">
-                <li><a href="/accounts/login/">Login</a></li>
+            <ul class="nav navbar-nav navbar-right">
+            {% if user.is_authenticated %}
+                <li>
+                    <div class="btn-group">
+                        <button type="button" class="btn dropdown-toggle navbar-btn btn-info btn-sm log" data-toggle="dropdown">
+                            <span class="glyphicon glyphicon-user"></span>
+                            {{ user.username }} 
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="#">Profile</a></li>
+                            <li><a href="#">Settings</a></li>
+                            <li class="divider"></li>
+                            <li><a href="/accounts/logout/">Sign Out</a></li>
+                        </ul>
+                    </div>
+                </li>
+            {% else %}
+                <li>
+                    <form action="/accounts/login/">
+                        <button class="btn navbar-btn btn-info btn-sm log">
+                        <span class="glyphicon glyphicon-user"></span>
+                        Sign In
+                        </button>
+                    </form>
+                </li>
+            {% endif %}
             </ul>
         </div><!--/.nav-collapse -->
     </div>

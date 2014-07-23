@@ -17,17 +17,24 @@
     <!-- End Top Bar -->
 
     <!-- Main Content-->
-    <div class="container fix-navbar">{% block container %}{% endblock %}
+    <div class="container fix-navbar">
+        {% block container %}{% endblock %}
     <!-- End Main Content-->
     
     <!-- Footer -->
     <footer class="row">
-        <div class="col-md-12">
+        <div>
             <hr />
             <div class="copyright">Copyright &#169; 2012-2014 Emory University. All rights reserved.</div>
         </div>
     </footer>
     <!-- End Footer -->
+    
+    {% if user.is_authenticated %}
+    logged in
+    {% else %}
+    not logged in
+    {% endif %}
     </div>
 
     <!-- Javascipt -->

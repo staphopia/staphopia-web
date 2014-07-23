@@ -6,7 +6,11 @@
     Shared
 ------------------------------------ */
 .navbar-right {
-    margin-right: 0em !important;
+    margin-right: 10px !important;
+}
+
+button.log {
+    margin-left: 15px !important;
 }
 
 div.fix-navbar {
@@ -15,6 +19,16 @@ div.fix-navbar {
 
 footer .copyright {
     text-align: center;
+}
+
+span.error {
+    color: red;
+    font-style: italic;
+    font-weight: bold;
+}
+
+div.fix-top-margin {
+    margin-top: 20px;
 }
 
 /* ------------------------------------
@@ -43,11 +57,6 @@ img.embed {
 div.panel {
     margin-top: 20px;
     margin-bottom: 0px;
-}
-
-div.form-group {
-    margin-bottom: 0px !important;
-    height: 49px;
 }
 
 label.text-right {

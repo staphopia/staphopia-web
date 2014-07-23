@@ -1,72 +1,84 @@
-{% extends "registration/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Sign up{% endblock %}
+{% block title %}Staphopia - Sign Up{% endblock %}
 
-{% block content %}
+{% block container %}
+    <div class="row">
+        <div>
+            <h3>Sign up for a Staphopia account</h3>
+            <p class="indent">
+                To register an account with Staphopia, please fill out the form 
+                to the below (all fields are required). Once completed you will
+                receive an email with instructions on how to finish your 
+                registration.
+            </p>
+            <hr />
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
+            {% if form.errors %}
+                <div class="alert alert-warning" role="alert">
+                <strong>Whoops! One or more fields has a problem!</strong>
+                    {% for field,error in form.errors.items %}
+                        {% if field == "password1" %}
+                            <p class="indent">Password: {{ error|join:"" }}</p>
+                        {% elif field == "password2" %}
+                            <p class="indent">Repeat Password: {{ error|join:"" }}</p>
+                        {% elif field == "email" %}
+                            <p class="indent">Email Address: {{ error|join:"" }}</p>
+                        {% elif field == "username" %}
+                            <p class="indent">{{ field|title }}: {{ error|join:"" }}</p>
+                        {% else %}
+                            <p class="indent">Passwords: {{ error|join:"" }}</p>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
 
-  {% if form.errors %}
-  <p class="errors">Please correct the errors below: {{ form.non_field_errors }}</p>
-  {% endif %}
+            <form class="form-horizontal" role="form" method="post" action="?next={{ next|default:"/" }}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="col-sm-3 col-md-3 control-label" for="id_username">Username </label> 
+                    <div class="col-sm-6 col-md-5">
+                        <input id="id_username" pattern="^[A-Za-z0-9_]{3,32}$" maxlength="32" 
+                               name="username" type="text" class="form-control input-md"
+                               title="Alpha-Numeric (and underscores). Length between 3 and 32 characters.">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 col-md-3 control-label" for="id_email">Email Address </label> 
+                    <div class="col-sm-6 col-md-5">
+                        <input id="id_email" name="email" type="email" class="form-control input-md">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="col-sm-3 col-md-3 control-label" for="id_password1">Password </label>
+                    
+                    <div class="col-sm-6 col-md-5">
+                        <input id="id_password1" name="password1" type="password" class="form-control input-md"
+                               pattern="^.{8,}$" title="Must be at least 6 characters in length.">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 col-md-3 control-label" for="id_password2">Repeat Password </label>
+                    
+                    <div class="col-sm-6 col-md-5">
+                        <input id="id_password2" name="password2" type="password" class="form-control input-md"
+                               pattern="^.{8,}$" title="Must be at least 6 characters in length.">
+                    </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-3 col-md-3 control-label" for="submit"></label>
+                  <div class="col-sm-2 col-md-2">
+                    <button id="submit" name="submit" class="btn btn-primary">Register</button>
+                  </div>
+                </div>
+            </form>
 
-  <h1>Create an account</h1>
-  
-  <form method="post" action="" class="wide">
-	{% csrf_token %}
-    <p>
-      <label for="id_first_name">First Name:</label>
-      {% if form.first_name.errors %}
-        <p class="errors">{{ form.first_name.errors.as_text }}</p>
-      {% endif %}
-      {{ form.first_name }}
-    </p>
-    <p>
-      <label for="id_first_name">Last Name:</label>
-      {% if form.last_name.errors %}
-        <p class="errors">{{ form.last_name.errors.as_text }}</p>
-      {% endif %}
-      {{ form.last_name }}
-    </p>
-    <p>
-      <label for="id_username">Username:</label>
-      {% if form.username.errors %}
-        <p class="errors">{{ form.username.errors.as_text }}</p>
-      {% endif %}
-      {{ form.username }}
-    </p>
-    <p>
-      <label for="id_email">Email address:</label>
-      {% if form.email.errors %}
-        <p class="errors">{{ form.email.errors.as_text }}</p>
-      {% endif %}
-      {{ form.email }}
-    </p>
-    <p>
-      <label for="id_password1">Password:</label>
-      {% if form.password1.errors %}
-        <p class="errors">{{ form.password1.errors.as_text }}</p>
-      {% endif %}
-      {{ form.password1 }}
-    </p>
-    <p>
-      <label for="id_password2">Password (type again to catch typos):</label>
-      {% if form.password2.errors %}
-        <p class="errors">{{ form.password2.errors.as_text }}</p>
-      {% endif %}
-      {{ form.password2 }}
-    </p>
-    <p class="submit"><input type="submit" value="Register &rarr;"></p>
-  </form>
-  
+        </div>
+    </div>
 {% endblock %}
 
-{% block content-related %}
-<p>Fill out the form to the left (all fields are required), and your
-account will be created; you'll be sent an email with instructions on how
-to finish your registration.</p>
-
-<p>We'll only use your email to send you signup instructions. We hate spam
-as much as you do.</p>
-
-<p>This account will let you log into the ticket tracker, claim tickets,
-and be exempt from spam filtering.</p>
-{% endblock %}

@@ -103,7 +103,7 @@ Staphopia
 -----------------------------------------------------------------------------'''
 ROOT_URLCONF = 'staphopia.urls'
 WSGI_APPLICATION = 'staphopia.wsgi.application'
-
+DEFAULT_FROM_EMAIL = "Staphopia's Friendly Robot <usa300@staphopia.com>"
 
 
 '''-----------------------------------------------------------------------------

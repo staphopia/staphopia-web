@@ -1,8 +1,16 @@
-{% extends "registration/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Activation complete{% endblock %}
+{% block title %}Staphopia - Activation Complete{% endblock %}
 
-{% block content %}
-<h1>Congratulations!</h1>
-<p>Your registration is now complete. Go to the site and start having fun!</p>
+{% block container %}
+    <div class="row">
+        <div class=>
+            <h3>Account Activation Successful</h3>
+            <p>
+                Your Staphopia account has been activated and registration is 
+                now complete. Thank you for signing up, you can now 
+                <a href="/accounts/login/">log in</a>.
+            </p>
+        </div>
+    </div>
 {% endblock %}

@@ -1,15 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}Staphopia - Log in{% endblock %}
+{% block title %}Staphopia - Sign In{% endblock %}
 
 {% block container %}
-
-
+    {% if user.is_authenticated %}
     <div class="row">
         <div>
-            <h3>Log In</h3>
+            <div class="fix-top-margin alert alert-info" role="alert">
+                <strong>You are already signed in as {{ user.username }}!</strong>
+                <p>
+                If you would like to log in as another user, please 
+                <a href="/accounts/logout/">Sign Out</a>.
+                </p>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div>
+            <h3>Sign in to Staphopia</h3>
             <hr />
-            
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
             {% if form.errors %}
                 <div class="alert alert-warning" role="alert">
                 <strong>Whoops! Try Again!</strong>
@@ -22,34 +35,51 @@
                 {% endif %}
                 </div>
             {% endif %}
-            <hr />
 
-            <form method="post" action="?next={{ next|default:"/" }}">
+            <form class="form-horizontal" role="form" method="post" action="?next={{ next|default:"/" }}">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label class="col-xs-2 col-md-2 control-label text-right" for="id_username">Username:</label>  
-                    {% if form.username.errors %} <span class="error">{{ form.username.errors|join:", " }}</span>{% endif %}
-                    <div class="col-md-5 col-xs-10">
+                    <label class="col-sm-2 col-md-2 control-label" for="id_username">Username </label> 
+                    <div class="col-sm-6 col-md-5">
                         <input id="id_username" maxlength="254" name="username" type="text" class="form-control input-md">
                     </div>
+                    {% if form.username.errors %} 
+                    <div class="col-sm-4 col-md-4">
+                        <span class="error">*{{ form.username.errors|join:", " }}</span>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
-                    <label class="col-xs-2 col-md-2 control-label text-right" for="id_password">Password:</label>
-                    {% if form.password.errors %} <span class="error">{{ form.password.errors|join:", " }}</span>{% endif %}
-                    <div class="col-md-5 col-xs-10">
+                    <label class="col-sm-2 col-md-2 control-label" for="id_password">Password </label>
+                    
+                    <div class="col-sm-6 col-md-5">
                         <input id="id_password" name="password" type="password" class="form-control input-md">
                     </div>
+                    {% if form.password.errors %} 
+                    <div class="col-sm-4 col-md-4">
+                        <span class="error">*{{ form.password.errors|join:", " }}</span>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
-                  <label class="col-xs-7 col-md-3 control-label" for="submit"></label>
-                  <div class="col-xs-2 col-md-2 col-md-offset-9">
-                    <button id="submit" name="submit" class="btn btn-primary">Log in</button>
+                  <label class="col-sm-2 col-md-2 control-label" for="submit"></label>
+                  <div class="col-sm-2 col-md-2">
+                    <button id="submit" name="submit" class="btn btn-primary">Sign In</button>
                   </div>
                 </div>
             </form>
-            <p>
-                If you don't have an account, you can <a href="/accounts/register/">sign up</a> for one.
-            </p>
+
         </div>
     </div>
+    <div class="row">
+        <div class="col-sm-5 col-sm-offset-3 col-md-4 col-md-offset-4">
+            Forget password? <a href="/accounts/password/reset/">Reset password here</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-5 col-sm-offset-3 col-md-4 col-md-offset-4">
+            Not registered? <a href="/accounts/register/">Sign up here</a>
+        </div>
+    </div>
+    {% endif %}
 {% endblock %}
