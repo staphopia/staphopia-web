@@ -18,7 +18,6 @@ def index(request):
         else:
             form = AutoFillForm(request.user.id)
         return render_to_response('accounts/autofill.html', 
-                                  {'form':form, 'POST':request.POST, 'settings':form.saved_settings, 'save':save_results}, 
-                                      RequestContext(request))
+                                  {'form':form}, RequestContext(request))
     else:
         return HttpResponseRedirect('/')
