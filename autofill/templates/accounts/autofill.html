@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% crispy form form.helper %}
+
+{% block container %}
+    <div class="row">
+        <div>
+            <h3>My Autofill Settings</h3>
+            <p class="indent">
+                While submitting genomes, often you will have common information 
+                between samples. This will allow you to save that information, 
+                and pre-fill some fields during the submission process. If you 
+                would like to delete a saved settings, remove any text associated 
+                with the setting.
+            </p>
+            <hr />
+        </div>
+    </div>
+    <div class="row">
+        <div>
+    {% crispy form %}
+        </div>
+    </div>
+    <br />
+    POST{{POST}}
+    <br />
+    {{settings }}
+    <br />
+
+        {{save}}
+        <br />
+        {{request.user.id}}
+
+{% endblock %}
+

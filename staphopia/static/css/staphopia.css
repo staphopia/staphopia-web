@@ -81,3 +81,10 @@ button#submit {
 table thead  td{
     font-weight: bold; 
 }
+
+/* ------------------------------------
+    accounts/autofill.html
+------------------------------------ */
+div.controls input.form-control {
+    width: 80% !important;
+}

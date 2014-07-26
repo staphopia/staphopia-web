@@ -31,13 +31,16 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'south',
-    'database',
     'registration',
+    'crispy_forms',
+    
+    'database',
+    'autofill',
 )
 
 # django-registration
 ACCOUNT_ACTIVATION_DAYS=7
-
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 '''-----------------------------------------------------------------------------
 Database 

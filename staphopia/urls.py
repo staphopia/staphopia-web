@@ -18,7 +18,9 @@ urlpatterns = patterns('',
     url(r'^genomes/', 'database.views.genomes', name='genomes'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
     
-
+    # Autofill Genome Submission fields
+    url(r'^accounts/autofill/', include('autofill.urls')),
+    
     # Fix for password reset
     url(r'^accounts/password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
             auth_views.password_reset_confirm,
