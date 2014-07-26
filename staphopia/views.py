@@ -8,6 +8,9 @@ from staphopia.models import ContactForm
 def index(request):
     return render_to_response('index.html', {}, RequestContext(request))
     
+def submission(request):
+    return render_to_response('submission.html', {}, RequestContext(request))
+    
 def contact(request):
     if request.POST:
         form = ContactForm(request.POST)

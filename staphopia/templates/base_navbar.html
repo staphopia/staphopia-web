@@ -1,6 +1,7 @@
 {% url 'home' as home %}
-{% url 'top10' as top10 %}
+{% url 'submission' as submission %}
 {% url 'genomes' as genomes %}
+{% url 'top10' as top10 %}
 {% url 'contact' as contact %}
 
 {% block navbar %}
@@ -20,8 +21,11 @@
             <!-- Left Nav Section -->
             <ul class="nav navbar-nav">
                 <li class="{% active request home %}"><a href="/">Home</a></li>
-                <li class="{% active request top10 %}"><a href="/top10/">Top 10</a></li>
+                {% if user.is_authenticated %}
+                <li class="{% active request submission %}"><a href="/submission/">Submission</a></li>
+                {% endif %}
                 <li class="{% active request genomes %}"><a href="/genomes/">Genomes</a></li>
+                <li class="{% active request top10 %}"><a href="/top10/">Top 10</a></li>
                 <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>
             </ul>
             <!-- Right Nav Section -->
