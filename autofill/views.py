@@ -14,6 +14,7 @@ def index(request):
             form = AutoFillForm(request.user.id, request.POST)
             if form.is_valid():
                 save_results = form.save(request.user.id, request.POST)
+                return HttpResponseRedirect('/accounts/autofill/')
         else:
             form = AutoFillForm(request.user.id)
         return render_to_response('accounts/autofill.html', 
