@@ -23,10 +23,8 @@ def contact(request):
             email = EmailMessage(subject, message, labrat, recipients)
             email.send(fail_silently=False)
 
-            return render_to_response(
-                'contact/success.html',
-                {},
-                context_instance=RequestContext(request))
+            return render_to_response('contact/success.html', {},
+                                      context_instance=RequestContext(request))
     else:
         form = ContactForm()
 

@@ -1,12 +1,9 @@
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
-
 from autofill.forms import AutoFillForm
  
-@login_required
 def index(request):
     if request.user.is_authenticated:
         form = None
