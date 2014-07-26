@@ -22,6 +22,8 @@ urlpatterns = patterns('',
     # Autofill Genome Submission fields
     url(r'^accounts/autofill/', include('autofill.urls')),
     
+    # django-registration 
+    url(r'^accounts/$', RedirectView.as_view(url='/',)),
     # Fix for password reset
     url(r'^accounts/password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
             auth_views.password_reset_confirm,

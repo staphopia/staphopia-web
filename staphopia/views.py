@@ -3,14 +3,11 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 import registration.views
 
-from staphopia.models import ContactForm
+from staphopia.forms import ContactForm
 
 def index(request):
     return render_to_response('index.html', {}, RequestContext(request))
-    
-def submission(request):
-    return render_to_response('submission.html', {}, RequestContext(request))
-    
+ 
 def contact(request):
     if request.POST:
         form = ContactForm(request.POST)
@@ -35,3 +32,6 @@ def contact(request):
 
     return render_to_response('contact.html', {'form': form},
                               context_instance=RequestContext(request))
+
+def submission(request):
+    return render_to_response('submission.html', {}, RequestContext(request))

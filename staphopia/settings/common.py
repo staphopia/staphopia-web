@@ -59,6 +59,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'staphopia.middleware.LoginRequiredMiddleware',
 )
 
 
@@ -107,7 +108,15 @@ Staphopia
 ROOT_URLCONF = 'staphopia.urls'
 WSGI_APPLICATION = 'staphopia.wsgi.application'
 DEFAULT_FROM_EMAIL = "Staphopia's Friendly Robot <usa300@staphopia.com>"
-
+LOGIN_URL = '/accounts/login/'
+LOGIN_EXEMPT_URLS = (
+    r'^$',
+    r'^genomes/',
+    r'^top10/', 
+    r'^contact/',
+    r'^accounts/login/',
+    r'^accounts/register/',
+)
 
 '''-----------------------------------------------------------------------------
 Internationalization
