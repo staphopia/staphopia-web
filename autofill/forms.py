@@ -72,7 +72,6 @@ class AutoFillForm(forms.Form):
         self.helper[0].wrap_together(Div, css_class=two_cols)
         self.helper[1].wrap_together(Div, css_class=two_cols)
         self.helper.add_input(Submit('submit', 'Save Changes', css_class=offset))
-        self.helper.add_input(Button('cancel', 'Cancel'))
   
     def save(self, user_id, POST, *args, **kwargs):
         results = []
