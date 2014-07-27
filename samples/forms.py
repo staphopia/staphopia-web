@@ -1,3 +1,5 @@
+import hashlib
+
 from django import forms
 
 from crispy_forms.helper import FormHelper
@@ -5,7 +7,7 @@ from crispy_forms.layout import *
 from crispy_forms.bootstrap import *
 
 from autofill.models import AutoFill
-from samples.models import MetaData
+from samples.models import Sample, MetaData, Upload
 from samples.forms_constants import *
 
 class SampleMetaDataForm(forms.Form):
@@ -82,4 +84,30 @@ class SampleMetaDataForm(forms.Form):
 
         self.helper[0:5].wrap_together(TabHolder)
         self.helper.add_input(Submit('submit', 'Submit Sample', css_class=offset))
-  
+        
+    def create_new_sample(self, user_id, is_public, *args, **kwargs):
+        new_sample = Sample.objects.create(user_id=user_id, is_public=is_public)
+        return new_sample
+
+        
+    def save_metadata(self, sample_id, POST, *args, **kwargs):
+        results = []
+        for field, value in POST.items():
+            if field not in POST_IGNORE:
+                metadata = MetaData(sample_id=sample_id, field=field, value=value)
+                if value:
+                    results.append(metadata.save())
+                else:
+                    results.append('{0} value is empty, did not save.'.format(field))
+        return results
+        
+    def save_upload(self, sample_id, FILES, *args, **kwargs):
+        md5 = hashlib.md5()
+        FILES['sequence_file'].open('rb')
+        for chunk in iter(lambda: FILES['sequence_file'].read(128*md5.block_size), b''): 
+            md5.update(chunk)
+        FILES['sequence_file'].close()
+    
+        upload = Upload(sample_id=sample_id, upload=FILES['sequence_file'], 
+                        upload_md5sum=md5.hexdigest(), analysis_status=0)
+        return upload.save()

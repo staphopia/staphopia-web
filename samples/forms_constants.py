@@ -60,6 +60,14 @@ REQUIRED_FIELDS = [
     'sequence_file',
 ]
 
+POST_IGNORE = [
+    'submit', 
+    'csrfmiddlewaretoken',
+    'is_public',
+    'sequence_file',
+]
+
+
 SELECT_FIELDS = [
     'sequencing_platform',
     'host_health',

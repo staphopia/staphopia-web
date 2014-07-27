@@ -7,15 +7,15 @@ class Sample(models.Model):
     is_public = models.BooleanField()
     
 class Upload(models.Model):
-    sample_id = models.ForeignKey('Sample')
+    sample = models.OneToOneField('Sample')
     upload = models.FileField(upload_to='.')
     upload_md5sum = models.CharField(max_length=32)
     analysis_status = models.PositiveSmallIntegerField(max_length=3)
     
 class MetaData(models.Model):
-    sample_id = models.ForeignKey('Sample')
+    sample = models.ForeignKey('Sample')
     field = models.CharField(max_length=50)
     value = models.CharField(max_length=255)
     
     class Meta:
-        unique_together = ('sample_id', 'field')
+        unique_together = ('sample', 'field')
