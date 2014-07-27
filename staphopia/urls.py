@@ -14,8 +14,8 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^$', 'staphopia.views.index', name='home'),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^submission/', 'staphopia.views.submission', name='submission'),
-    url(r'^genomes/', 'database.views.genomes', name='genomes'),
+    url(r'^submission/', 'samples.views.submission', name='submission'),
+    url(r'^genomes/', 'samples.views.genomes', name='genomes'),
     url(r'^top10/', 'database.views.top10', name='top10'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
     

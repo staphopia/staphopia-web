@@ -36,6 +36,7 @@ INSTALLED_APPS = (
     
     'database',
     'autofill',
+    'samples',
 )
 
 # django-registration

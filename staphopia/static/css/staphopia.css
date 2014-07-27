@@ -63,17 +63,6 @@ label.text-right {
     padding-right: 0px;
 }
 
-div.adjust-height {
-    height: 200px;
-}
-
-textarea.form-control {
-    height: 160px;
-}
-
-button#submit {
-    padding: 6px 36px;
-}
 
 /* ------------------------------------
     top10.html
@@ -82,9 +71,3 @@ table thead  td{
     font-weight: bold; 
 }
 
-/* ------------------------------------
-    accounts/autofill.html
------------------------------------- */
-div.controls input.form-control {
-    width: 80% !important;
-}

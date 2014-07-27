@@ -1,77 +1,65 @@
 from django import forms
-from django.contrib.auth.models import User
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import *
 from crispy_forms.bootstrap import *
 
 from autofill.models import AutoFill
+from autofill.forms_constants import *
 
 class AutoFillForm(forms.Form):
-
-    class Meta:
-        model = AutoFill
-        fields = ('user', 'field', 'value')       
         
     def _query_autofill(self, user_id):
         query = AutoFill.objects.all().filter(user_id=user_id)
         self.saved_settings = {}
         for row in query:
-            self.saved_settings[row.field] = row.value
+            if row.field in FIELDS:
+                self.saved_settings[row.field] = row.value
         
             
     def __init__(self, user_id, *args, **kwargs):
         self._query_autofill(user_id)
-        offset = 'col-sm-offset-1 col-md-offset-1'
-        two_cols = 'col-sm-5 col-md-5 {0}'.format(offset)
-        FIELDS = {
-            'contact_name':['Contact Name', 'Robert Petit'],
-            'contact_email':['Contact Email',
-                             'usa300@staphopia.com'],
-            'contact_link':['Contact Link',
-                            'www.staphopia.com/contact/'],
-            'sequencing_center':['Sequencing Center', 
-                                 'Emory Integrated Genomics Core'],
-            'sequencing_center_link':['Sequencing Center Link',
-                                      'eigc.emory.edu'],
-            'sequencing_center_location':['Sequencing Center Location',
-                                          'Atlanta, GA'],
-            'isolation_country':['Isolation Country', 'United States'],
-            'isolation_city':['Isolation City', 'Atlanta'],
-            'isolation_region':['Isolation Region', 'Georgia'],
-            'funding_agency':['Funding Agency', 'NIH'],
-            'funding_agency_link':['Funding Agency Link', 'www.nih.gov'],
-            'sequencing_libaray_method':['Sequencing Library Method', 
-                                         'Standard MinION protocol'],
-        }
-        
         super(AutoFillForm, self).__init__(*args, **kwargs)
-        for id in sorted(FIELDS.iterkeys()):
+        for id in FIELD_ORDER:
             value = self.saved_settings[id] if id in self.saved_settings else ''
+            widget_attrs = {
+                'placeholder':FIELDS[id][1],
+                'value':value,
+            }
             attributes = {                    
                 'label':FIELDS[id][0],            
                 'required':False,
-                'widget':forms.TextInput(attrs={'placeholder':FIELDS[id][1],
-                                                'value':value}),
             }
+            
             if id.endswith('_email'):
+                attributes['widget'] = forms.EmailInput(attrs=widget_attrs)
                 self.fields[id] = forms.EmailField(**attributes)
             elif id.endswith('_link'):
+                attributes['widget'] = forms.URLInput(attrs=widget_attrs)
                 self.fields[id] = forms.URLField(**attributes)
             else:
+                attributes['widget'] = forms.TextInput(attrs=widget_attrs)
                 self.fields[id] = forms.CharField(**attributes)
+                
         self.helper = FormHelper()
         self.helper.form_method = 'POST'
         self.helper.form_id = 'autofill'
         self.helper.form_class = ''
         self.helper.form_action = ''
         self.helper.layout = Layout()
+
+        # TODO figure out why len() is not working, I have to manually set 
+        #      values to get it to work
         self.helper.layout.extend(self.fields)
-        self.helper[0:6].wrap_together(Div, css_class="row")
-        self.helper[1:7].wrap_together(Div, css_class="row")
-        self.helper[0].wrap_together(Div, css_class=two_cols)
-        self.helper[1].wrap_together(Div, css_class=two_cols)
-        self.helper.add_input(Submit('submit', 'Save Changes', css_class=offset))
+        self.helper.layout.insert(0, 'Project Information')
+        self.helper[0:8].wrap_together(Tab)
+        self.helper.layout.insert(1, 'Publication Information')
+        self.helper[1:4].wrap_together(Tab)
+        self.helper.layout.insert(2, 'Organism Information')
+        self.helper[2:6].wrap_together(Tab)
+        
+        self.helper[0:3].wrap_together(TabHolder)
+        self.helper.add_input(Submit('submit', 'Save Changes'))
   
     def save(self, user_id, POST, *args, **kwargs):
         results = []
