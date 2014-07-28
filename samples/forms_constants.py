@@ -1,6 +1,15 @@
 '''
     Use this constant values to be used in forms.py
 '''
+MAX_FILE_SIZE = 2147483648 # 2 GB
+
+ACCEPTED_FILETYPES = [
+    'application/x-bzip2',
+    'application/x-bzip',
+    'application/zip',
+    'application/x-gzip',
+]
+
 FIELDS = {
     # Project Information
     'contact_name':['Contact Name', 'Alexander Ogston'],
@@ -48,7 +57,7 @@ FIELDS = {
     # Sequence Information
     'is_public':['Make Genome Public', ''],
     'is_paired':['Reads are paired', ''],
-    'sequence_file':['Compressed FASTQ File',''],
+    'sequence_file':['Compressed (bzip2, gzip, zip) FASTQ File',''],
 
 }
 

@@ -1,6 +1,9 @@
 import hashlib
+import magic
 
 from django import forms
+from django.utils.translation import ugettext_lazy as _
+from django.template.defaultfilters import filesizeformat
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import *
@@ -111,3 +114,22 @@ class SampleMetaDataForm(forms.Form):
         upload = Upload(sample_id=sample_id, upload=FILES['sequence_file'], 
                         upload_md5sum=md5.hexdigest(), analysis_status=0)
         return upload.save()
+        
+    def clean_sequence_file(self):
+        file = self.cleaned_data['sequence_file']
+        print file.name, file.content_type, file._size, ACCEPTED_FILETYPES, MAX_FILE_SIZE
+        try:
+            content_type = ''
+            for chunk in file.chunks(chunk_size=1024):
+                content_type = magic.from_buffer(chunk, mime=True)
+                break
+
+            if content_type in ACCEPTED_FILETYPES:
+                if file._size > MAX_FILE_SIZE:
+                    raise forms.ValidationError(_('Please keep filesize under %s. Current filesize %s') % (filesizeformat(MAX_FILE_SIZE), filesizeformat(file._size)))
+            else:
+                raise forms.ValidationError(_('Filetype not supported.'))
+        except AttributeError:
+            pass        
+
+        return file

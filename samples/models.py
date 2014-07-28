@@ -6,9 +6,13 @@ class Sample(models.Model):
     user = models.ForeignKey(User)
     is_public = models.BooleanField()
     
+def content_file_name(instance, filename):
+    print '/'.join(['uploads', instance.sample.user.username, str(instance.sample.sample_id), filename])
+    return '/'.join(['uploads', instance.sample.user.username, str(instance.sample.sample_id), filename])
+    
 class Upload(models.Model):
     sample = models.OneToOneField('Sample')
-    upload = models.FileField(upload_to='.')
+    upload = models.FileField(upload_to=content_file_name)
     upload_md5sum = models.CharField(max_length=32)
     analysis_status = models.PositiveSmallIntegerField(max_length=3)
     
