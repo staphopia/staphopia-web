@@ -1,6 +1,6 @@
 {% url 'home' as home %}
 {% url 'submission' as submission %}
-{% url 'genomes' as genomes %}
+{% url 'samples' as samples %}
 {% url 'top10' as top10 %}
 {% url 'contact' as contact %}
 
@@ -24,7 +24,7 @@
                 {% if user.is_authenticated %}
                 <li class="{% active request submission %}"><a href="/submission/">Submission</a></li>
                 {% endif %}
-                <li class="{% active request genomes %}"><a href="/genomes/">Genomes</a></li>
+                <li class="{% active request samples %}"><a href="/samples/">Samples</a></li>
                 <li class="{% active request top10 %}"><a href="/top10/">Top 10</a></li>
                 <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>
             </ul>
@@ -52,12 +52,10 @@
                 </li>
             {% else %}
                 <li>
-                    <form action="/accounts/login/">
-                        <button class="btn navbar-btn btn-info btn-sm log">
-                        <span class="glyphicon glyphicon-user"></span>
-                        Sign In
-                        </button>
-                    </form>
+                    <a data-toggle="tooltip" data-placement="bottom" 
+                       title="Sign In" href="/accounts/login/">
+                        <span class="glyphicon glyphicon-log-in"></span>
+                    </a>
                 </li>
             {% endif %}
             </ul>
