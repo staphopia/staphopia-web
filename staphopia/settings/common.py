@@ -38,7 +38,6 @@ INSTALLED_APPS = (
     'database',
     'autofill',
     'samples',
-    'djangojs',
     'django_datatables_view',
 )
 
