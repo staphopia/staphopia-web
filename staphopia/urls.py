@@ -7,7 +7,7 @@ from registration.forms import RegistrationFormUniqueEmail
 from registration.backends.default.views import RegistrationView, ActivationView
 from django_email_changer.views import CreateUserEmailModificationRequest, ActivateUserEmailModification, ActivationEmailSentSuccessView
 
-
+from database.views import SummaryDatatablesView
 from staphopia.settings.common import *
 
 admin.autodiscover()
@@ -16,7 +16,8 @@ urlpatterns = patterns('',
     url(r'^$', 'staphopia.views.index', name='home'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^submission/', 'samples.views.submission', name='submission'),
-    url(r'^genomes/', 'samples.views.genomes', name='genomes'),
+    url(r'^genomes/$', 'database.views.genomes', name='genomes'),
+    url(r'^genomes/data/$', SummaryDatatablesView.as_view(), name='genomes_data'),
     url(r'^top10/', 'database.views.top10', name='top10'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
     url(r'^accounts/settings/', 'staphopia.views.account_settings', name='account_settings'),

@@ -57,7 +57,7 @@ class Summary(models.Model):
     top_seq_centers = Counter(sequencingcenter.choices).most_common(10)
     top_st = Counter(sequencetype.choices).most_common(10)
     top_cc = Counter(clonalcomplex.choices).most_common(10)
-    test = 'am i here'
+
     class Meta:
         managed = False
         app_label = 'database'

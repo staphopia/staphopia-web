@@ -5,3 +5,4 @@ django-registration
 django-crispy-forms
 python-magic
 django_email_changer 
+django-datatables-view

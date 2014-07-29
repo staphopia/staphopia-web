@@ -26,5 +26,3 @@ def submission(request):
     else:
         return HttpResponseRedirect('/')
     
-def genomes(request):
-    return render_to_response('genomes.html', {}, RequestContext(request))
