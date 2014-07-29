@@ -2,6 +2,8 @@ from django.core.mail import EmailMessage
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
+from registration.backends.default.views import RegistrationView
+
 from staphopia.forms import ContactForm, UserEmailForm
 
 def index(request):
@@ -33,3 +35,4 @@ def contact(request):
 
     return render_to_response('contact.html', {'form': form},
                               context_instance=RequestContext(request))
+                              

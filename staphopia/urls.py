@@ -8,7 +8,9 @@ from registration.backends.default.views import RegistrationView, ActivationView
 from django_email_changer.views import CreateUserEmailModificationRequest, ActivateUserEmailModification, ActivationEmailSentSuccessView
 
 from database.views import SummaryDatatablesView
+from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
+import staphopia.signals
 
 admin.autodiscover()
 
@@ -59,7 +61,7 @@ urlpatterns = patterns('',
                                name='registration_activate'),
     # enable unique email registration feature
     url(r'^accounts/register/$',
-        RegistrationView.as_view(form_class=RegistrationFormUniqueEmail),
+        RegistrationView.as_view(form_class=RegistrationFormWithName),
         name='registration_register'),
     url(r'^accounts/', include('registration.backends.default.urls')),
 )

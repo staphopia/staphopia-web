@@ -4,6 +4,11 @@ from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import *
 from crispy_forms.bootstrap import *
+from registration.forms import RegistrationFormUniqueEmail
+
+class RegistrationFormWithName(RegistrationFormUniqueEmail):
+    first_name = forms.CharField(max_length=50, label='First Name')    
+    last_name = forms.CharField(max_length=50, label='Last Name')
 
 class ContactForm(forms.Form):
     name = forms.CharField(max_length=100)

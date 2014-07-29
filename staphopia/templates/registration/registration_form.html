@@ -28,7 +28,7 @@
                             <p class="indent">Repeat Password: {{ error|join:"" }}</p>
                         {% elif field == "email" %}
                             <p class="indent">Email Address: {{ error|join:"" }}</p>
-                        {% elif field == "username" %}
+                        {% elif field == "username" or field == "fisrt_name" or field == "last_name" %}
                             <p class="indent">{{ field|title }}: {{ error|join:"" }}</p>
                         {% else %}
                             <p class="indent">Passwords: {{ error|join:"" }}</p>
@@ -39,6 +39,20 @@
 
             <form class="form-horizontal" role="form" method="post" action="?next={{ next|default:"/" }}">
                 {% csrf_token %}
+                <div class="form-group">
+                    <label class="col-sm-3 col-md-3 control-label" for="id_first_name">First Name </label> 
+                    <div class="col-sm-6 col-md-5">
+                        <input id="id_first_name" maxlength="50" name="first_name" type="text" 
+                               class="form-control input-md" title="Your first name.">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 col-md-3 control-label" for="id_last_name">Last Name </label> 
+                    <div class="col-sm-6 col-md-5">
+                        <input id="id_last_name" maxlength="50" name="last_name" type="text" 
+                               class="form-control input-md" title="Your last name.">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label class="col-sm-3 col-md-3 control-label" for="id_username">Username </label> 
                     <div class="col-sm-6 col-md-5">
