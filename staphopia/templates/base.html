@@ -38,11 +38,18 @@
     </div>
 
     <!-- Javascipt -->
-    {% block js %}
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-        <script src="{% static "js/bootstrap.min.js" %}"></script>
-    {% endblock %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="{% static "js/bootstrap.min.js" %}"></script>
+        
+    {% if user.is_authenticated %}
+    <script>
+        $(document).ready(function() {
+            $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+        });
+        {% endif %}
+    </script>
     <!-- End Javascript -->
         
 </body>
 </html>
+

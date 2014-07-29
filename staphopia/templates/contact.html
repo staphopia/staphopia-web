@@ -1,13 +1,4 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
-
-{% block css %}
-<style>
-.asteriskField {
-    display: none;
-}
-</style>
-{% endblock %}
 
 {% block container %}
     <div class="row">
@@ -24,7 +15,7 @@
     </div>
     <div class="row">
         <div class="col-sm-6 col-md-6 col-sm-offset-3 col-md-offset-3">
-    {% crispy form %}
+            {% crispy form %}
         </div>
     </div>
 {% endblock %}

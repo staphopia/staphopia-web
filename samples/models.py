@@ -7,7 +7,6 @@ class Sample(models.Model):
     is_public = models.BooleanField()
     
 def content_file_name(instance, filename):
-    print '/'.join(['uploads', instance.sample.user.username, str(instance.sample.sample_id), filename])
     return '/'.join(['uploads', instance.sample.user.username, str(instance.sample.sample_id), filename])
     
 class Upload(models.Model):

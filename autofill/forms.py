@@ -37,6 +37,11 @@ class AutoFillForm(forms.Form):
             elif id.endswith('_link'):
                 attributes['widget'] = forms.URLInput(attrs=widget_attrs)
                 self.fields[id] = forms.URLField(**attributes)
+            elif id in SELECT_FIELDS:
+                attributes['widget'] = forms.Select(attrs=widget_attrs)
+                self.fields[id] = forms.ChoiceField(choices=CHOICES[id], 
+                                                    initial=value, 
+                                                    **attributes)
             else:
                 attributes['widget'] = forms.TextInput(attrs=widget_attrs)
                 self.fields[id] = forms.CharField(**attributes)

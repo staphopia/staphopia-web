@@ -1,0 +1,10 @@
+Hello {{ email_modification.user.username }},
+
+We have received a request to update your email address. In order to activate your new email address please click this link:
+
+http://peregrine.genetics.emory.edu/accounts/email/change/activate/{{ email_modification.security_code }}/
+
+If you did not make this request, please disreagard this email.
+
+Thanks,
+The Staphopia Team

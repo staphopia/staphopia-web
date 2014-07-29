@@ -3,4 +3,5 @@ MySQL-python==1.2.5
 South
 django-registration
 django-crispy-forms
-
+python-magic
+django_email_changer 

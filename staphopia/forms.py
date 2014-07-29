@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.models import User
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import *
@@ -16,3 +17,10 @@ class ContactForm(forms.Form):
     helper.form_class = ''
     helper.form_action = ''
     helper.add_input(Submit('submit', 'Contact'))
+    
+class UserEmailForm(forms.ModelForm):
+    email = forms.EmailField(required=True)
+    class Meta:
+        model = User
+        fields = ('email',)
+        

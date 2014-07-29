@@ -4,8 +4,9 @@ from django.template.loader import add_to_builtins
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from registration.forms import RegistrationFormUniqueEmail
-from registration.backends.default.views import RegistrationView
-from registration.backends.default.views import ActivationView
+from registration.backends.default.views import RegistrationView, ActivationView
+from django_email_changer.views import CreateUserEmailModificationRequest, ActivateUserEmailModification, ActivationEmailSentSuccessView
+
 
 from staphopia.settings.common import *
 
@@ -18,9 +19,21 @@ urlpatterns = patterns('',
     url(r'^genomes/', 'samples.views.genomes', name='genomes'),
     url(r'^top10/', 'database.views.top10', name='top10'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
+    url(r'^accounts/settings/', 'staphopia.views.account_settings', name='account_settings'),
     
+    # django-email-changer
+    url(r'accounts/email/change/activate/(?P<code>[^/]+)/',
+        ActivateUserEmailModification.as_view(),
+        name="django_change_email_activate_new_email"),
+    url(r'^accounts/email/change/sent/$',
+        ActivationEmailSentSuccessView.as_view(),
+        name="django_change_email_sent_activation_email"),
+    url(r'^accounts/email/change/$',
+        CreateUserEmailModificationRequest.as_view(),
+        name="django_email_changer_change_view"),
+        
     # Autofill Genome Submission fields
-    url(r'^accounts/autofill/', include('autofill.urls')),
+    url(r'^accounts/autofill/', include('autofill.urls'), name='autofill'),
     
     # django-registration 
     url(r'^accounts/$', RedirectView.as_view(url='/',)),

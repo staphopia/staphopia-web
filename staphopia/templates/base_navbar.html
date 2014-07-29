@@ -32,19 +32,23 @@
             <ul class="nav navbar-nav navbar-right">
             {% if user.is_authenticated %}
                 <li>
-                    <div class="btn-group">
-                        <button type="button" class="btn dropdown-toggle navbar-btn btn-info btn-sm log" data-toggle="dropdown">
-                            <span class="glyphicon glyphicon-user"></span>
-                            {{ user.username }} 
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" role="menu">
-                            <li><a href="/accounts/autofill/">Saved Settings</a></li>
-                            <li><a href="#">Security</a></li>
-                            <li class="divider"></li>
-                            <li><a href="/accounts/logout/">Sign Out</a></li>
-                        </ul>
-                    </div>
+                    <a data-toggle="tooltip" data-placement="bottom" 
+                       title="View Samples" href="/samples/{{ user.username }}/"> 
+                        <span class="glyphicon glyphicon-user"></span>
+                        {{ user.username }} 
+                    </a>
+                </li>
+                <li>
+                    <a data-toggle="tooltip" data-placement="bottom" 
+                       title="Account Settings" href="/accounts/settings/">
+                        <span class="glyphicon glyphicon-cog"></span>
+                    </a>
+                </li>
+                <li>
+                    <a data-toggle="tooltip" data-placement="bottom" 
+                       title="Sign Out" href="/accounts/logout/">
+                        <span class="glyphicon glyphicon-log-out"></span>
+                    </a>
                 </li>
             {% else %}
                 <li>

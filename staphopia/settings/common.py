@@ -33,6 +33,7 @@ INSTALLED_APPS = (
     'south',
     'registration',
     'crispy_forms',
+    'django_email_changer',
     
     'database',
     'autofill',
@@ -42,6 +43,12 @@ INSTALLED_APPS = (
 # django-registration
 ACCOUNT_ACTIVATION_DAYS=7
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
+
+# django_email_changer 
+EMAIL_CHANGE_NOTIFICATION_SUBJECT = '[Email Update] - Please verify Staphopia emial update'
+EMAIL_CHANGE_NOTIFICATION_FROM = "Staphopia's Friendly Robot <usa300@staphopia.com>"
+
+
 
 '''-----------------------------------------------------------------------------
 Database 

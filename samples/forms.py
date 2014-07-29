@@ -52,7 +52,9 @@ class SampleMetaDataForm(forms.Form):
                 self.fields[id] = forms.BooleanField(**attributes)
             elif id in SELECT_FIELDS:
                 attributes['widget'] = forms.Select(attrs=widget_attrs)
-                self.fields[id] = forms.ChoiceField(choices=CHOICES[id], **attributes)
+                self.fields[id] = forms.ChoiceField(choices=CHOICES[id], 
+                                                    initial=value, 
+                                                    **attributes)
             elif id == 'sequence_file':
                 attributes['widget'] = forms.ClearableFileInput(attrs=widget_attrs)
                 self.fields[id] = forms.FileField(**attributes)
