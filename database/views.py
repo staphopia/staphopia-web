@@ -6,8 +6,6 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from database.models import Summary
 
-add_to_builtins('eztables.templatetags.eztables')
-
 def top10(request):
     return render_to_response('top10.html', {}, RequestContext(request))
     
