@@ -70,19 +70,19 @@ class SummaryDatatablesView(BaseDatatableView):
     
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('search[value]', None)
+        print sSearch
         if sSearch:
             qs = qs.filter(
-                    Q(sampletag__contains=sSearch) |
-                    Q(grade__contains=sSearch) | 
-                    Q(sequencingcenter__contains=sSearch) |
-                    Q(strain__contains=sSearch) | 
-                    Q(quality__contains=sSearch) |
-                    Q(coverage__contains=sSearch) | 
-                    Q(meanlength__contains=sSearch) |
-                    Q(sequencetype__contains=sSearch) | 
-                    Q(clonalcomplex__contains=sSearch) |
-                    Q(n50__contains=sSearch) |
-                    Q(mincontig__contains=sSearch) | 
-                    Q(mean__contains=sSearch)
+                    Q(sampletag__icontains=sSearch) |
+                    Q(sequencingcenter__icontains=sSearch) |
+                    Q(strain__icontains=sSearch) | 
+                    Q(quality__icontains=sSearch) |
+                    Q(coverage__icontains=sSearch) | 
+                    Q(meanlength__icontains=sSearch) |
+                    Q(sequencetype__icontains=sSearch) | 
+                    Q(clonalcomplex__icontains=sSearch) |
+                    Q(n50__icontains=sSearch) |
+                    Q(mincontig__icontains=sSearch) | 
+                    Q(mean__icontains=sSearch)
                 )
         return qs
