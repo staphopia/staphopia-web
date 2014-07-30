@@ -18,7 +18,6 @@ def submission(request):
                     True if 'is_public' in request.POST else False,
                     True if 'is_paired' in request.POST else False
                 )
-                
                 save_results = form.save_metadata(request.user, sample.pk, request.POST)
                 save_upload = form.save_upload(sample.pk, request.FILES)
                 return HttpResponseRedirect('/')
