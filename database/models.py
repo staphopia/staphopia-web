@@ -10,6 +10,17 @@
 from __future__ import unicode_literals
 from django.db import models
 
+def get_sequencing_grade(meanlength, coverage, quality):
+    if meanlength >= 75:
+        if coverage >= 45 and quality >= 30:
+            return 'Gold'
+        elif coverage >= 20 and quality >= 20:
+            return 'Silver'
+        else:
+            return 'Bronze'
+    else:
+        return 'Bronze'
+
 class Summary(models.Model):
     from collections import Counter
     sampleid = models.IntegerField(db_column='SampleID', primary_key=True) # Field name made lowercase.

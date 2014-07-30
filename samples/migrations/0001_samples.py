@@ -12,17 +12,18 @@ class Migration(SchemaMigration):
         db.create_table(u'samples_sample', (
             ('sample_id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
-            ('is_public', self.gf('django.db.models.fields.BooleanField')()),
+            ('is_public', self.gf('django.db.models.fields.BooleanField')(default=True)),
+            ('is_published', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('is_paired', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('analysis_stage', self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=0, max_length=3)),
         ))
         db.send_create_signal(u'samples', ['Sample'])
 
         # Adding model 'Upload'
         db.create_table(u'samples_upload', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('sample', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['samples.Sample'], unique=True)),
+            ('sample', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['samples.Sample'], unique=True, primary_key=True)),
             ('upload', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
-            ('upload_md5sum', self.gf('django.db.models.fields.CharField')(max_length=32)),
-            ('analysis_status', self.gf('django.db.models.fields.PositiveSmallIntegerField')(max_length=3)),
+            ('upload_md5sum', self.gf('django.db.models.fields.CharField')(unique=True, max_length=32)),
         ))
         db.send_create_signal(u'samples', ['Upload'])
 
@@ -99,17 +100,18 @@ class Migration(SchemaMigration):
         },
         u'samples.sample': {
             'Meta': {'object_name': 'Sample'},
-            'is_public': ('django.db.models.fields.BooleanField', [], {}),
+            'analysis_stage': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '0', 'max_length': '3'}),
+            'is_paired': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'is_public': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
+            'is_published': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'sample_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['auth.User']"})
         },
         u'samples.upload': {
             'Meta': {'object_name': 'Upload'},
-            'analysis_status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'max_length': '3'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'sample': ('django.db.models.fields.related.OneToOneField', [], {'to': u"orm['samples.Sample']", 'unique': 'True'}),
+            'sample': ('django.db.models.fields.related.OneToOneField', [], {'to': u"orm['samples.Sample']", 'unique': 'True', 'primary_key': 'True'}),
             'upload': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
-            'upload_md5sum': ('django.db.models.fields.CharField', [], {'max_length': '32'})
+            'upload_md5sum': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '32'})
         }
     }
 

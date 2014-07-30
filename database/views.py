@@ -35,7 +35,7 @@ class SummaryDatatablesView(BaseDatatableView):
     order_columns = [
         'sampletag',
         #'ispublished',
-        '',
+        'grade',
         'sequencingcenter',
         'strain',
         'quality',
@@ -51,6 +51,7 @@ class SummaryDatatablesView(BaseDatatableView):
         'mean',
     ]
     
+
     def render_column(self, row, column):
         # We want to render user as a custom column
         if column == 'grade':
@@ -63,14 +64,12 @@ class SummaryDatatablesView(BaseDatatableView):
                     return 'Bronze'
             else:
                 return 'Bronze'
-            return '{0} {1}'.format(row.customer_firstname, row.customer_lastname)
         else:
             return super(SummaryDatatablesView, self).render_column(row, column)
-          
+  
     
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('search[value]', None)
-        print sSearch
         if sSearch:
             qs = qs.filter(
                     Q(sampletag__icontains=sSearch) |
@@ -85,4 +84,5 @@ class SummaryDatatablesView(BaseDatatableView):
                     Q(mincontig__icontains=sSearch) | 
                     Q(mean__icontains=sSearch)
                 )
+            
         return qs

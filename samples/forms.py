@@ -4,6 +4,7 @@ import magic
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+from django.conf import settings
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import *
@@ -90,13 +91,16 @@ class SampleMetaDataForm(forms.Form):
         self.helper[0:5].wrap_together(TabHolder)
         self.helper.add_input(Submit('submit', 'Submit Sample', css_class=offset))
         
-    def create_new_sample(self, user_id, is_public, *args, **kwargs):
-        new_sample = Sample.objects.create(user_id=user_id, is_public=is_public)
+    def create_new_sample(self, user_id, is_public, is_paired, *args, **kwargs):
+        new_sample = Sample.objects.create(user_id=user_id, 
+                                           is_public=is_public, 
+                                           is_paired=is_paired)
         return new_sample
 
         
-    def save_metadata(self, sample_id, POST, *args, **kwargs):
+    def save_metadata(self, user, sample_id, POST, *args, **kwargs):
         results = []
+        
         for field, value in POST.items():
             if field not in POST_IGNORE:
                 metadata = MetaData(sample_id=sample_id, field=field, value=value)
@@ -104,34 +108,72 @@ class SampleMetaDataForm(forms.Form):
                     results.append(metadata.save())
                 else:
                     results.append('{0} value is empty, did not save.'.format(field))
+        
+        # Generate sample tag
+        num_samples = str(Sample.objects.filter(user_id=user.id).count())
+        sample_tag = '{0}_{1}'.format(user.username, num_samples.zfill(6))
+        metadata = MetaData(sample_id=sample_id, field='sample_tag', value=value)
+        results.append(metadata.save())
+        
         return results
         
     def save_upload(self, sample_id, FILES, *args, **kwargs):
-        md5 = hashlib.md5()
-        FILES['sequence_file'].open('rb')
-        for chunk in iter(lambda: FILES['sequence_file'].read(128*md5.block_size), b''): 
-            md5.update(chunk)
-        FILES['sequence_file'].close()
-    
         upload = Upload(sample_id=sample_id, upload=FILES['sequence_file'], 
-                        upload_md5sum=md5.hexdigest(), analysis_status=0)
+                        upload_md5sum=self.file_md5sum)
         return upload.save()
         
     def clean_sequence_file(self):
         file = self.cleaned_data['sequence_file']
-        print file.name, file.content_type, file._size, ACCEPTED_FILETYPES, MAX_FILE_SIZE
         try:
-            content_type = ''
-            for chunk in file.chunks(chunk_size=1024):
-                content_type = magic.from_buffer(chunk, mime=True)
-                break
-
-            if content_type in ACCEPTED_FILETYPES:
-                if file._size > MAX_FILE_SIZE:
+            if file._size > MAX_FILE_SIZE:
                     raise forms.ValidationError(_('Please keep filesize under %s. Current filesize %s') % (filesizeformat(MAX_FILE_SIZE), filesizeformat(file._size)))
             else:
-                raise forms.ValidationError(_('Filetype not supported.'))
+                content_type = ''
+                md5sum = ''
+                if hasattr(file, 'temporary_file_path'):
+                    content_type = self.content_type_from_file(file.temporary_file_path())
+                    md5sum = self.md5sum(file.temporary_file_path())
+                else:
+                    content_type, md5sum = self.content_type_and_md5sum_from_memory(file)
+            
+                if content_type in ACCEPTED_FILETYPES:
+                    query = Upload.objects.filter(upload_md5sum=md5sum)
+                    self.file_md5sum = md5sum
+                    if query.count():
+                        raise forms.ValidationError(_('A file with MD5sum (%s) has already been uploaded.') % (md5sum))
+                else:
+                    raise forms.ValidationError(_('Filetype not supported.'))
         except AttributeError:
             pass        
 
+        print self.file_md5sum
         return file
+
+    
+    def content_type_and_md5sum_from_memory(self, file):
+        content_type = ''
+        md5 = hashlib.md5()
+        file.open()
+        for chunk in iter(lambda: file.read(128*md5.block_size), b''):
+            if not content_type:
+                content_type = magic.from_buffer(chunk, mime=True)
+            md5.update(chunk)
+        file.close()
+        
+        return [content_type, md5.hexdigest()]
+     
+    def content_type_from_file(self, file):
+        fh = open(file)
+        content_type = magic.from_buffer(fh.read(1024), mime=True)
+        fh.close()
+        
+        return content_type
+        
+    def md5sum_from_file(self, file):
+        md5 = hashlib.md5()
+        fh = open(file)
+        for chunk in iter(lambda: fh.read(128*md5.block_size), b''): 
+            md5.update(chunk)
+        fh.close()
+        
+        return md5.hexdigest()
