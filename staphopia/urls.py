@@ -18,11 +18,15 @@ urlpatterns = patterns('',
     url(r'^$', 'staphopia.views.index', name='home'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^submission/', 'samples.views.submission', name='submission'),
-    url(r'^samples/$', 'database.views.samples', name='samples'),
-    url(r'^samples/data/$', SummaryDatatablesView.as_view(), name='samples_data'),
     url(r'^top10/', 'database.views.top10', name='top10'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
     url(r'^accounts/settings/', 'staphopia.views.account_settings', name='account_settings'),
+    
+    # Samples
+    url(r'^samples/data/$', SummaryDatatablesView.as_view(), name='samples_data'),
+    url(r'^samples/(?P<sample_tag>[^/]+)/', 'database.views.samples', name='sample_results'),
+    url(r'^samples/$', 'database.views.samples', name='samples'),
+
     
     # django-email-changer
     url(r'accounts/email/change/activate/(?P<code>[^/]+)/',

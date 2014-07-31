@@ -9,8 +9,14 @@ from database.models import Summary
 def top10(request):
     return render_to_response('top10.html', {}, RequestContext(request))
     
-def samples(request):
-    return render_to_response('samples.html', {}, RequestContext(request))
+def samples(request, sample_tag=None):
+    if sample_tag:
+        return render_to_response('sample/results.html', 
+                                  {'sample_tag':sample_tag}, 
+                                  RequestContext(request))
+    else:
+        return render_to_response('samples.html', {}, RequestContext(request))
+    
     
 class SummaryDatatablesView(BaseDatatableView):
     model = Summary

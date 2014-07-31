@@ -1,0 +1,71 @@
+{% load staticfiles %}
+
+    <div class='col-sm-3 col-md-2'>
+        <div class="panel-group" id="accordion">
+            <div class="panel panel-info">
+                <div class="panel-heading"><em>{{ sample_tag }}</em></div>
+                <div class="panel-body text-center">
+                    <img src="{% static "img/gold.png" %}">
+                </div>          
+                <div class="list-group">
+                    <a class="list-group-item list-group-item-info" data-parent="#accordion"
+                       href="#collapseSummary" data-toggle="collapse">
+                        Summary
+                    </a>
+                </div>
+                <div id="collapseSummary" class="list-group panel-collapse collapse in">
+                    <a class="list-group-item active" href="#">Outline</a>
+                    <a class="list-group-item" href="#">Meta-Data</a>
+                    <a class="list-group-item" href="#">Phenotype</a>
+                    <a class="list-group-item" href="#">Sequence</a>
+                    <a class="list-group-item" href="#">Assembly</a>
+                </div>
+                
+                <div class="list-group">
+                    <a class="list-group-item list-group-item-info" data-parent="#accordion" 
+                       href="#collapseMLST" data-toggle="collapse">
+                        MLST
+                    </a>
+                </div>
+                <div id="collapseMLST" class="list-group panel-collapse collapse">
+                    <a class="list-group-item" href="#">Outline</a>
+                    <a class="list-group-item" href="#">Related Samples</a>
+                </div>
+                
+                <div class="list-group">
+                    <a class="list-group-item list-group-item-info" data-parent="#accordion" 
+                       href="#collapseSCCmec" data-toggle="collapse">
+                        SCCmec
+                    </a>
+                </div>
+                <div id="collapseSCCmec" class="list-group panel-collapse collapse">
+                    <a class="list-group-item" href="#">Outline</a>
+                    <a class="list-group-item" href="#">Cassette Coverage</a>
+                    <a class="list-group-item" href="#">Protein Hits</a>
+                    <a class="list-group-item" href="#">Primer Hits</a>
+                </div>
+                
+                <div class="list-group">
+                    <a class="list-group-item list-group-item-info" data-parent="#accordion" 
+                       href="#collapseResistance" data-toggle="collapse">
+                        Resistance
+                    </a>
+                </div>
+                <div id="collapseResistance" class="list-group panel-collapse collapse">
+                    <a class="list-group-item" href="#">Outline</a>
+                    <a class="list-group-item" href="#">Protein Hits</a>
+                </div>
+
+                <div class="list-group">
+                    <a class="list-group-item list-group-item-info" data-parent="#accordion" 
+                       href="#collapseVirulence" data-toggle="collapse">
+                        Virulence
+                    </a>
+                </div>
+                <div id="collapseVirulence" class="list-group panel-collapse collapse">
+                    <a class="list-group-item" href="#">Outline</a>
+                    <a class="list-group-item" href="#">Protein Hits</a>
+                </div>
+            </div>
+        </div>
+    </div>

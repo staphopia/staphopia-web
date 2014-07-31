@@ -76,3 +76,23 @@ table thead  td{
     font-weight: bold; 
 }
 
+/* ------------------------------------
+    samples.html
+------------------------------------ */
+#samples_table_wrapper {
+    font-size: 12px;
+}
+
+#samples_table_wrapper  table{
+    width: 100% !important;
+}
+
+.table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
+    cursor: pointer;
+    background-color: #2ba6cb !important;
+}
+
+.table-striped>tbody>tr:nth-child(odd)>td, .table-striped>tbody>tr:nth-child(odd)>th{
+    background-color: #E2E4FF;
+}
+
