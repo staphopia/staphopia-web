@@ -1,14 +1,140 @@
 '''
-    Use this constant values to be used in forms.py
+    Use this constant values to be used in forms.py and models.py
 '''
+from django import forms
+from django.utils.translation import ugettext_lazy as _
+
 MAX_FILE_SIZE = 2147483648 # 2 GB
 
 ACCEPTED_FILETYPES = [
     'application/x-bzip2',
     'application/x-bzip',
-    'application/zip',
     'application/x-gzip',
 ]
+
+SUBMISSION_FIELDS = [
+    # Project Information
+    'contact_name', 'contact_email', 'contact_link', 'sequencing_center',
+    'sequencing_center_link', 'sequencing_date', 'sequencing_libaray_method',
+    'sequencing_platform',
+
+    # Publication Inforamtion
+    'publication_link', 'pubmed_id', 'doi', 'funding_agency', 
+    'funding_agency_link',
+    
+    # Organism Information
+    'strain', 'isolation_date', 'isolation_country', 'isolation_city',
+    'isolation_region', 'host_name', 'host_health', 'host_age', 'host_gender',
+    'comments',
+                             
+    # Phenotype Information
+    'vancomycin_mic', 'penicillin_mic', 'oxacillin_mic', 'clindamycin_mic',
+    'daptomycin_mic', 'levofloxacin_mic', 'linezolid_mic', 'rifampin_mic',
+    'tetracycline_mic', 'trimethoprim_mic', 'source',
+    
+    # Sequence Information
+    'is_public', 'is_paired',
+]
+
+SUBMISSION_LABELS = {
+    # Project Information
+    'contact_name':_('Contact Name'),
+    'contact_email':_('Contact Email'),
+    'contact_link':_('Contact Link'),
+    'sequencing_center':_('Sequencing Center'),
+    'sequencing_center_link':_('Sequencing Center Link'),
+    'sequencing_date':_('Sequencing Date'),
+    'sequencing_libaray_method':_('Sequencing Library Method'),
+    'sequencing_platform':_('Sequencing Platform'),
+
+    # Publication Inforamtion
+    'publication_link':_('Publication Link'),
+    'pubmed_id':_('PubMed ID'),
+    'doi':_('Digital Object Identifier (DOI)'),
+    'funding_agency':_('Funding Agency'),
+    'funding_agency_link':_('Funding Agency Link'),
+    
+    # Organism Information
+    'strain':_('Strain'),
+    'isolation_date':_('Isolation Date'),
+    'isolation_country':_('Isolation Country'),
+    'isolation_city':_('Isolation City'),
+    'isolation_region':_('Isolation Region'),
+    'host_name':_('Host Species Name'), # Should have taxon id
+    'host_health':_('Host Health'),
+    'host_age':_('Host Age'),
+    'host_gender':_('Host Gender'),
+    'comments':_('Comments'),
+                             
+    # Phenotype Information
+    'vancomycin_mic':_('Vancomyocin'),
+    'penicillin_mic':_('Penicillin'),
+    'oxacillin_mic':_('Oxacillin'),
+    'clindamycin_mic':_('Clindamycin'),
+    'daptomycin_mic':_('Daptomycin'),
+    'levofloxacin_mic':_('Levofloxacin'),
+    'linezolid_mic':_('Linezolid'),
+    'rifampin_mic':_('Rifampin'),
+    'tetracycline_mic':_('Tetracycline'),
+    'trimethoprim_mic':_('Trimethoprim-Sulfamethoxazole'),
+    'source':_('Source'),
+    
+    # Sequence Information
+    'is_public':_('Make Genome Public'),
+    'is_paired':_('Reads are paired'),
+    'sequence_file':_('Compressed (bzip2, gzip) FASTQ File'),
+
+}
+
+SUBMISSION_WIDGETS = {
+    # Project Information
+    'contact_name': forms.TextInput(attrs={
+            'placeholder': 'Alexander Ogston',
+            'value': ''
+        }),
+    'contact_email': forms.TextInput(attrs={
+            'placeholder': 'usa300@staphopia.com'
+        }),
+    'contact_link': forms.TextInput(attrs={
+            'placeholder': 'www.staphopia.com/contact/'
+        }),
+    'sequencing_center': forms.TextInput(attrs={
+            'placeholder': 'Emory Integrated Genomics Core'
+        }),
+    'sequencing_center_link': forms.TextInput(attrs={
+            'placeholder': 'eigc.emory.edu'
+        }),
+    'sequencing_date': forms.TextInput(attrs={'placeholder':  '03/11/2001'}),
+    'sequencing_libaray_method': forms.TextInput(attrs={
+            'placeholder': 'Standard MinION protocol'
+        }),
+
+    # Publication Inforamtion
+    'publication_link': forms.TextInput(attrs={
+            'placeholder': 'www.ncbi.nlm.nih.gov/pmc/articles/PMC1427395/'
+        }),
+    'pubmed_id': forms.TextInput(attrs={'placeholder':  '17860813'}),
+    'doi': forms.TextInput(attrs={'placeholder':  '10.1128/JB.00951-10'}),
+    'funding_agency': forms.TextInput(attrs={'placeholder':  'NIH'}),
+    'funding_agency_link': forms.TextInput(attrs={
+            'placeholder': 'www.nih.gov'
+        }),
+    
+    # Organism Information
+    'strain': forms.TextInput(attrs={'placeholder':  'USA300'}),
+    'isolation_date': forms.TextInput(attrs={'placeholder':  '6/7/2014'}),
+    'isolation_country': forms.TextInput(attrs={
+            'placeholder': 'United States'
+        }),
+    'isolation_city': forms.TextInput(attrs={'placeholder':  'Atlanta'}),
+    'isolation_region': forms.TextInput(attrs={'placeholder':  'Georgia'}),
+    'host_name': forms.TextInput(attrs={'placeholder':  'Homo sapiens'}),
+    'host_age': forms.TextInput(attrs={'placeholder':  '50'}),
+    'comments': forms.Textarea(attrs={
+            'placeholder': ('Any comments about this sample you may have. '
+                           '(i.e. Patient acquired pathogen from sibling.)')
+        }),
+}
 
 FIELDS = {
     # Project Information
