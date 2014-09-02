@@ -64,6 +64,9 @@ class Sample(models.Model):
     is_paired = models.BooleanField(default=False)
     is_published = models.BooleanField(default=False, db_index=True)
     
+    class Meta: 
+        app_label = 'samples' 
+    
 def content_file_name(instance, filename):
     new_name = '{0}_{1}_original.{2}'.format(
         instance.sample.user.username, 
@@ -77,3 +80,6 @@ class Upload(models.Model):
     sample = models.OneToOneField('Sample', primary_key=True, on_delete=models.CASCADE)
     path = models.FileField(default='', upload_to=content_file_name)
     md5sum = models.CharField(default='', max_length=32, unique=True)
+    
+    class Meta: 
+        app_label = 'samples' 
