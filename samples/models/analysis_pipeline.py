@@ -58,8 +58,7 @@ class AssemblyStatistics(models.Model):
     '''
     
     '''
-    sample = models.ForeignKey(Sample, primary_key=True, 
-                               on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     is_scaffolds = models.BooleanField(default=False, db_index=True)
     version = models.ForeignKey('PipelineVersions', on_delete=models.CASCADE)
     
