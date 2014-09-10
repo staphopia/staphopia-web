@@ -74,4 +74,16 @@ class EnaRun(models.Model):
 
     class Meta: 
         app_label = 'samples' 
-        
+     
+class EnaQueue(models.Model):
+    '''
+    
+    '''
+    experiment_accession = models.ForeignKey('EnaExperiment', 
+                                             db_column='experiment_accession',
+                                             on_delete=models.CASCADE,
+                                             primary_key=True)
+    is_waiting = models.BooleanField() 
+    
+    class Meta: 
+        app_label = 'samples' 

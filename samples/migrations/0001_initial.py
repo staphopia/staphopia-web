@@ -187,10 +187,9 @@ class Migration(SchemaMigration):
 
         # Adding model 'EnaRun'
         db.create_table(u'samples_enarun', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('run_accession', self.gf('django.db.models.fields.TextField')(primary_key=True)),
             ('experiment_accession', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['samples.EnaExperiment'], db_column='experiment_accession')),
-            ('is_paired', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('run_accession', self.gf('django.db.models.fields.TextField')(unique=True)),
+            ('is_paired', self.gf('django.db.models.fields.BooleanField')()),
             ('run_alias', self.gf('django.db.models.fields.TextField')()),
             ('read_count', self.gf('django.db.models.fields.PositiveIntegerField')()),
             ('base_count', self.gf('django.db.models.fields.PositiveIntegerField')()),
@@ -203,6 +202,13 @@ class Migration(SchemaMigration):
             ('fastq_ftp', self.gf('django.db.models.fields.TextField')()),
         ))
         db.send_create_signal('samples', ['EnaRun'])
+
+        # Adding model 'EnaQueue'
+        db.create_table(u'samples_enaqueue', (
+            ('experiment_accession', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['samples.EnaExperiment'], primary_key=True, db_column='experiment_accession')),
+            ('is_waiting', self.gf('django.db.models.fields.BooleanField')()),
+        ))
+        db.send_create_signal('samples', ['EnaQueue'])
 
 
     def backwards(self, orm):
@@ -250,6 +256,9 @@ class Migration(SchemaMigration):
 
         # Deleting model 'EnaRun'
         db.delete_table(u'samples_enarun')
+
+        # Deleting model 'EnaQueue'
+        db.delete_table(u'samples_enaqueue')
 
 
     models = {
@@ -339,6 +348,11 @@ class Migration(SchemaMigration):
             'submission_accession': ('django.db.models.fields.TextField', [], {}),
             'tax_id': ('django.db.models.fields.TextField', [], {})
         },
+        'samples.enaqueue': {
+            'Meta': {'object_name': 'EnaQueue'},
+            'experiment_accession': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['samples.EnaExperiment']", 'primary_key': 'True', 'db_column': "'experiment_accession'"}),
+            'is_waiting': ('django.db.models.fields.BooleanField', [], {})
+        },
         'samples.enarun': {
             'Meta': {'object_name': 'EnaRun'},
             'base_count': ('django.db.models.fields.PositiveIntegerField', [], {}),
@@ -349,11 +363,10 @@ class Migration(SchemaMigration):
             'fastq_ftp': ('django.db.models.fields.TextField', [], {}),
             'fastq_md5': ('django.db.models.fields.TextField', [], {}),
             'first_public': ('django.db.models.fields.TextField', [], {}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_paired': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'is_paired': ('django.db.models.fields.BooleanField', [], {}),
             'mean_read_length': ('django.db.models.fields.DecimalField', [], {'max_digits': '10', 'decimal_places': '2'}),
             'read_count': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'run_accession': ('django.db.models.fields.TextField', [], {'unique': 'True'}),
+            'run_accession': ('django.db.models.fields.TextField', [], {'primary_key': 'True'}),
             'run_alias': ('django.db.models.fields.TextField', [], {})
         },
         'samples.enastudy': {
