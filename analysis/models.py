@@ -95,3 +95,39 @@ class AssemblyStats(models.Model):
     
     class Meta: 
         unique_together = ('sample', 'is_scaffolds', 'version')        
+
+class Kmer(models.Model):
+    '''
+    
+    '''
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    version = models.ForeignKey('PipelineVersions', on_delete=models.CASCADE)
+    
+    class Meta: 
+        unique_together = ('sample', 'version')   
+        
+class KmerString(models.Model):
+    '''
+    
+    '''
+    kmer = models.CharField(default='', max_length=31, unique=True)
+    
+class KmerCount(models.Model):
+    '''
+    
+    '''
+    kmer = models.ForeignKey('Kmer', on_delete=models.CASCADE)
+    string = models.ForeignKey('KmerString', on_delete=models.CASCADE)
+    count = models.PositiveIntegerField()
+    
+    class Meta: 
+        unique_together = ('kmer', 'string') 
+    
+class KmerTotal(models.Model):
+    '''
+    
+    '''
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    total = models.PositiveIntegerField()
+    
+  
