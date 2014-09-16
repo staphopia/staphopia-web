@@ -55,8 +55,8 @@ class Run(models.Model):
                                              on_delete=models.CASCADE)
     is_paired = models.BooleanField() 
     run_alias = models.TextField() 
-    read_count = models.PositiveIntegerField() 
-    base_count = models.PositiveIntegerField() 
+    read_count = models.BigIntegerField() 
+    base_count = models.BigIntegerField() 
     mean_read_length = models.DecimalField(max_digits=10, decimal_places=2)
     coverage = models.DecimalField(max_digits=10, decimal_places=2)
     first_public = models.TextField() 
@@ -64,13 +64,4 @@ class Run(models.Model):
     fastq_md5 = models.TextField() 
     fastq_aspera = models.TextField() 
     fastq_ftp = models.TextField() 
-     
-class Queue(models.Model):
-    '''
     
-    '''
-    experiment_accession = models.ForeignKey('Experiment', 
-                                             db_column='experiment_accession',
-                                             on_delete=models.CASCADE,
-                                             primary_key=True)
-    is_waiting = models.BooleanField() 
