@@ -1,6 +1,6 @@
 from django.db import models
 
-from samples.models.sample import Sample
+from samples.models import Sample
 
 class PipelineVersions(models.Model):
     '''
@@ -11,8 +11,6 @@ class PipelineVersions(models.Model):
     
     class Meta: 
         unique_together = ('module', 'version')
-        app_label = 'samples' 
-        
 
 class Programs(models.Model):
     '''
@@ -24,9 +22,8 @@ class Programs(models.Model):
     
     class Meta: 
         unique_together = ('pipeline', 'program', 'version')
-        app_label = 'samples' 
         
-class FastqStatistics(models.Model):
+class FastqStats(models.Model):
     '''
     
     '''
@@ -52,9 +49,8 @@ class FastqStatistics(models.Model):
     
     class Meta: 
         unique_together = ('sample', 'is_original', 'version')
-        app_label = 'samples' 
     
-class AssemblyStatistics(models.Model):
+class AssemblyStats(models.Model):
     '''
     
     '''
@@ -98,6 +94,4 @@ class AssemblyStatistics(models.Model):
     num_contig_non_acgtn = models.PositiveSmallIntegerField()
     
     class Meta: 
-        unique_together = ('sample', 'is_scaffolds', 'version')
-        app_label = 'samples' 
-        
+        unique_together = ('sample', 'is_scaffolds', 'version')        

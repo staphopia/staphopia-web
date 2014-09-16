@@ -15,8 +15,12 @@ https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 -----------------------------------------------------------------------------'''
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'staphopia_django',
+        'USER' : 'django',
+        'PASSWORD' : 'ca1e0a1ac201e4',
+        'HOST' : 'localhost',
+        'PORT' : '5432',
     },
     'staphopia': {
         'ENGINE': 'django.db.backends.mysql',

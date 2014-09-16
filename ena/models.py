@@ -1,21 +1,20 @@
 from django.db import models
 
-from samples.models.sample import Sample
+from samples.models import Sample
 
-class EnaToSample(models.Model):
+class ToSample(models.Model):
     '''
     
     '''
-    experiment_accession = models.ForeignKey('EnaExperiment', 
+    experiment_accession = models.ForeignKey('Experiment', 
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE)
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     
     class Meta: 
         unique_together = ('experiment_accession', 'sample')
-        app_label = 'samples' 
         
-class EnaStudy(models.Model):
+class Study(models.Model):
     '''
     
     '''
@@ -23,18 +22,15 @@ class EnaStudy(models.Model):
     secondary_study_accession = models.TextField() 
     study_title = models.TextField() 
     study_alias = models.TextField() 
-
-    class Meta: 
-        app_label = 'samples' 
     
-class EnaExperiment(models.Model):
+class Experiment(models.Model):
     '''
     
     '''
     experiment_accession = models.TextField(primary_key=True)
     experiment_title = models.TextField() 
     experiment_alias = models.TextField() 
-    study_accession = models.ForeignKey('EnaStudy', 
+    study_accession = models.ForeignKey('Study', 
                                         db_column='study_accession',
                                         on_delete=models.CASCADE)
     sample_accession = models.TextField() 
@@ -48,16 +44,13 @@ class EnaExperiment(models.Model):
     library_strategy = models.TextField()  
     library_selection = models.TextField() 
     center_name = models.TextField()  
-
-    class Meta: 
-        app_label = 'samples' 
         
-class EnaRun(models.Model):
+class Run(models.Model):
     '''
     
     '''
     run_accession = models.TextField(primary_key=True) 
-    experiment_accession = models.ForeignKey('EnaExperiment', 
+    experiment_accession = models.ForeignKey('Experiment', 
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE)
     is_paired = models.BooleanField() 
@@ -71,19 +64,13 @@ class EnaRun(models.Model):
     fastq_md5 = models.TextField() 
     fastq_aspera = models.TextField() 
     fastq_ftp = models.TextField() 
-
-    class Meta: 
-        app_label = 'samples' 
      
-class EnaQueue(models.Model):
+class Queue(models.Model):
     '''
     
     '''
-    experiment_accession = models.ForeignKey('EnaExperiment', 
+    experiment_accession = models.ForeignKey('Experiment', 
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE,
                                              primary_key=True)
     is_waiting = models.BooleanField() 
-    
-    class Meta: 
-        app_label = 'samples' 

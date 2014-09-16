@@ -4,7 +4,7 @@ from django.template import RequestContext
 from django.db import transaction
 
 from samples.forms import SampleSubmissionForm
-from samples.models.sample import Sample
+from samples.models import Sample
 
 @transaction.commit_on_success
 def submission(request):
