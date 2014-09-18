@@ -53,7 +53,7 @@ class Run(models.Model):
     experiment_accession = models.ForeignKey('Experiment', 
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE)
-    is_paired = models.BooleanField() 
+    is_paired = models.BooleanField(default=False) 
     run_alias = models.TextField() 
     read_count = models.BigIntegerField() 
     base_count = models.BigIntegerField() 

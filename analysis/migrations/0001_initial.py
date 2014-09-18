@@ -1,268 +1,186 @@
 # -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'PipelineVersions'
-        db.create_table(u'analysis_pipelineversions', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('module', self.gf('django.db.models.fields.TextField')()),
-            ('version', self.gf('django.db.models.fields.TextField')()),
-        ))
-        db.send_create_signal(u'analysis', ['PipelineVersions'])
+    dependencies = [
+        ('samples', '__first__'),
+    ]
 
-        # Adding unique constraint on 'PipelineVersions', fields ['module', 'version']
-        db.create_unique(u'analysis_pipelineversions', ['module', 'version'])
-
-        # Adding model 'Programs'
-        db.create_table(u'analysis_programs', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('pipeline', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['analysis.PipelineVersions'])),
-            ('program', self.gf('django.db.models.fields.TextField')()),
-            ('version', self.gf('django.db.models.fields.TextField')()),
-        ))
-        db.send_create_signal(u'analysis', ['Programs'])
-
-        # Adding unique constraint on 'Programs', fields ['pipeline', 'program', 'version']
-        db.create_unique(u'analysis_programs', ['pipeline_id', 'program', 'version'])
-
-        # Adding model 'FastqStats'
-        db.create_table(u'analysis_fastqstats', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('sample', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['samples.Sample'])),
-            ('is_original', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('version', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['analysis.PipelineVersions'])),
-            ('rank', self.gf('django.db.models.fields.PositiveSmallIntegerField')(db_index=True)),
-            ('total_bp', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('total_reads', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('coverage', self.gf('django.db.models.fields.DecimalField')(max_digits=6, decimal_places=3)),
-            ('min_read_length', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('mean_read_length', self.gf('django.db.models.fields.DecimalField')(max_digits=10, decimal_places=3)),
-            ('max_read_length', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('qual_mean', self.gf('django.db.models.fields.DecimalField')(max_digits=6, decimal_places=3)),
-            ('qual_std', self.gf('django.db.models.fields.DecimalField')(max_digits=6, decimal_places=3)),
-            ('qual_25th', self.gf('django.db.models.fields.DecimalField')(max_digits=6, decimal_places=3)),
-            ('qual_median', self.gf('django.db.models.fields.DecimalField')(max_digits=6, decimal_places=3)),
-            ('qual_75th', self.gf('django.db.models.fields.DecimalField')(max_digits=6, decimal_places=3)),
-        ))
-        db.send_create_signal(u'analysis', ['FastqStats'])
-
-        # Adding unique constraint on 'FastqStats', fields ['sample', 'is_original', 'version']
-        db.create_unique(u'analysis_fastqstats', ['sample_id', 'is_original', 'version_id'])
-
-        # Adding model 'AssemblyStats'
-        db.create_table(u'analysis_assemblystats', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('sample', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['samples.Sample'])),
-            ('is_scaffolds', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('version', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['analysis.PipelineVersions'])),
-            ('total_contig', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-            ('total_contig_length', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('min_contig_length', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('median_contig_length', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('mean_contig_length', self.gf('django.db.models.fields.DecimalField')(max_digits=9, decimal_places=2)),
-            ('max_contig_length', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('n50_contig_length', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('l50_contig_count', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-            ('ng50_contig_length', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('lg50_contig_count', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-            ('contigs_greater_1k', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-            ('contigs_greater_10k', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-            ('contigs_greater_100k', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-            ('contigs_greater_1m', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-            ('percent_contigs_greater_1k', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('percent_contigs_greater_10k', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('percent_contigs_greater_100k', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('percent_contigs_greater_1m', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('contig_percent_a', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('contig_percent_t', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('contig_percent_g', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('contig_percent_c', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('contig_percent_n', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('contig_non_acgtn', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
-            ('num_contig_non_acgtn', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-        ))
-        db.send_create_signal(u'analysis', ['AssemblyStats'])
-
-        # Adding unique constraint on 'AssemblyStats', fields ['sample', 'is_scaffolds', 'version']
-        db.create_unique(u'analysis_assemblystats', ['sample_id', 'is_scaffolds', 'version_id'])
-
-
-    def backwards(self, orm):
-        # Removing unique constraint on 'AssemblyStats', fields ['sample', 'is_scaffolds', 'version']
-        db.delete_unique(u'analysis_assemblystats', ['sample_id', 'is_scaffolds', 'version_id'])
-
-        # Removing unique constraint on 'FastqStats', fields ['sample', 'is_original', 'version']
-        db.delete_unique(u'analysis_fastqstats', ['sample_id', 'is_original', 'version_id'])
-
-        # Removing unique constraint on 'Programs', fields ['pipeline', 'program', 'version']
-        db.delete_unique(u'analysis_programs', ['pipeline_id', 'program', 'version'])
-
-        # Removing unique constraint on 'PipelineVersions', fields ['module', 'version']
-        db.delete_unique(u'analysis_pipelineversions', ['module', 'version'])
-
-        # Deleting model 'PipelineVersions'
-        db.delete_table(u'analysis_pipelineversions')
-
-        # Deleting model 'Programs'
-        db.delete_table(u'analysis_programs')
-
-        # Deleting model 'FastqStats'
-        db.delete_table(u'analysis_fastqstats')
-
-        # Deleting model 'AssemblyStats'
-        db.delete_table(u'analysis_assemblystats')
-
-
-    models = {
-        u'analysis.assemblystats': {
-            'Meta': {'unique_together': "(('sample', 'is_scaffolds', 'version'),)", 'object_name': 'AssemblyStats'},
-            'contig_non_acgtn': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'contig_percent_a': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'contig_percent_c': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'contig_percent_g': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'contig_percent_n': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'contig_percent_t': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'contigs_greater_100k': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'contigs_greater_10k': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'contigs_greater_1k': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'contigs_greater_1m': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_scaffolds': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'l50_contig_count': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'lg50_contig_count': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'max_contig_length': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'mean_contig_length': ('django.db.models.fields.DecimalField', [], {'max_digits': '9', 'decimal_places': '2'}),
-            'median_contig_length': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'min_contig_length': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'n50_contig_length': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'ng50_contig_length': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'num_contig_non_acgtn': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'percent_contigs_greater_100k': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'percent_contigs_greater_10k': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'percent_contigs_greater_1k': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'percent_contigs_greater_1m': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
-            'sample': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['samples.Sample']"}),
-            'total_contig': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'total_contig_length': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'version': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['analysis.PipelineVersions']"})
-        },
-        u'analysis.fastqstats': {
-            'Meta': {'unique_together': "(('sample', 'is_original', 'version'),)", 'object_name': 'FastqStats'},
-            'coverage': ('django.db.models.fields.DecimalField', [], {'max_digits': '6', 'decimal_places': '3'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_original': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'max_read_length': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'mean_read_length': ('django.db.models.fields.DecimalField', [], {'max_digits': '10', 'decimal_places': '3'}),
-            'min_read_length': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'qual_25th': ('django.db.models.fields.DecimalField', [], {'max_digits': '6', 'decimal_places': '3'}),
-            'qual_75th': ('django.db.models.fields.DecimalField', [], {'max_digits': '6', 'decimal_places': '3'}),
-            'qual_mean': ('django.db.models.fields.DecimalField', [], {'max_digits': '6', 'decimal_places': '3'}),
-            'qual_median': ('django.db.models.fields.DecimalField', [], {'max_digits': '6', 'decimal_places': '3'}),
-            'qual_std': ('django.db.models.fields.DecimalField', [], {'max_digits': '6', 'decimal_places': '3'}),
-            'rank': ('django.db.models.fields.PositiveSmallIntegerField', [], {'db_index': 'True'}),
-            'sample': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['samples.Sample']"}),
-            'total_bp': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'total_reads': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'version': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['analysis.PipelineVersions']"})
-        },
-        u'analysis.pipelineversions': {
-            'Meta': {'unique_together': "(('module', 'version'),)", 'object_name': 'PipelineVersions'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'module': ('django.db.models.fields.TextField', [], {}),
-            'version': ('django.db.models.fields.TextField', [], {})
-        },
-        u'analysis.programs': {
-            'Meta': {'unique_together': "(('pipeline', 'program', 'version'),)", 'object_name': 'Programs'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'pipeline': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['analysis.PipelineVersions']"}),
-            'program': ('django.db.models.fields.TextField', [], {}),
-            'version': ('django.db.models.fields.TextField', [], {})
-        },
-        u'auth.group': {
-            'Meta': {'object_name': 'Group'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '80'}),
-            'permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'})
-        },
-        u'auth.permission': {
-            'Meta': {'ordering': "(u'content_type__app_label', u'content_type__model', u'codename')", 'unique_together': "((u'content_type', u'codename'),)", 'object_name': 'Permission'},
-            'codename': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['contenttypes.ContentType']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
-        },
-        u'auth.user': {
-            'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
-            'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "u'user_set'", 'blank': 'True', 'to': u"orm['auth.Group']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
-            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "u'user_set'", 'blank': 'True', 'to': u"orm['auth.Permission']"}),
-            'username': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '30'})
-        },
-        u'contenttypes.contenttype': {
-            'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
-            'app_label': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
-        },
-        u'samples.sample': {
-            'Meta': {'object_name': 'Sample'},
-            'clindamycin_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'comments': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'contact_email': ('django.db.models.fields.EmailField', [], {'default': "''", 'max_length': '75'}),
-            'contact_link': ('django.db.models.fields.URLField', [], {'default': "''", 'max_length': '200', 'blank': 'True'}),
-            'contact_name': ('django.db.models.fields.TextField', [], {'default': "''"}),
-            'daptomycin_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'doi': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'funding_agency': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'funding_agency_link': ('django.db.models.fields.URLField', [], {'default': "''", 'max_length': '200', 'blank': 'True'}),
-            'host_age': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '0', 'blank': 'True'}),
-            'host_gender': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'host_health': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'host_name': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_paired': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_public': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
-            'is_published': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'isolation_city': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'isolation_country': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'isolation_date': ('django.db.models.fields.DateField', [], {'default': "'1900-01-01'", 'blank': 'True'}),
-            'isolation_region': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'levofloxacin_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'linezolid_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'oxacillin_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'penicillin_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'publication_link': ('django.db.models.fields.URLField', [], {'default': "''", 'max_length': '200', 'blank': 'True'}),
-            'pubmed_id': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'rifampin_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'sample_tag': ('django.db.models.fields.TextField', [], {'default': "''", 'db_index': 'True', 'blank': 'True'}),
-            'sequencing_center': ('django.db.models.fields.TextField', [], {'default': "''"}),
-            'sequencing_center_link': ('django.db.models.fields.URLField', [], {'default': "''", 'max_length': '200', 'blank': 'True'}),
-            'sequencing_date': ('django.db.models.fields.DateField', [], {'default': "'1900-01-01'", 'blank': 'True'}),
-            'sequencing_libaray_method': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'sequencing_platform': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'source': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'strain': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'tetracycline_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'trimethoprim_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['auth.User']"}),
-            'vancomycin_mic': ('django.db.models.fields.DecimalField', [], {'default': '-200.0', 'max_digits': '6', 'decimal_places': '3', 'blank': 'True'})
-        }
-    }
-
-    complete_apps = ['analysis']
+    operations = [
+        migrations.CreateModel(
+            name='AssemblyStats',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('is_scaffolds', models.BooleanField(default=False, db_index=True)),
+                ('total_contig', models.PositiveSmallIntegerField()),
+                ('total_contig_length', models.PositiveIntegerField()),
+                ('min_contig_length', models.PositiveIntegerField()),
+                ('median_contig_length', models.PositiveIntegerField()),
+                ('mean_contig_length', models.DecimalField(max_digits=9, decimal_places=2)),
+                ('max_contig_length', models.PositiveIntegerField()),
+                ('n50_contig_length', models.PositiveIntegerField()),
+                ('l50_contig_count', models.PositiveSmallIntegerField()),
+                ('ng50_contig_length', models.PositiveIntegerField()),
+                ('lg50_contig_count', models.PositiveSmallIntegerField()),
+                ('contigs_greater_1k', models.PositiveSmallIntegerField()),
+                ('contigs_greater_10k', models.PositiveSmallIntegerField()),
+                ('contigs_greater_100k', models.PositiveSmallIntegerField()),
+                ('contigs_greater_1m', models.PositiveSmallIntegerField()),
+                ('percent_contigs_greater_1k', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('percent_contigs_greater_10k', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('percent_contigs_greater_100k', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('percent_contigs_greater_1m', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('contig_percent_a', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('contig_percent_t', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('contig_percent_g', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('contig_percent_c', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('contig_percent_n', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('contig_non_acgtn', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('num_contig_non_acgtn', models.PositiveSmallIntegerField()),
+                ('sample', models.ForeignKey(to='samples.Sample')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='FastqStats',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('is_original', models.BooleanField(default=False, db_index=True)),
+                ('rank', models.PositiveSmallIntegerField(db_index=True)),
+                ('total_bp', models.PositiveIntegerField()),
+                ('total_reads', models.PositiveIntegerField()),
+                ('coverage', models.DecimalField(max_digits=6, decimal_places=3)),
+                ('min_read_length', models.PositiveIntegerField()),
+                ('mean_read_length', models.DecimalField(max_digits=10, decimal_places=3)),
+                ('max_read_length', models.PositiveIntegerField()),
+                ('qual_mean', models.DecimalField(max_digits=6, decimal_places=3)),
+                ('qual_std', models.DecimalField(max_digits=6, decimal_places=3)),
+                ('qual_25th', models.DecimalField(max_digits=6, decimal_places=3)),
+                ('qual_median', models.DecimalField(max_digits=6, decimal_places=3)),
+                ('qual_75th', models.DecimalField(max_digits=6, decimal_places=3)),
+                ('sample', models.ForeignKey(to='samples.Sample')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Kmer',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('sample', models.ForeignKey(to='samples.Sample')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='KmerCount',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('count', models.PositiveIntegerField()),
+                ('kmer', models.ForeignKey(to='analysis.Kmer')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='KmerString',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('kmer', models.CharField(default=b'', unique=True, max_length=31)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='KmerTotal',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('total', models.PositiveIntegerField()),
+                ('sample', models.ForeignKey(to='samples.Sample')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='PipelineVersions',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('module', models.TextField()),
+                ('version', models.TextField()),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Programs',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('program', models.TextField()),
+                ('version', models.TextField()),
+                ('pipeline', models.ForeignKey(to='analysis.PipelineVersions')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AlterUniqueTogether(
+            name='programs',
+            unique_together=set([('pipeline', 'program', 'version')]),
+        ),
+        migrations.AlterUniqueTogether(
+            name='pipelineversions',
+            unique_together=set([('module', 'version')]),
+        ),
+        migrations.AddField(
+            model_name='kmercount',
+            name='string',
+            field=models.ForeignKey(to='analysis.KmerString'),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='kmercount',
+            unique_together=set([('kmer', 'string')]),
+        ),
+        migrations.AddField(
+            model_name='kmer',
+            name='version',
+            field=models.ForeignKey(to='analysis.PipelineVersions'),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='kmer',
+            unique_together=set([('sample', 'version')]),
+        ),
+        migrations.AddField(
+            model_name='fastqstats',
+            name='version',
+            field=models.ForeignKey(to='analysis.PipelineVersions'),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='fastqstats',
+            unique_together=set([('sample', 'is_original', 'version')]),
+        ),
+        migrations.AddField(
+            model_name='assemblystats',
+            name='version',
+            field=models.ForeignKey(to='analysis.PipelineVersions'),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='assemblystats',
+            unique_together=set([('sample', 'is_scaffolds', 'version')]),
+        ),
+    ]

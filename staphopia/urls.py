@@ -1,6 +1,5 @@
 from django.conf.urls import patterns, include, url
 from django.views.generic import RedirectView
-from django.template.loader import add_to_builtins
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from registration.forms import RegistrationFormUniqueEmail
@@ -69,6 +68,3 @@ urlpatterns = patterns('',
         name='registration_register'),
     url(r'^accounts/', include('registration.backends.default.urls')),
 )
-
-for tag in AUTOLOAD_TEMPLATETAGS:
-    add_to_builtins(tag)

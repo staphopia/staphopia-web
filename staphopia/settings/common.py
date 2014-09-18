@@ -30,11 +30,11 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'south',
     'registration',
     'crispy_forms',
     'django_email_changer',
     
+    'staphopia',
     'database',
     'autofill',
     'samples',
@@ -105,13 +105,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.request',
 )
-
-AUTOLOAD_TEMPLATETAGS = (
-    'staphopia.templatetags.navbar',
-    'database.templatetags.top10',
-)
-
-
 
 '''-----------------------------------------------------------------------------
 Staphopia 

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load top10 %}
 {% block container %}
 <div class="row">
     {% top10_table 'Top Contributors' 'Sequencing Center' 'sequencingcenter' %}
