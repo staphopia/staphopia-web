@@ -82,7 +82,7 @@ class Command(BaseCommand):
             Create a list of all the primary keys in a table, prevents multiple
             queries testing if a primary key exists
         '''
-        return ena_obj.objects.values_list(pk, flat=True).order_by(pk)
+        return list(ena_obj.objects.values_list(pk, flat=True).order_by(pk))
  
     def test_foreign_key(self, ena_obj, table, value):
         '''

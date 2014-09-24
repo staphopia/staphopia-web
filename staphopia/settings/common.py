@@ -120,6 +120,8 @@ LOGIN_EXEMPT_URLS = (
     r'^contact/',
     r'^accounts/login/',
     r'^accounts/register/',
+    r'^accounts/activate/',
+    r'^admin/',
 )
 
 '''-----------------------------------------------------------------------------

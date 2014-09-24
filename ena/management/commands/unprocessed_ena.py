@@ -67,18 +67,15 @@ class Command(BaseCommand):
                     mean_read_length__range = (opts['min_read_length'],
                                                opts['max_read_length'])
                 )
-                if len(ena_runs) > 0:
+                if ena_runs.count() > 0:
                     coverage = sum([float(r.coverage) for r in ena_runs])
                     if coverage > float(opts['coverage']):
-                        to_process[entry.experiment_accession] = {
-                            'is_paired':False,
-                            'fastq_ftp':[],
-                            'fastq_aspera':[],
-                        }
+                        to_process[entry.experiment_accession] = {}
                         for run in ena_runs:
-                            to_process[entry.experiment_accession]['is_paired'] = run.is_paired
-                            to_process[entry.experiment_accession]['fastq_ftp'].append(run.fastq_ftp)
-                            to_process[entry.experiment_accession]['fastq_aspera'].append(run.fastq_aspera)
-                        
-        
+                            to_process[entry.experiment_accession][run.run_accession] = {
+                                'is_paired':run.is_paired,
+                                'fastq_ftp':run.fastq_ftp,
+                                'fastq_aspera':run.fastq_aspera,
+                            }
+
         print json.dumps(to_process)
