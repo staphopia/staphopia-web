@@ -4,6 +4,7 @@
     Reads output from EBI's data warehouse API and inserts the data into 
     proper tables.
 '''
+import sys
 import os.path
 from optparse import make_option
 
@@ -22,18 +23,26 @@ class Command(BaseCommand):
                     help='A table of experiment information.'),
         make_option('--run', dest='run',
                     help='A table of run information'),
+        make_option('--empty', dest='empty', action='store_true',
+                    help='Empty each of the tables'),
         make_option('--debug', action='store_true', dest='debug', 
                     default=False, help='Will not write to the database'),
         )
         
     def handle(self, *args, **options):
         # Required Parameters
-        if not options['study']:
-            raise CommandError('--study is requried')
-        elif not options['experiment']:
-            raise CommandError('--experiment is requried')
-        elif not options['run']:
-            raise CommandError('--run is requried')
+        if not options['empty']:
+            if not options['study']:
+                raise CommandError('--study is requried')
+            elif not options['experiment']:
+                raise CommandError('--experiment is requried')
+            elif not options['run']:
+                raise CommandError('--run is requried')
+        else:
+            ena.Study.objects.all().delete()
+            ena.Experiment.objects.all().delete()
+            ena.Run.objects.all().delete()
+            sys.exit()
 
         # Test input files
         if not os.path.exists(options['study']):
@@ -117,6 +126,7 @@ class Command(BaseCommand):
                             ena.Study, table, cols[foreign_key]
                         )
                     elif table == 'Run':
+                        cols['is_paired'] = True if int(cols['is_paired']) == 1 else False
                         cols[foreign_key] = self.test_foreign_key(
                             ena.Experiment, table, cols[foreign_key]
                         )
