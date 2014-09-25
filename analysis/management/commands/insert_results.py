@@ -84,8 +84,8 @@ class Command(BaseCommand):
         table_object = None
         if options['table'].startswith('fastq'):
             is_original = False if options['table'] == 'fastq_clean' else True
-            table_object = FastqStatistics(
-                sample_id=sample.sample_id, 
+            table_object = FastqStats(
+                sample=sample, 
                 is_original=is_original, 
                 rank=self.get_rank(json_data),
                 version_id=pipeline_version.pk,
@@ -93,8 +93,8 @@ class Command(BaseCommand):
             )
         elif options['table'].startswith('assembly'):
             is_scaffolds = False if options['table'] == 'assembly_contigs' else True
-            table_object = AssemblyStatistics(
-                sample_id=sample.sample_id, 
+            table_object = AssemblyStats(
+                sample=sample, 
                 is_scaffolds=is_scaffolds,
                 version_id=pipeline_version.pk,
                 **json_data
