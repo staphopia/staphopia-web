@@ -110,7 +110,7 @@ class KmerString(models.Model):
     '''
     
     '''
-    kmer = models.CharField(default='', max_length=31, unique=True)
+    string = models.CharField(default='', max_length=31, unique=True)
     
 class KmerCount(models.Model):
     '''
@@ -127,7 +127,7 @@ class KmerTotal(models.Model):
     '''
     
     '''
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    kmer = models.ForeignKey('Kmer', on_delete=models.CASCADE)
     total = models.PositiveIntegerField()
     
   
