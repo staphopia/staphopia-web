@@ -1,4 +1,4 @@
-bind = "127.0.0.1:80"
+bind = "127.0.0.1:8000"
 
 workers = 8
 worker_class = 'sync'
