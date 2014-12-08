@@ -1,2 +1,0 @@
-django-storages==1.1.8
-boto==2.32.1

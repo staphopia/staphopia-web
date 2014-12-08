@@ -6,3 +6,5 @@ python-magic==0.4.6
 django-datatables-view==1.12
 psycopg2==2.5.4
 django-email-changer==0.1.2
+django-storages==1.1.8
+boto==2.32.1
