@@ -1,5 +1,4 @@
 Django==1.7
-MySQL-python==1.2.5
 git+git://github.com/macropin/django-registration
 django-crispy-forms==1.4.0
 python-magic==0.4.6

@@ -1,13 +1,14 @@
 '''
     Robert Petit
-    
-    Reads output from EBI's data warehouse API and inserts the data into 
+
+    Reads output from EBI's data warehouse API and inserts the data into
     proper tables.
 '''
 import sys
 import os.path
 from optparse import make_option
 
+from django.core.mail import EmailMessage
 from django.db import transaction
 from django.core.management.base import BaseCommand, CommandError
 
@@ -25,10 +26,10 @@ class Command(BaseCommand):
                     help='A table of run information'),
         make_option('--empty', dest='empty', action='store_true',
                     help='Empty each of the tables'),
-        make_option('--debug', action='store_true', dest='debug', 
+        make_option('--debug', action='store_true', dest='debug',
                     default=False, help='Will not write to the database'),
         )
-        
+
     def handle(self, *args, **options):
         # Required Parameters
         if not options['empty']:
@@ -58,41 +59,63 @@ class Command(BaseCommand):
             'Experiment':self.get_primary_keys(ena.Experiment, 'experiment_accession'),
             'Run':self.get_primary_keys(ena.Run, 'run_accession'),
         }
-            
+
         # Insert Studies
-        studies_created = self.insert(options['study'], ena.Study, 'Study', 
+        studies_created = self.insert(options['study'], ena.Study, 'Study',
                                       'study_accession', None)
-        
+
         # Insert Experiments
-        exps_created = self.insert(options['experiment'], ena.Experiment, 
-                                   'Experiment', 'experiment_accession', 
+        exps_created = self.insert(options['experiment'], ena.Experiment,
+                                   'Experiment', 'experiment_accession',
                                    'study_accession')
-        
+
         # Insert Runs
         runs_created = self.insert(options['run'], ena.Run, 'Run',
                                    'run_accession', 'experiment_accession')
-        
+
         print 'ENA Data Summary (new additions in parentheses)'
         print 'Studies: {0} ({1})'.format(
-            ena.Study.objects.count(), 
+            ena.Study.objects.count(),
             studies_created
         )
         print 'Experiments: {0} ({1})'.format(
-            ena.Experiment.objects.count(), 
+            ena.Experiment.objects.count(),
             exps_created
         )
         print 'Runs: {0} ({1})'.format(
             ena.Run.objects.count(),
             runs_created
         )
- 
+
+        # Email Admin with Update
+        labrat = "Staphopia's Friendly Robot <usa300@staphopia.com>"
+        subject = '[Staphopia ENA Update] - ENA info has been updated.'
+        message = (
+            "Project information from ENA has been updated.\n\n"
+            "New ENA Additions (total in parentheses)\n"
+            "Studies: {0} ({1})\n"
+            "Experiments: {2} ({3})\n"
+            "Runs: {4} ({5})\n\n"
+        ).format(
+            studies_created,
+            ena.Study.objects.count(),
+            exps_created,
+            ena.Experiment.objects.count(),
+            runs_created,
+            ena.Run.objects.count()
+        )
+        recipients = ['admin@staphopia.com', 'robert.petit@emory.edu']
+        email = EmailMessage(subject, message, labrat, recipients)
+        email.send(fail_silently=False)
+
+
     def get_primary_keys(self, ena_obj, pk):
         '''
             Create a list of all the primary keys in a table, prevents multiple
             queries testing if a primary key exists
         '''
         return list(ena_obj.objects.values_list(pk, flat=True).order_by(pk))
- 
+
     def test_foreign_key(self, ena_obj, table, value):
         '''
             Make sure the foreign key exists before inserting a row
@@ -103,8 +126,8 @@ class Command(BaseCommand):
             raise CommandError('EXCEPTION: {0}, Table:{1}, Value:{2}'.format(
                 'Foreign Key Missing', table, value
             ))
-        
-    @transaction.atomic    
+
+    @transaction.atomic
     def insert(self, input_file, ena_obj, table, primary_key, foreign_key):
         '''
             Insert new studies into the Study table
@@ -118,7 +141,7 @@ class Command(BaseCommand):
                 col_names = col_vals
             else:
                 cols = dict(zip(col_names, col_vals))
-                
+
                 # Test if entry exists, if not create
                 if cols[primary_key] not in self.pks[table]:
                     if table == 'Experiment':
@@ -130,10 +153,10 @@ class Command(BaseCommand):
                         cols[foreign_key] = self.test_foreign_key(
                             ena.Experiment, table, cols[foreign_key]
                         )
-                
+
                     row = ena_obj(**cols)
                     row.save()
-                    count += 1 
+                    count += 1
         fh.close()
-        
+
         return count
