@@ -7,7 +7,7 @@ timeout = 30
 keepalive = 2
 
 loglevel = 'info'
-errorlog = '/home/staphopia/staphopia.com/logs/gunicorn_error.log'
-accesslog = '/home/staphopia/staphopia.com/logs/gunicorn_access.log'
+errorlog = '/staphopia/ebs/staphopia.com/logs/gunicorn_error.log'
+accesslog = '/staphopia/ebs/staphopia.com/logs/gunicorn_access.log'
 
 preload = True
