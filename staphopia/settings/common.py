@@ -8,21 +8,22 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 '''
 import os
-import re
 
 from staphopia.settings.private import *
 
 '''-----------------------------------------------------------------------------
-Common 
+Common
 -----------------------------------------------------------------------------'''
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 
 '''-----------------------------------------------------------------------------
-Applications 
+Applications
 -----------------------------------------------------------------------------'''
 INSTALLED_APPS = (
+    'grappelli',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -33,12 +34,12 @@ INSTALLED_APPS = (
     'registration',
     'crispy_forms',
     'django_email_changer',
-    
+
     'staphopia',
     'database',
     'autofill',
     'samples',
-    'ena', 
+    'ena',
     'analysis',
     'django_datatables_view',
 )
@@ -47,22 +48,22 @@ INSTALLED_APPS = (
 ACCOUNT_ACTIVATION_DAYS=7
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
-# django_email_changer 
+# django_email_changer
 EMAIL_CHANGE_NOTIFICATION_SUBJECT = '[Email Update] - Please verify Staphopia email update'
 EMAIL_CHANGE_NOTIFICATION_FROM = "Staphopia's Friendly Robot <usa300@staphopia.com>"
 
 
 
-'''-----------------------------------------------------------------------------
-Database 
------------------------------------------------------------------------------'''
+'''----------------------------------------------------------------------------
+Database
+----------------------------------------------------------------------------'''
 DATABASE_ROUTERS = ('database.routers.StaphopiaRouter',)
 
 
 
-'''-----------------------------------------------------------------------------
-Middleware 
------------------------------------------------------------------------------'''
+'''----------------------------------------------------------------------------
+Middleware
+----------------------------------------------------------------------------'''
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -75,22 +76,22 @@ MIDDLEWARE_CLASSES = (
 
 
 
-'''-----------------------------------------------------------------------------
-Static 
------------------------------------------------------------------------------'''
+'''----------------------------------------------------------------------------
+Static
+----------------------------------------------------------------------------'''
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
 
-STATICFILES_FINDERS = ( 
-    'django.contrib.staticfiles.finders.FileSystemFinder', 
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder', 
-) 
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
 
 
 
 '''-----------------------------------------------------------------------------
-Template 
+Template
 -----------------------------------------------------------------------------'''
 TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, "templates"),
@@ -102,12 +103,13 @@ TEMPLATE_LOADERS = (
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.core.context_processors.request',
     'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.request',
 )
 
 '''-----------------------------------------------------------------------------
-Staphopia 
+Staphopia
 -----------------------------------------------------------------------------'''
 ROOT_URLCONF = 'staphopia.urls'
 WSGI_APPLICATION = 'staphopia.wsgi.application'
@@ -116,7 +118,7 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_EXEMPT_URLS = (
     r'^$',
     r'^genomes/',
-    r'^top10/', 
+    r'^top10/',
     r'^contact/',
     r'^accounts/login/',
     r'^accounts/register/',

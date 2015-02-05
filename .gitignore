@@ -2,3 +2,7 @@
 *.sqlite3
 fabfile/*
 staphopia/settings/private.py
+logs/*
+*.log
+staphopia/static/admin
+staphopia/static/grappelli

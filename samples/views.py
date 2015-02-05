@@ -6,6 +6,7 @@ from django.db import transaction
 from samples.forms import SampleSubmissionForm
 from samples.models import Sample
 
+
 @transaction.commit_on_success
 def submission(request):
     if request.user.is_authenticated:
@@ -13,10 +14,10 @@ def submission(request):
         save_results = None
         if request.method == 'POST':
             num_samples = Sample.objects.filter(user_id=request.user.id).count()
-            sample_tag = '{0}_{1}'.format(request.user.username, 
+            sample_tag = '{0}_{1}'.format(request.user.username,
                                           str(num_samples+1).zfill(6))
-            form = SampleSubmissionForm(request.user.id, request.POST, 
-                                        request.FILES,  
+            form = SampleSubmissionForm(request.user.id, request.POST,
+                                        request.FILES,
                                         instance=Sample(user=request.user,
                                                         sample_tag=sample_tag))
             if form.is_valid():
@@ -25,8 +26,7 @@ def submission(request):
                 return HttpResponseRedirect('/')
         else:
             form = SampleSubmissionForm(request.user.id)
-        return render_to_response('submission.html', 
-                                  {'form':form}, RequestContext(request))
+        return render_to_response('submission.html',
+                                  {'form': form}, RequestContext(request))
     else:
         return HttpResponseRedirect('/')
-    

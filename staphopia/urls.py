@@ -13,20 +13,25 @@ import staphopia.signals
 
 admin.autodiscover()
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
+
+    url(r'^grappelli/', include('grappelli.urls')),  # grappelli URLS
+    url(r'^admin/',  include(admin.site.urls)),  # admin site
+
     url(r'^$', 'staphopia.views.index', name='home'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^submission/', 'samples.views.submission', name='submission'),
     url(r'^top10/', 'database.views.top10', name='top10'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
     url(r'^accounts/settings/', 'staphopia.views.account_settings', name='account_settings'),
-    
+
     # Samples
     url(r'^samples/data/$', SummaryDatatablesView.as_view(), name='samples_data'),
     url(r'^samples/(?P<sample_tag>[^/]+)/', 'database.views.samples', name='sample_results'),
     url(r'^samples/$', 'database.views.samples', name='samples'),
 
-    
+
     # django-email-changer
     url(r'accounts/email/change/activate/(?P<code>[^/]+)/',
         ActivateUserEmailModification.as_view(),
@@ -37,11 +42,11 @@ urlpatterns = patterns('',
     url(r'^accounts/email/change/$',
         CreateUserEmailModificationRequest.as_view(),
         name="django_email_changer_change_view"),
-        
+
     # Autofill Genome Submission fields
     url(r'^accounts/autofill/', include('autofill.urls'), name='autofill'),
-    
-    # django-registration 
+
+    # django-registration
     url(r'^accounts/$', RedirectView.as_view(url='/',)),
     # Fix for password reset
     url(r'^accounts/password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
@@ -53,14 +58,14 @@ urlpatterns = patterns('',
     url(r'^password/change/done/$',
         auth_views.password_change_done,
         name='password_change_done'),
-    url(r'^accounts/password/reset/confirm/$', 
+    url(r'^accounts/password/reset/confirm/$',
         RedirectView.as_view(url='/',)),
-    url(r'^accounts/password/reset/$', 
-        'django.contrib.auth.views.password_reset', 
+    url(r'^accounts/password/reset/$',
+        'django.contrib.auth.views.password_reset',
         {'post_reset_redirect' : '/accounts/password/reset/done/'},
         name="password_reset"),
     url('^accounts/activate/$', ActivationView.as_view(),
-                               {'activation_key':'None'}, 
+                               {'activation_key':'None'},
                                name='registration_activate'),
     # enable unique email registration feature
     url(r'^accounts/register/$',

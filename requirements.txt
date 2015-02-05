@@ -7,3 +7,4 @@ psycopg2==2.5.4
 django-email-changer==0.1.2
 django-storages==1.1.8
 boto==2.32.1
+django-grappelli==2.6.3
