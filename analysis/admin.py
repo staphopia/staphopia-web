@@ -1,6 +1,24 @@
 from django.contrib import admin
 
-from analysis.models import FastqStat, AssemblyStat, PipelineVersion
+from analysis.models import (
+    FastqStat,
+    AssemblyStat,
+    PipelineVersion,
+    Variant,
+    VariantAnnotation,
+    VariantComment,
+    VariantFilter,
+    VariantIndel,
+    VariantInfo,
+    VariantReference,
+    VariantSNP,
+    VariantToIndel,
+    VariantToSNP,
+    MLST,
+    MLSTSequenceType,
+    MLSTBlast,
+    MLSTSrst2
+)
 
 
 @admin.register(FastqStat)
@@ -27,3 +45,94 @@ class AssemblyAdmin(admin.ModelAdmin):
 @admin.register(PipelineVersion)
 class PipelineAdmin(admin.ModelAdmin):
     list_display = ('module', 'version')
+
+
+@admin.register(VariantAnnotation)
+class AnnotationAdmin(admin.ModelAdmin):
+    list_display = (
+        'locus_tag', 'gene', 'protein_id', 'db_xref', 'fixed_product',
+        'fixed_note'
+    )
+
+
+@admin.register(VariantToSNP)
+class ToSNPAdmin(admin.ModelAdmin):
+    list_display = (
+        'variant_id',
+        'snp_id',
+        'info_id',
+        'comment',
+        'filters',
+        'quality'
+    )
+
+
+@admin.register(VariantSNP)
+class SNPAdmin(admin.ModelAdmin):
+    list_display = (
+        'reference_strain', 'locus_tag',
+        'reference_position', 'reference_base', 'alternate_base',
+        'reference_codon', 'alternate_codon',
+        'reference_amino_acid', 'alternate_amino_acid',
+        'codon_position', 'snp_codon_position', 'amino_acid_change',
+        'is_synonymous', 'is_transition', 'is_genic'
+    )
+
+
+@admin.register(VariantToIndel)
+class ToIndelAdmin(admin.ModelAdmin):
+    list_display = (
+        'variant_id',
+        'indel_id',
+        'info_id',
+        'filters',
+        'quality'
+    )
+
+
+@admin.register(VariantIndel)
+class IndelAdmin(admin.ModelAdmin):
+    list_display = (
+        'reference_strain', 'locus_tag', 'reference_position',
+        'reference_base', 'alternate_base', 'is_deletion'
+    )
+
+
+@admin.register(VariantInfo)
+class InfoAdmin(admin.ModelAdmin):
+    list_display = ('AC', 'AD', 'AF', 'AN', 'DP', 'GQ', 'GT', 'MQ', 'PL', 'QD')
+
+
+@admin.register(Variant)
+class VariantAdmin(admin.ModelAdmin):
+    list_display = ('sample_tag', 'pipeline_version')
+
+
+@admin.register(MLST)
+class MLSTAdmin(admin.ModelAdmin):
+    list_display = ('sample_tag', 'pipeline_version')
+
+
+@admin.register(MLSTSequenceType)
+class SequenceTypeAdmin(admin.ModelAdmin):
+    list_display = ('ST', 'arcc', 'aroe', 'glpf', 'gmk', 'pta', 'tpi', 'yqil',
+                    'last_updated')
+
+
+@admin.register(MLSTBlast)
+class MLSTBlastAdmin(admin.ModelAdmin):
+    list_display = ('sample_tag', 'locus_name', 'locus_id', 'bitscore', 'slen',
+                    'length', 'gaps', 'mismatch', 'pident', 'evalue')
+
+
+@admin.register(MLSTSrst2)
+class Srst2Admin(admin.ModelAdmin):
+    list_display = ('sample_tag', 'ST', 'arcc', 'aroe', 'glpf', 'gmk', 'pta',
+                    'tpi', 'yqil', 'mismatches', 'uncertainty', 'depth',
+                    'maxMAF')
+
+
+# Single column Tables
+admin.site.register(VariantComment)
+admin.site.register(VariantFilter)
+admin.site.register(VariantReference)

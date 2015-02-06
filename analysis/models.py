@@ -1,4 +1,5 @@
 """ Table models for analysis results. """
+import os
 from django.db import models
 
 from samples.models import Sample
@@ -191,6 +192,18 @@ class Variant(models.Model):
     class Meta:
         unique_together = ('sample', 'version')
 
+    def sample_tag(self):
+        """ Display sample tag in admin view. """
+        return self.sample.sample_tag
+    sample_tag.short_description = 'Sample Tag'
+    sample_tag.admin_order_field = 'sample'
+
+    def pipeline_version(self):
+        """ Display pipeline version in admin view. """
+        return self.version.version
+    pipeline_version.short_description = 'Pipeline Version'
+    pipeline_version.admin_order_field = 'version'
+
 
 class VariantToIndel(models.Model):
 
@@ -201,6 +214,27 @@ class VariantToIndel(models.Model):
     info = models.ForeignKey('VariantInfo', on_delete=models.CASCADE)
     filters = models.ForeignKey('VariantFilter', on_delete=models.CASCADE)
     quality = models.DecimalField(max_digits=8, decimal_places=3)
+
+    class Meta:
+        unique_together = ('variant', 'indel')
+
+    def variant_id(self):
+        """ Display variant id in admin view. """
+        return self.variant.pk
+    variant_id.short_description = 'Variant ID'
+    variant_id.admin_order_field = 'variant'
+
+    def indel_id(self):
+        """ Display InDel id in admin view. """
+        return self.indel.pk
+    indel_id.short_description = 'InDel ID'
+    indel_id.admin_order_field = 'indel'
+
+    def info_id(self):
+        """ Display info id in admin view. """
+        return self.info.pk
+    info_id.short_description = 'Info ID'
+    info_id.admin_order_field = 'info'
 
 
 class VariantIndel(models.Model):
@@ -214,10 +248,24 @@ class VariantIndel(models.Model):
     reference_position = models.PositiveIntegerField()
     reference_base = models.TextField()
     alternate_base = models.TextField()
+    is_deletion = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         unique_together = ('reference', 'reference_position', 'reference_base',
                            'alternate_base')
+
+    def locus_tag(self):
+        """ Display locus_tag in admin view. """
+        return self.annotation.locus_tag
+    locus_tag.short_description = 'Locus Tag'
+    locus_tag.admin_order_field = 'annotation'
+
+    def reference_strain(self):
+        """ Display reference name in admin view. """
+        fasta = os.path.basename(self.reference.name).upper()
+        return fasta.replace('.FASTA', '')
+    reference_strain.short_description = 'Reference Strain'
+    reference_strain.admin_order_field = 'reference'
 
 
 class VariantToSNP(models.Model):
@@ -231,12 +279,37 @@ class VariantToSNP(models.Model):
     filters = models.ForeignKey('VariantFilter', on_delete=models.CASCADE)
     quality = models.DecimalField(max_digits=8, decimal_places=3)
 
+    class Meta:
+        unique_together = ('variant', 'snp')
+
+    def variant_id(self):
+        """ Display variant id in admin view. """
+        return self.variant.pk
+    variant_id.short_description = 'Variant ID'
+    variant_id.admin_order_field = 'variant'
+
+    def snp_id(self):
+        """ Display InDel id in admin view. """
+        return self.snp.pk
+    snp_id.short_description = 'SNP ID'
+    snp_id.admin_order_field = 'snp'
+
+    def info_id(self):
+        """ Display info id in admin view. """
+        return self.info.pk
+    info_id.short_description = 'Info ID'
+    info_id.admin_order_field = 'info'
+
 
 class VariantComment(models.Model):
 
     """ SNP related comments. """
 
     comment = models.TextField(db_index=True, unique=True)
+
+    def __unicode__(self):
+        """ Display comment in admin view. """
+        return u"%s" % self.comment
 
 
 class VariantInfo(models.Model):
@@ -260,6 +333,10 @@ class VariantFilter(models.Model):
     """ Filters that may have been applied by GATK. """
 
     name = models.TextField(db_index=True, unique=True)
+
+    def __unicode__(self):
+        """ Display filter name in admin view. """
+        return u"%s" % self.name
 
 
 class VariantSNP(models.Model):
@@ -292,12 +369,29 @@ class VariantSNP(models.Model):
         unique_together = ('reference', 'reference_position', 'reference_base',
                            'alternate_base')
 
+    def locus_tag(self):
+        """ Display locus_tag in admin view. """
+        return self.annotation.locus_tag
+    locus_tag.short_description = 'Locus Tag'
+    locus_tag.admin_order_field = 'annotation'
+
+    def reference_strain(self):
+        """ Display reference name in admin view. """
+        fasta = os.path.basename(self.reference.name).upper()
+        return fasta.replace('.FASTA', '')
+    reference_strain.short_description = 'Reference Strain'
+    reference_strain.admin_order_field = 'reference'
+
 
 class VariantReference(models.Model):
 
     """ Reference genome used for SNP calling. """
 
     name = models.TextField(db_index=True, unique=True)
+
+    def __unicode__(self):
+        """ Display reference name in admin view. """
+        return u"%s" % self.name
 
 
 class VariantAnnotation(models.Model):
@@ -311,3 +405,115 @@ class VariantAnnotation(models.Model):
     db_xref = models.TextField()
     product = models.TextField()
     note = models.TextField()
+
+    def fixed_note(self):
+        """ Display note with appropriate replacements in admin view. """
+        return self.note.replace(
+            '[space]', ' '
+        ).replace(
+            '[semi-colon]', ';'
+        ).replace(
+            '[comma]', ','
+        )
+    fixed_note.short_description = 'Note'
+    fixed_note.admin_order_field = 'note'
+
+    def fixed_product(self):
+        """ Display product with appropriate replacements in admin view. """
+        return self.product.replace(
+            '[space]', ' '
+        ).replace(
+            '[semi-colon]', ';'
+        ).replace(
+            '[comma]', ','
+        )
+    fixed_product.short_description = 'Product'
+    fixed_product.admin_order_field = 'product'
+
+
+class MLST(models.Model):
+
+    """ MLST results from the analysis pipeline. """
+
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    version = models.ForeignKey('PipelineVersion', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('sample', 'version')
+
+    def sample_tag(self):
+        """ Display sample tag in admin view. """
+        return self.sample.sample_tag
+    sample_tag.short_description = 'Sample Tag'
+    sample_tag.admin_order_field = 'mlst'
+
+    def pipeline_version(self):
+        """ Display pipeline version in admin view. """
+        return self.version.version
+    pipeline_version.short_description = 'Pipeline Version'
+    pipeline_version.admin_order_field = 'version'
+
+
+class MLSTSequenceType(models.Model):
+
+    """ Sequence type mappings from MLST database. """
+
+    ST = models.PositiveIntegerField(db_index=True, unique=True)
+    arcc = models.PositiveIntegerField()
+    aroe = models.PositiveIntegerField()
+    glpf = models.PositiveIntegerField()
+    gmk = models.PositiveIntegerField()
+    pta = models.PositiveIntegerField()
+    tpi = models.PositiveIntegerField()
+    yqil = models.PositiveIntegerField()
+    last_updated = models.DateTimeField(auto_now=True)
+
+
+class MLSTBlast(models.Model):
+
+    """ Blast results from contigs against MLST loci. """
+
+    mlst = models.ForeignKey('MLST', on_delete=models.CASCADE)
+    locus_name = models.CharField(max_length=4)
+    locus_id = models.PositiveSmallIntegerField()
+    bitscore = models.PositiveSmallIntegerField()
+    slen = models.PositiveSmallIntegerField()
+    length = models.PositiveSmallIntegerField()
+    gaps = models.PositiveSmallIntegerField()
+    mismatch = models.PositiveSmallIntegerField()
+    pident = models.DecimalField(max_digits=5, decimal_places=2)
+    evalue = models.DecimalField(max_digits=7, decimal_places=2)
+
+    class Meta:
+        unique_together = ('mlst', 'locus_name', 'locus_id')
+
+    def sample_tag(self):
+        """ Display sample tag in admin view. """
+        return self.mlst.sample.sample_tag
+    sample_tag.short_description = 'Sample Tag'
+    sample_tag.admin_order_field = 'mlst'
+
+
+class MLSTSrst2(models.Model):
+
+    """ SRST2 results from mapping of FASTQ files. """
+
+    mlst = models.ForeignKey('MLST', on_delete=models.CASCADE, unique=True)
+    ST = models.TextField()
+    arcc = models.TextField()
+    aroe = models.TextField()
+    glpf = models.TextField()
+    gmk = models.TextField()
+    pta = models.TextField()
+    tpi = models.TextField()
+    yqil = models.TextField()
+    mismatches = models.TextField()
+    uncertainty = models.TextField()
+    depth = models.DecimalField(max_digits=8, decimal_places=3)
+    maxMAF = models.DecimalField(max_digits=11, decimal_places=7)
+
+    def sample_tag(self):
+        """ Display sample tag in admin view. """
+        return self.mlst.sample.sample_tag
+    sample_tag.short_description = 'Sample Tag'
+    sample_tag.admin_order_field = 'mlst'
