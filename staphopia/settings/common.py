@@ -36,7 +36,6 @@ INSTALLED_APPS = (
     'django_email_changer',
 
     'staphopia',
-    'database',
     'autofill',
     'samples',
     'ena',

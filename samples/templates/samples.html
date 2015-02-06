@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block css %}
-<link rel="stylesheet" type="text/css" 
+<link rel="stylesheet" type="text/css"
       href="//cdn.datatables.net/plug-ins/725b2a2115b/integration/bootstrap/3/dataTables.bootstrap.css">
 {% endblock %}
 
@@ -17,30 +17,23 @@
             <table id="samples_table" class="dataTable table table-striped table-bordered table-hover table-condensed" cellspacing="0" width="100%">
                 <thead>
                     <tr>
-                        <th>Sample Name</th>
-                        <th>Sequencing Grade</th>
-                        <th>Sequencing Center</th>
-                        <th>Strain</th>
-                        <th>Quality</th>
+                        <th>Sample Tag</th>
+                        <th>Sequencing Rank</th>
+                        <th>Total Reads</th>
+                        <th>Mean Q-Score</th>
                         <th>Coverage</th>
-                        <th>Mean Read</th>
-                        <th>ST</th>
-                        <th>CC</th>
-                        <th>N50</th>
-                        <th>Min Contig</th>
-                        <th>Mean Contig</th>
                     </tr>
                 </thead>
             </table>
-            
+
         </div>
     </div>
 {% endblock %}
 
 {% block js %}
-    <script type="text/javascript" language="javascript" 
+    <script type="text/javascript" language="javascript"
             src="//cdn.datatables.net/1.10.2/js/jquery.dataTables.js"></script>
-    <script type="text/javascript" language="javascript" 
+    <script type="text/javascript" language="javascript"
             src="//cdn.datatables.net/plug-ins/725b2a2115b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
     <script>
 
@@ -58,7 +51,7 @@
                 $(row).prop('title', "Views details on sample " + data[0] + " in another window.");
             }
         });
-        
+
         $('#samples_table tbody').on( 'click', 'tr', function () {
             var rowData = table.row( this ).data();
             window.open(rowData[0]+'/', '_blank');

@@ -1,6 +1,7 @@
-CREATE OR REPLACE VIEW sample_summary AS
+CREATE OR REPLACE VIEW samples_summary AS
 SELECT
     -- Sample
+    sample.id,
     sample.sample_tag,
     (SELECT username FROM auth_user WHERE id=sample.user_id) AS username,
     sample.contact_name,
@@ -42,7 +43,7 @@ SELECT
     sample.is_published,
 
     -- FASTQ
-    fq.rank,
+    CASE fq.rank WHEN 3 THEN 'Gold' WHEN 2 THEN 'Silver' ELSE 'Bronze' END as rank,
     fq.total_bp,
     fq.total_reads,
     fq.coverage,
@@ -62,7 +63,6 @@ SELECT
     assembly.median_contig_length,
     assembly.mean_contig_length,
     assembly.max_contig_length,
-    assembly.n50_contig_length,
     assembly.n50_contig_length,
     assembly.l50_contig_count,
     assembly.ng50_contig_length,
@@ -97,7 +97,7 @@ SELECT
         AND gmk.pident=100 AND pta.pident=100 AND tpi.pident=100
         AND yqil.pident=100), 0) AS st_blast
 FROM samples_sample AS sample
-LEFT JOIN analysis_fastqstat AS fq ON sample.id=fq.sample_id AND fq.is_original is TRUE
+LEFT JOIN analysis_fastqstat AS fq ON sample.id=fq.sample_id AND fq.is_original is FALSE
 LEFT JOIN analysis_assemblystat AS assembly ON sample.id=assembly.sample_id AND assembly.is_scaffolds is FALSE
 LEFT JOIN analysis_mlst AS mlst ON sample.id=mlst.sample_id
 LEFT JOIN analysis_variant AS variant ON sample.id=variant.sample_id

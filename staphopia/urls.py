@@ -2,14 +2,19 @@ from django.conf.urls import patterns, include, url
 from django.views.generic import RedirectView
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from registration.forms import RegistrationFormUniqueEmail
-from registration.backends.default.views import RegistrationView, ActivationView
-from django_email_changer.views import CreateUserEmailModificationRequest, ActivateUserEmailModification, ActivationEmailSentSuccessView
+from registration.backends.default.views import (
+    ActivationView,
+    RegistrationView
+)
+from django_email_changer.views import (
+    ActivateUserEmailModification,
+    ActivationEmailSentSuccessView,
+    CreateUserEmailModificationRequest,
+)
 
-from database.views import SummaryDatatablesView
+from samples.views import SummaryDatatablesView
 from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
-import staphopia.signals
 
 admin.autodiscover()
 
@@ -17,20 +22,22 @@ urlpatterns = patterns(
     '',
 
     url(r'^grappelli/', include('grappelli.urls')),  # grappelli URLS
-    url(r'^admin/',  include(admin.site.urls)),  # admin site
+    url(r'^admin/', include(admin.site.urls)),  # admin site
 
     url(r'^$', 'staphopia.views.index', name='home'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^submission/', 'samples.views.submission', name='submission'),
-    url(r'^top10/', 'database.views.top10', name='top10'),
+    url(r'^top10/', 'samples.views.top10', name='top10'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
-    url(r'^accounts/settings/', 'staphopia.views.account_settings', name='account_settings'),
+    url(r'^accounts/settings/', 'staphopia.views.account_settings',
+        name='account_settings'),
 
     # Samples
-    url(r'^samples/data/$', SummaryDatatablesView.as_view(), name='samples_data'),
-    url(r'^samples/(?P<sample_tag>[^/]+)/', 'database.views.samples', name='sample_results'),
-    url(r'^samples/$', 'database.views.samples', name='samples'),
-
+    url(r'^samples/data/$', SummaryDatatablesView.as_view(),
+        name='samples_data'),
+    url(r'^samples/(?P<sample_tag>[^/]+)/', 'samples.views.samples',
+        name='sample_results'),
+    url(r'^samples/$', 'samples.views.samples', name='samples'),
 
     # django-email-changer
     url(r'accounts/email/change/activate/(?P<code>[^/]+)/',
@@ -50,8 +57,7 @@ urlpatterns = patterns(
     url(r'^accounts/$', RedirectView.as_view(url='/',)),
     # Fix for password reset
     url(r'^accounts/password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
-            auth_views.password_reset_confirm,
-            name='auth_password_reset_confirm'),
+        auth_views.password_reset_confirm, name='auth_password_reset_confirm'),
     url(r'^password/reset/complete/$',
         auth_views.password_reset_complete,
         name='password_reset_complete'),
@@ -62,11 +68,11 @@ urlpatterns = patterns(
         RedirectView.as_view(url='/',)),
     url(r'^accounts/password/reset/$',
         'django.contrib.auth.views.password_reset',
-        {'post_reset_redirect' : '/accounts/password/reset/done/'},
+        {'post_reset_redirect': '/accounts/password/reset/done/'},
         name="password_reset"),
     url('^accounts/activate/$', ActivationView.as_view(),
-                               {'activation_key':'None'},
-                               name='registration_activate'),
+        {'activation_key': 'None'}, name='registration_activate'),
+
     # enable unique email registration feature
     url(r'^accounts/register/$',
         RegistrationView.as_view(form_class=RegistrationFormWithName),
