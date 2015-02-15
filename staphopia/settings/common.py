@@ -22,6 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 Applications
 -----------------------------------------------------------------------------'''
 INSTALLED_APPS = (
+    'rest_framework',
     'grappelli',
 
     'django.contrib.admin',
@@ -52,12 +53,17 @@ EMAIL_CHANGE_NOTIFICATION_SUBJECT = '[Email Update] - Please verify Staphopia em
 EMAIL_CHANGE_NOTIFICATION_FROM = "Staphopia's Friendly Robot <usa300@staphopia.com>"
 
 
-
 '''----------------------------------------------------------------------------
-Database
+REST API
 ----------------------------------------------------------------------------'''
-DATABASE_ROUTERS = ('database.routers.StaphopiaRouter',)
-
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ],
+    'PAGINATE_BY': 10
+}
 
 
 '''----------------------------------------------------------------------------

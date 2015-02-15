@@ -96,15 +96,16 @@ SELECT
         AND arcc.pident=100 AND aroe.pident=100 AND glpf.pident=100
         AND gmk.pident=100 AND pta.pident=100 AND tpi.pident=100
         AND yqil.pident=100), 0) AS st_blast
-FROM samples_sample AS sample
-LEFT JOIN analysis_fastqstat AS fq ON sample.id=fq.sample_id AND fq.is_original is FALSE
-LEFT JOIN analysis_assemblystat AS assembly ON sample.id=assembly.sample_id AND assembly.is_scaffolds is FALSE
-LEFT JOIN analysis_mlst AS mlst ON sample.id=mlst.sample_id
-LEFT JOIN analysis_variant AS variant ON sample.id=variant.sample_id
+FROM analysis_assemblystat as assembly
+LEFT JOIN analysis_fastqstat AS fq ON assembly.sample_id=fq.sample_id AND fq.is_original is FALSE
+LEFT JOIN samples_sample AS sample ON sample.id=assembly.sample_id
+LEFT JOIN analysis_mlst AS mlst ON assembly.sample_id=mlst.sample_id
+LEFT JOIN analysis_variant AS variant ON assembly.sample_id=variant.sample_id
 LEFT JOIN analysis_mlstblast AS arcc ON mlst.id=arcc.id AND arcc.locus_name='arcc'
 LEFT JOIN analysis_mlstblast AS aroe ON mlst.id=aroe.id AND aroe.locus_name='aroe'
 LEFT JOIN analysis_mlstblast AS glpf ON mlst.id=glpf.id AND glpf.locus_name='glpf'
 LEFT JOIN analysis_mlstblast AS gmk ON mlst.id=gmk.id AND gmk.locus_name='gmk'
 LEFT JOIN analysis_mlstblast AS pta ON mlst.id=pta.id AND pta.locus_name='pta'
 LEFT JOIN analysis_mlstblast AS tpi ON mlst.id=tpi.id AND tpi.locus_name='tpi'
-LEFT JOIN analysis_mlstblast AS yqil ON mlst.id=yqil.id AND yqil.locus_name='yqil';
+LEFT JOIN analysis_mlstblast AS yqil ON mlst.id=yqil.id AND yqil.locus_name='yqil'
+WHERE assembly.is_scaffolds is FALSE;

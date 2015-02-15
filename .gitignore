@@ -6,3 +6,4 @@ logs/*
 *.log
 staphopia/static/admin
 staphopia/static/grappelli
+staphopia/static/rest_framework

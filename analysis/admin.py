@@ -70,7 +70,7 @@ class ToSNPAdmin(admin.ModelAdmin):
 @admin.register(VariantSNP)
 class SNPAdmin(admin.ModelAdmin):
     list_display = (
-        'reference_strain', 'locus_tag',
+        'locus_tag',
         'reference_position', 'reference_base', 'alternate_base',
         'reference_codon', 'alternate_codon',
         'reference_amino_acid', 'alternate_amino_acid',

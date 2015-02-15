@@ -282,6 +282,12 @@ class VariantToSNP(models.Model):
     class Meta:
         unique_together = ('variant', 'snp')
 
+    def sample_tag(self):
+        """ Display sample_tag in admin view. """
+        return self.variant.sample.sample_tag
+    sample_tag.short_description = 'Sample Tag'
+    sample_tag.admin_order_field = 'variant'
+
     def variant_id(self):
         """ Display variant id in admin view. """
         return self.variant.pk
@@ -299,6 +305,11 @@ class VariantToSNP(models.Model):
         return self.info.pk
     info_id.short_description = 'Info ID'
     info_id.admin_order_field = 'info'
+
+    def snp_count(self):
+        """ Display snp_counts in admin view. """
+        return self.objects.filter(variant=self.variant).count()
+    snp_count.short_description = 'SNP Count'
 
 
 class VariantComment(models.Model):

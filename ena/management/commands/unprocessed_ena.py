@@ -86,8 +86,9 @@ class Command(BaseCommand):
                         for run in ena_runs:
                             to_process[entry.experiment_accession][run.run_accession] = {
                                 'is_paired': run.is_paired,
-                                'fastq_ftp': run.fastq_ftp,
-                                'fastq_aspera': run.fastq_aspera,
+                                'fastq_ftp': run.fastq_ftp.split(';'),
+                                'fastq_aspera': run.fastq_aspera.split(';'),
+                                'fastq_md5': run.fastq_md5.split(';')
                             }
 
         print json.dumps(to_process)

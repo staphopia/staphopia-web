@@ -9,7 +9,7 @@ from samples.forms import SampleSubmissionForm
 from samples.models import Sample, SamplesSummary
 
 
-@transaction.commit_on_success
+@transaction.atomic
 def submission(request):
     if request.user.is_authenticated:
         form = None
@@ -51,15 +51,7 @@ class SummaryDatatablesView(BaseDatatableView):
     model = SamplesSummary
     columns = [
         'sample_tag',
-        'rank',
-        'total_reads',
-        'qual_mean',
-        'coverage'
     ]
     order_columns = [
         'sample_tag',
-        'rank',
-        'total_reads',
-        'qual_mean',
-        'coverage'
     ]

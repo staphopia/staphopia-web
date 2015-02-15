@@ -2,6 +2,8 @@ from django.conf.urls import patterns, include, url
 from django.views.generic import RedirectView
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+
+# from rest_framework import routers
 from registration.backends.default.views import (
     ActivationView,
     RegistrationView
@@ -12,17 +14,32 @@ from django_email_changer.views import (
     CreateUserEmailModificationRequest,
 )
 
+# from api.views import (
+#     sample_list,
+#     VariantViewSet,
+# )
 from samples.views import SummaryDatatablesView
 from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
 
 admin.autodiscover()
 
+
+# Routers provide an easy way of automatically determining the URL conf.
+# router = routers.DefaultRouter()
+# router.register(r'variant', VariantViewSet)
+# router.register(r'sample(?P<sample_tag>[^/]+)/', sample_list)
+
 urlpatterns = patterns(
     '',
+    # Django REST Framework
+    # url(r'^api/', include(router.urls)),
+    # url(r'^api-auth/', include('rest_framework.urls',
+    #     namespace='rest_framework')),
 
-    url(r'^grappelli/', include('grappelli.urls')),  # grappelli URLS
-    url(r'^admin/', include(admin.site.urls)),  # admin site
+    # Grappelli & Admin Site
+    url(r'^grappelli/', include('grappelli.urls')),
+    url(r'^admin/', include(admin.site.urls)),
 
     url(r'^$', 'staphopia.views.index', name='home'),
     url(r'^admin/', include(admin.site.urls)),

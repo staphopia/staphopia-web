@@ -88,7 +88,7 @@ class SamplesSummary(models.Model):
 
     """ Unmananged model of a database view. """
 
-    id = models.IntegerField(blank=True, null=True)
+    id = models.IntegerField(primary_key=True)
     sample_tag = models.TextField(blank=True)
     username = models.CharField(max_length=30, blank=True)
     contact_name = models.TextField(blank=True)
