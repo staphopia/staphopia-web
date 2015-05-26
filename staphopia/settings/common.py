@@ -17,7 +17,6 @@ Common
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
-
 '''-----------------------------------------------------------------------------
 Applications
 -----------------------------------------------------------------------------'''
@@ -25,6 +24,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'grappelli',
 
+    'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,6 +32,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
+
     'registration',
     'crispy_forms',
     'django_email_changer',

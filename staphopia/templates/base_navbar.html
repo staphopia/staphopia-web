@@ -15,7 +15,7 @@
                 <span class="icon-bar"></span>
             </button>
             <a class="navbar-brand" href="#">
-                <em>Staphopia&trade;<sub>v2</sub></em>
+                Staphopia
             </a>
         </div>
         <div class="collapse navbar-collapse">
@@ -33,27 +33,27 @@
             <ul class="nav navbar-nav navbar-right">
             {% if user.is_authenticated %}
                 <li>
-                    <a data-toggle="tooltip" data-placement="bottom" 
-                       title="View Samples" href="/samples/{{ user.username }}/"> 
+                    <a data-toggle="tooltip" data-placement="bottom"
+                       title="View Samples" href="/samples/{{ user.username }}/">
                         <span class="glyphicon glyphicon-user"></span>
-                        {{ user.username }} 
+                        {{ user.username }}
                     </a>
                 </li>
                 <li>
-                    <a data-toggle="tooltip" data-placement="bottom" 
+                    <a data-toggle="tooltip" data-placement="bottom"
                        title="Account Settings" href="/accounts/settings/">
                         <span class="glyphicon glyphicon-cog"></span>
                     </a>
                 </li>
                 <li>
-                    <a data-toggle="tooltip" data-placement="bottom" 
+                    <a data-toggle="tooltip" data-placement="bottom"
                        title="Sign Out" href="/accounts/logout/">
                         <span class="glyphicon glyphicon-log-out"></span>
                     </a>
                 </li>
             {% else %}
                 <li>
-                    <a data-toggle="tooltip" data-placement="bottom" 
+                    <a data-toggle="tooltip" data-placement="bottom"
                        title="Sign In" href="/accounts/login/">
                         <span class="glyphicon glyphicon-log-in"></span>
                     </a>

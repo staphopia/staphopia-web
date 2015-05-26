@@ -3,7 +3,11 @@
 
     Outputs Experiments and corresponding runs information in JSON format.
 '''
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
+
 from optparse import make_option
 
 from django.core.management.base import BaseCommand
@@ -90,5 +94,4 @@ class Command(BaseCommand):
                                 'fastq_aspera': run.fastq_aspera.split(';'),
                                 'fastq_md5': run.fastq_md5.split(';')
                             }
-
         print json.dumps(to_process)

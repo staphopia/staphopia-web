@@ -7,3 +7,7 @@ logs/*
 staphopia/static/admin
 staphopia/static/grappelli
 staphopia/static/rest_framework
+exps.txt
+missing_fastq.txt
+runs.txt
+study.txt

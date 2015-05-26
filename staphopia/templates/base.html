@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
     <link rel="stylesheet" href="{% static "css/normalize.css" %}">
     <link rel="stylesheet" href="{% static "css/staphopia.css" %}">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:regular,bold&subset=Latin">
     {% block css %}{% endblock %}
     <title>{% block title %}Staphopia{% endblock %}</title>
     <link rel="shortcut icon" href="{% static "img/favicon.ico" %}" />
@@ -20,7 +21,7 @@
     <div class="container fix-navbar">
         {% block container %}{% endblock %}
     <!-- End Main Content-->
-    
+
     <!-- Footer -->
     <footer class="row">
         <div>
@@ -29,7 +30,7 @@
         </div>
     </footer>
     <!-- End Footer -->
-    
+
     {% if user.is_authenticated %}
     logged in
     {% else %}
@@ -40,7 +41,7 @@
     <!-- Javascipt -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script src="{% static "js/bootstrap.min.js" %}"></script>
-        
+
     {% if user.is_authenticated %}
     <script>
         $(document).ready(function() {
@@ -48,11 +49,11 @@
         });
         {% endif %}
     </script>
-    
+
     {% block js %}
     {% endblock %}
     <!-- End Javascript -->
-        
+
 </body>
 </html>
 

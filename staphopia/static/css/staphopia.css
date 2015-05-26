@@ -1,12 +1,24 @@
 /*
     Staphopia specific CSS
 */
-
+body {
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+}
 /* ------------------------------------
     Shared
 ------------------------------------ */
+.navbar {
+    background-color: #000;
+    border: none !important;
+}
 .navbar-right {
     margin-right: 10px !important;
+}
+
+.navbar-brand {
+    color: white !important;
+    background-color: #337ab7 !important;
+    font-size: 16px !important;
 }
 
 button.log {
@@ -33,7 +45,7 @@ div.fix-top-margin {
 
 .tooltip-inner {
     min-width: 110px;
-    width: 110px; 
+    width: 110px;
 }
 
 /* ------------------------------------
@@ -73,7 +85,7 @@ label.text-right {
     top10.html
 ------------------------------------ */
 table thead  td{
-    font-weight: bold; 
+    font-weight: bold;
 }
 
 /* ------------------------------------

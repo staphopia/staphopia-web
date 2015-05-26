@@ -509,7 +509,7 @@ class MLSTSrst2(models.Model):
 
     """ SRST2 results from mapping of FASTQ files. """
 
-    mlst = models.ForeignKey('MLST', on_delete=models.CASCADE, unique=True)
+    mlst = models.ForeignKey('MLST', on_delete=models.CASCADE)
     ST = models.TextField()
     arcc = models.TextField()
     aroe = models.TextField()
