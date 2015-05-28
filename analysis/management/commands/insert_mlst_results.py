@@ -77,6 +77,7 @@ class Command(BaseCommand):
             raise CommandError('MLST Error: {0}'.format(e))
 
         # Insert Blast Results
+        print "{0}".format(opts['sample_tag'])
         blast_results = open(opts['blast'], 'r')
         for line in blast_results:
             line = line.rstrip()
@@ -90,7 +91,7 @@ class Command(BaseCommand):
                     mlst=mlst,
                     locus_name=locus_name,
                     locus_id=locus_id,
-                    bitscore=cols[1],
+                    bitscore=int(float(cols[1])),
                     slen=cols[2],
                     length=cols[3],
                     gaps=cols[4],
@@ -100,7 +101,8 @@ class Command(BaseCommand):
                 )
                 print "BLASTN Results Saved"
             except IntegrityError as e:
-                raise CommandError('MLSTBlast Error: {0}'.format(e))
+                raise CommandError('{0} MLSTBlast Error: {1}'.format(
+                                   opts['sample_tag'], e))
         blast_results.close()
 
         # Insert SRST2 Results
@@ -129,4 +131,5 @@ class Command(BaseCommand):
             )
             print "SRST2 Results Saved"
         except IntegrityError as e:
-            raise CommandError('MLSTSrst2 Error: {0}'.format(e))
+            raise CommandError('{0} MLSTSrst2 Error: {1}'.format(
+                               opts['sample_tag'], e))

@@ -11,15 +11,15 @@ import os
 
 from staphopia.settings.private import *
 
-'''-----------------------------------------------------------------------------
+'''----------------------------------------------------------------------------
 Common
------------------------------------------------------------------------------'''
+----------------------------------------------------------------------------'''
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
-'''-----------------------------------------------------------------------------
+'''----------------------------------------------------------------------------
 Applications
------------------------------------------------------------------------------'''
+----------------------------------------------------------------------------'''
 INSTALLED_APPS = (
     'rest_framework',
     'grappelli',
@@ -46,12 +46,14 @@ INSTALLED_APPS = (
 )
 
 # django-registration
-ACCOUNT_ACTIVATION_DAYS=7
+ACCOUNT_ACTIVATION_DAYS = 7
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 # django_email_changer
-EMAIL_CHANGE_NOTIFICATION_SUBJECT = '[Email Update] - Please verify Staphopia email update'
-EMAIL_CHANGE_NOTIFICATION_FROM = "Staphopia's Friendly Robot <usa300@staphopia.com>"
+EMAIL_CHANGE_NOTIFICATION_SUBJECT = ('[Email Update] - Please verify '
+                                     'Staphopia email update')
+EMAIL_CHANGE_NOTIFICATION_FROM = ("Staphopia's Friendly Robot "
+                                  "<usa300@staphopia.com>")
 
 
 '''----------------------------------------------------------------------------
@@ -66,7 +68,6 @@ REST_FRAMEWORK = {
     'PAGINATE_BY': 10
 }
 
-
 '''----------------------------------------------------------------------------
 Middleware
 ----------------------------------------------------------------------------'''
@@ -80,8 +81,6 @@ MIDDLEWARE_CLASSES = (
     'staphopia.middleware.LoginRequiredMiddleware',
 )
 
-
-
 '''----------------------------------------------------------------------------
 Static
 ----------------------------------------------------------------------------'''
@@ -94,11 +93,9 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 
-
-
-'''-----------------------------------------------------------------------------
+'''----------------------------------------------------------------------------
 Template
------------------------------------------------------------------------------'''
+----------------------------------------------------------------------------'''
 TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, "templates"),
 )
@@ -114,9 +111,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
 )
 
-'''-----------------------------------------------------------------------------
+'''----------------------------------------------------------------------------
 Staphopia
------------------------------------------------------------------------------'''
+----------------------------------------------------------------------------'''
 ROOT_URLCONF = 'staphopia.urls'
 WSGI_APPLICATION = 'staphopia.wsgi.application'
 DEFAULT_FROM_EMAIL = "Staphopia's Friendly Robot <usa300@staphopia.com>"
@@ -132,13 +129,12 @@ LOGIN_EXEMPT_URLS = (
     r'^admin/',
 )
 
-'''-----------------------------------------------------------------------------
+'''----------------------------------------------------------------------------
 Internationalization
 https://docs.djangoproject.com/en/1.6/topics/i18n/
------------------------------------------------------------------------------'''
+----------------------------------------------------------------------------'''
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-

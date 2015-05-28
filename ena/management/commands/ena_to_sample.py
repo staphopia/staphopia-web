@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
     """ Create new sample for ENA data. """
 
-    help = 'Return the paired status of an experiment accession'
+    help = 'Create new sample for ENA data.'
 
     option_list = BaseCommand.option_list + (
         make_option('--experiment', dest='experiment',

@@ -100,10 +100,10 @@ class AssemblyStat(models.Model):
     mean_contig_length = models.DecimalField(max_digits=9, decimal_places=2)
     max_contig_length = models.PositiveIntegerField()
 
-    n50_contig_length = models.PositiveIntegerField()
-    l50_contig_count = models.PositiveSmallIntegerField()
-    ng50_contig_length = models.PositiveIntegerField()
-    lg50_contig_count = models.PositiveSmallIntegerField()
+    n50_contig_length = models.PositiveIntegerField(default=0)
+    l50_contig_count = models.PositiveSmallIntegerField(default=0)
+    ng50_contig_length = models.PositiveIntegerField(default=0)
+    lg50_contig_count = models.PositiveSmallIntegerField(default=0)
 
     contigs_greater_1k = models.PositiveSmallIntegerField()
     contigs_greater_10k = models.PositiveSmallIntegerField()

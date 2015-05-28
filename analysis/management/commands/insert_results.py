@@ -20,7 +20,8 @@ class Command(BaseCommand):
         make_option('--sample_tag', dest='sample_tag',
                     help='Sample tag for which the data is for'),
         make_option('--table', dest='table',
-                    help=('Table (fastq_original, fastq_clean, assembly) to '
+                    help=('Table (fastq_original, fastq_clean, '
+                          'assembly_contigs, assembly_scaffolds) to '
                           'insert data into.')),
         make_option('--input', dest='input',
                     help='JSON formated file containing data to be inserted'),
@@ -120,7 +121,7 @@ class Command(BaseCommand):
 
         3: Gold, 2: Silver, 1: Bronze
         """
-        if data['mean_read_length'] >= 75:
+        if data['mean_read_length'] >= 95:
             if data['coverage'] >= 45 and data['qual_mean'] >= 30:
                 return 3
             elif data['coverage'] >= 20 and data['qual_mean'] >= 20:
