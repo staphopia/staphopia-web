@@ -211,8 +211,18 @@ class VariantToIndel(models.Model):
 
     variant = models.ForeignKey('Variant', on_delete=models.CASCADE)
     indel = models.ForeignKey('VariantIndel', on_delete=models.CASCADE)
-    info = models.ForeignKey('VariantInfo', on_delete=models.CASCADE)
     filters = models.ForeignKey('VariantFilter', on_delete=models.CASCADE)
+
+    """ INFO and Qual, fields specific to each variant. """
+    AC = models.TextField(default="")
+    AD = models.TextField(default="")
+    AF = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
+    DP = models.PositiveIntegerField(default=0)
+    GQ = models.PositiveIntegerField(default=0)
+    GT = models.TextField(default="")
+    MQ = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
+    PL = models.TextField(default="")
+    QD = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
     quality = models.DecimalField(max_digits=8, decimal_places=3)
 
     class Meta:
@@ -229,12 +239,6 @@ class VariantToIndel(models.Model):
         return self.indel.pk
     indel_id.short_description = 'InDel ID'
     indel_id.admin_order_field = 'indel'
-
-    def info_id(self):
-        """ Display info id in admin view. """
-        return self.info.pk
-    info_id.short_description = 'Info ID'
-    info_id.admin_order_field = 'info'
 
 
 class VariantIndel(models.Model):
@@ -275,8 +279,18 @@ class VariantToSNP(models.Model):
     variant = models.ForeignKey('Variant', on_delete=models.CASCADE)
     snp = models.ForeignKey('VariantSNP', on_delete=models.CASCADE)
     comment = models.ForeignKey('VariantComment', on_delete=models.CASCADE)
-    info = models.ForeignKey('VariantInfo', on_delete=models.CASCADE)
     filters = models.ForeignKey('VariantFilter', on_delete=models.CASCADE)
+
+    """ INFO and Qual, fields specific to each variant. """
+    AC = models.TextField(default="")
+    AD = models.TextField(default="")
+    AF = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
+    DP = models.PositiveIntegerField(default=0)
+    GQ = models.PositiveIntegerField(default=0)
+    GT = models.TextField(default="")
+    MQ = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
+    PL = models.TextField(default="")
+    QD = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
     quality = models.DecimalField(max_digits=8, decimal_places=3)
 
     class Meta:
@@ -300,12 +314,6 @@ class VariantToSNP(models.Model):
     snp_id.short_description = 'SNP ID'
     snp_id.admin_order_field = 'snp'
 
-    def info_id(self):
-        """ Display info id in admin view. """
-        return self.info.pk
-    info_id.short_description = 'Info ID'
-    info_id.admin_order_field = 'info'
-
     def snp_count(self):
         """ Display snp_counts in admin view. """
         return self.objects.filter(variant=self.variant).count()
@@ -321,22 +329,6 @@ class VariantComment(models.Model):
     def __unicode__(self):
         """ Display comment in admin view. """
         return u"%s" % self.comment
-
-
-class VariantInfo(models.Model):
-
-    """ All the data stored in the INFO column of the VCF. """
-
-    AC = models.TextField()
-    AD = models.TextField()
-    AF = models.DecimalField(max_digits=8, decimal_places=3)
-    AN = models.PositiveIntegerField()
-    DP = models.PositiveIntegerField()
-    GQ = models.PositiveIntegerField()
-    GT = models.TextField()
-    MQ = models.DecimalField(max_digits=8, decimal_places=3)
-    PL = models.TextField()
-    QD = models.DecimalField(max_digits=8, decimal_places=3)
 
 
 class VariantFilter(models.Model):

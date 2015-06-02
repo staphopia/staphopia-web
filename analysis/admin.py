@@ -9,7 +9,6 @@ from analysis.models import (
     VariantComment,
     VariantFilter,
     VariantIndel,
-    VariantInfo,
     VariantReference,
     VariantSNP,
     VariantToIndel,
@@ -60,9 +59,9 @@ class ToSNPAdmin(admin.ModelAdmin):
     list_display = (
         'variant_id',
         'snp_id',
-        'info_id',
         'comment',
         'filters',
+        'AC', 'AD', 'AF', 'DP', 'GQ', 'GT', 'MQ', 'PL', 'QD',
         'quality'
     )
 
@@ -84,8 +83,8 @@ class ToIndelAdmin(admin.ModelAdmin):
     list_display = (
         'variant_id',
         'indel_id',
-        'info_id',
         'filters',
+        'AC', 'AD', 'AF', 'DP', 'GQ', 'GT', 'MQ', 'PL', 'QD',
         'quality'
     )
 
@@ -96,11 +95,6 @@ class IndelAdmin(admin.ModelAdmin):
         'reference_strain', 'locus_tag', 'reference_position',
         'reference_base', 'alternate_base', 'is_deletion'
     )
-
-
-@admin.register(VariantInfo)
-class InfoAdmin(admin.ModelAdmin):
-    list_display = ('AC', 'AD', 'AF', 'AN', 'DP', 'GQ', 'GT', 'MQ', 'PL', 'QD')
 
 
 @admin.register(Variant)
