@@ -143,45 +143,6 @@ class AssemblyStat(models.Model):
     pipeline_version.admin_order_field = 'version'
 
 
-class Kmer(models.Model):
-
-    """ A linking table for Sample and Kmers. """
-
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    version = models.ForeignKey('PipelineVersion', on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('sample', 'version')
-
-
-class KmerString(models.Model):
-
-    """ Unique 31-mer strings. """
-
-    string = models.CharField(default='', max_length=31, unique=True,
-                              db_index=True)
-
-
-class KmerCount(models.Model):
-
-    """ Kmer counts from each sample. """
-
-    kmer = models.ForeignKey('Kmer', on_delete=models.CASCADE)
-    string = models.ForeignKey('KmerString', on_delete=models.CASCADE)
-    count = models.PositiveIntegerField()
-
-    class Meta:
-        unique_together = ('kmer', 'string')
-
-
-class KmerTotal(models.Model):
-
-    """ Total kmer counts from each sample. """
-
-    kmer = models.ForeignKey('Kmer', on_delete=models.CASCADE)
-    total = models.PositiveIntegerField()
-
-
 class Variant(models.Model):
 
     """ A linking table for Sample and Variant. """

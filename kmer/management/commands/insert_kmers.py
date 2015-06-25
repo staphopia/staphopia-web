@@ -9,7 +9,7 @@ from django.db import connection, transaction
 from django.core.management.base import BaseCommand, CommandError
 
 from samples.models import Sample
-from analysis.models import PipelineVersions
+from analysis.models import PipelineVersion
 from kmer.models import Kmer, KmerBinary, KmerCount, KmerTotal
 
 
@@ -62,15 +62,15 @@ class Command(BaseCommand):
 
         # Get PipelineVersion instance
         try:
-            pipeline_version = PipelineVersions.objects.get_or_create(
+            pipeline_version = PipelineVersion.objects.get_or_create(
                 module='kmer',
                 version=opts['pipeline_version']
             )[0]
-        except PipelineVersions.DoesNotExist:
+        except PipelineVersion.DoesNotExist:
             raise CommandError('Error saving pipeline information')
 
         # Create kmer instance
-        self.kmer_instance = Kmer.objects.get_or_create(
+        self.kmer_instance, created = Kmer.objects.get_or_create(
             sample=sample,
             version=pipeline_version
         )
