@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'samples',
     'ena',
     'analysis',
+    'kmer',
     'django_datatables_view',
 )
 
