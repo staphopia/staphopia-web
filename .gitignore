@@ -14,3 +14,4 @@ study.txt
 insert_variant.*
 *.err
 *.out
+.Rproj.user
