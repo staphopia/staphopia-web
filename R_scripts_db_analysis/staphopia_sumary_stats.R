@@ -9,7 +9,7 @@ top_20_sc <- count(samples_tab, sequencing_center) %>% top_n(20) %>% as.data.fra
 
 
 #number that are published
-as.data.frame(count(samples_tab,is_published))
+num_pub <- count(samples_tab,is_published) %>% as.data.frame
 #breakdown of gold, silver, bronze
 
 #breakdown of N50, number of contigs
