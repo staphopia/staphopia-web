@@ -1,0 +1,1 @@
+#the avergae Q-score should be the same for SNPs that are found only once versus multiple times
