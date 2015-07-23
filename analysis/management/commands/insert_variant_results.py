@@ -22,6 +22,19 @@ from analysis.models import (
 )
 
 
+def timeit(method):
+
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+
+        print '%r\t%2.2f sec' % (method.__name__, te - ts)
+        return result
+
+    return timed
+
+
 class Command(BaseCommand):
 
     """ Insert results into database. """
@@ -60,6 +73,7 @@ class Command(BaseCommand):
         self.get_comment_instances()
         self.get_filters()
         self.get_filter_instances()
+        self.get_snps()
 
         # Store variants for bulk create
         self.snps = []
@@ -89,9 +103,15 @@ class Command(BaseCommand):
         except IntegrityError as e:
             raise CommandError('PipelineVersion Error: {0}'.format(e))
 
+    @timeit
+    def get_positions(self, input):
+        self.positions = [record.POS for record in self.records]
+
+    @timeit
     def open_vcf(self, input):
         try:
             self.vcf_reader = vcf.Reader(open(input, 'r'), compressed=True)
+            self.records = [record for record in self.vcf_reader]
         except IOError:
             raise CommandError('{0} does not exist'.format(input))
 
@@ -119,12 +139,14 @@ class Command(BaseCommand):
                 )
             )
 
+    @timeit
     def get_locus_tags(self):
         """ Return the primary key of each locus tag. """
         self.locus_tags = {}
         for tag in VariantAnnotation.objects.filter(reference=self.reference):
             self.locus_tags[tag.locus_tag] = tag.pk
 
+    @timeit
     def get_annotation_instances(self):
         """ Return the instance for each annotation. """
         pks = []
@@ -138,6 +160,7 @@ class Command(BaseCommand):
         for c in VariantComment.objects.all():
             self.comments[c.comment] = c.pk
 
+    @timeit
     def get_comment_instances(self):
         """ Return the instance for each comment. """
         pks = []
@@ -145,12 +168,14 @@ class Command(BaseCommand):
             pks.append(ks.pk)
         self.comment_instances = VariantComment.objects.in_bulk(pks)
 
+    @timeit
     def get_filters(self):
         """ Return the primary key of each comment. """
         self.filters = {}
         for f in VariantFilter.objects.all():
             self.filters[f.name] = f.pk
 
+    @timeit
     def get_filter_instances(self):
         """ Return the instance for each comment. """
         pks = []
@@ -235,6 +260,7 @@ class Command(BaseCommand):
         return comment
 
     @transaction.atomic
+    @timeit
     def create_snp(self, record, reference, annotation):
         return VariantSNP.objects.create(
             reference=reference,
@@ -262,19 +288,31 @@ class Command(BaseCommand):
             is_genic=record.INFO['IsGenic'],
         )
 
+    def get_snps(self):
+        self.all_snps = {}
+        for snp in VariantSNP.objects.filter(
+            reference=self.reference,
+            reference_position__in=[record.POS for record in self.records]
+        ):
+            key = (
+                snp.reference_position,
+                snp.reference_base,
+                snp.alternate_base
+            )
+            self.all_snps[key] = snp.pk
+
     def get_snp(self, record, reference, annotation):
         snp = False
         while not snp:
             try:
-                snp = VariantSNP.objects.get(
-                    reference=reference,
-                    reference_position=record.POS,
-                    reference_base=record.REF,
-                    alternate_base=record.ALT[0]
-                )
-            except VariantSNP.DoesNotExist:
+                snp = self.all_snps[(
+                    record.POS,
+                    record.REF,
+                    str(record.ALT[0])
+                )]
+            except KeyError:
                 try:
-                    snp = self.create_snp(record, reference, annotation)
+                    snp = self.create_snp(record, reference, annotation).pk
                 except IntegrityError:
                     print "trying SNP ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT[0]
@@ -320,9 +358,10 @@ class Command(BaseCommand):
 
         return indel
 
+    @timeit
     def read_vcf(self):
         # Insert VCF Records
-        for record in self.vcf_reader:
+        for record in self.records:
             # Get annotation, filter, comment
             annotation = self.get_annotation(record)
             record_filters = self.get_filter(record.FILTER)
@@ -337,7 +376,7 @@ class Command(BaseCommand):
                     self.snps.append(
                         VariantToSNP(
                             variant=self.variant,
-                            snp=snp,
+                            snp_id=snp,
                             comment=comment,
                             filters=record_filters,
                             AC=str(record.INFO['AC']),
@@ -380,11 +419,13 @@ class Command(BaseCommand):
                     raise CommandError('VariantIndel Error: {0}'.format(e))
 
     @transaction.atomic
+    @timeit
     def insert_snps(self):
-        VariantToSNP.objects.bulk_create(self.snps, batch_size=2000)
+        VariantToSNP.objects.bulk_create(self.snps, batch_size=5000)
         return None
 
     @transaction.atomic
+    @timeit
     def insert_indels(self):
-        VariantToIndel.objects.bulk_create(self.indels, batch_size=2000)
+        VariantToIndel.objects.bulk_create(self.indels, batch_size=5000)
         return None

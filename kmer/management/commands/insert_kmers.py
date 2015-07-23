@@ -1,26 +1,30 @@
 """ Insert Jellyfish output into the database. """
 import gzip
-import psycopg2
+import sys
 import time
 
 from bitarray import bitarray
 
 from django.db import connection, transaction
+from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
 from samples.models import Sample
 from analysis.models import PipelineVersion
-from kmer.models import Kmer, KmerBinary, KmerCount, KmerTotal
+from kmer.models import Kmer, KmerBinary, KmerTotal
 
 
-def timeit(f):
-    def f_timer(*args, **kwargs):
-        start = time.time()
-        result = f(*args, **kwargs)
-        end = time.time()
-        print f.__name__, 'took', end - start, 'time'
+def timeit(method):
+
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+
+        print '%r\t%2.2f sec' % (method.__name__, te - ts)
         return result
-    return f_timer
+
+    return timed
 
 
 class Command(BaseCommand):
@@ -34,8 +38,8 @@ class Command(BaseCommand):
     }
 
     _tables = [
+        'kmer_kmerbinarytmp',
         'kmer_kmercount',
-        'kmer_kmerbinary',
         'kmer_kmertotal',
         'kmer_kmer',
     ]
@@ -47,11 +51,17 @@ class Command(BaseCommand):
                             help=('Compressed (gzip) Jellyfish counts to be '
                                   'inserted.'))
         parser.add_argument('--pipeline_version', type=str, default="0.1",
-                            dest='pipeline_version',
                             help=('Version of the pipeline used in this '
-                                  'analysis. (Default: 0.1)')),
+                                  'analysis. (Default: 0.1)'))
+        parser.add_argument('--empty', action='store_true',
+                            help='Empty tables and reset counts.')
 
     def handle(self, *args, **opts):
+        if opts['empty']:
+            # Empty Tables
+            self.empty_tables()
+            sys.exit()
+
         # Get Sample instance
         try:
             sample = Sample.objects.get(sample_tag=opts['sample_tag'])
@@ -70,13 +80,49 @@ class Command(BaseCommand):
             raise CommandError('Error saving pipeline information')
 
         # Create kmer instance
-        self.kmer_instance, created = Kmer.objects.get_or_create(
-            sample=sample,
-            version=pipeline_version
-        )
+        try:
+            self.kmer_instance = Kmer.objects.create(
+                sample=sample,
+                version=pipeline_version
+            )
+        except IntegrityError:
+            raise CommandError(
+                'Kmer entry already exists for {0} ({1})'.format(
+                    sample, pipeline_version
+                )
+            )
+
+        # Inititalize values
+        self.total = 0
+        self.singletons = 0
+        self.kmer_counts = {}
+        self.kmer_binary = []
+        self.new_kmers = 0
 
         # Read Jellyfish file
         self.read_jellyfish_counts(opts['jellyfish'])
+        self.encode_words(self.kmer_counts.keys())
+
+        # Split words into 100k chunks
+        start_time = time.time()
+        self.insert_kmer(self.encoded_words.keys())
+        values = self.get_kmer_binary_inbulk(self.encoded_words.keys())
+        # for chunk in self.chunks(values, 20):
+        self.insert_counts(values)
+        print '{0}\t{1:.2f}'.format(
+            len(self.encoded_words),
+            (time.time() - start_time)
+        )
+
+        # Process remaining kmers and insert totals
+        runtime = int(time.time() - start_time)
+        KmerTotal.objects.create(
+            kmer=self.kmer_instance,
+            total=self.total,
+            singletons=self.singletons,
+            new_kmers=self.new_kmers,
+            runtime=runtime
+        )
 
     def encode(self, seq):
         a = bitarray()
@@ -93,110 +139,73 @@ class Command(BaseCommand):
         for i in xrange(0, len(l), n):
             yield l[i:i + n]
 
+    @timeit
     def read_jellyfish_counts(self, jellyfish_file):
-        # Empty Tables
-        # self.empty_tables()
-
-        # Inititalize values
-        total = 0
-        singletons = 0
-        self.kmer_counts = {}
-        self.kmer_binary = []
-        self.new_kmers = 0
-
         fh = gzip.open(jellyfish_file)
         for line in fh:
-            if total % 100000 == 0 and total > 0:
-                self.process_kmers()
-
             word, count = line.rstrip().split(' ')
             self.kmer_counts[word] = int(count)
-            self.kmer_binary.append(KmerBinary(string=self.encode(word)))
 
             # increment totals
-            total += 1
+            self.total += 1
             if int(count) == 1:
-                singletons += 1
+                self.singletons += 1
+        fh.close()
 
-        # Process remaining kmers and insert totals
-        self.process_kmers()
-        KmerTotal.objects.create(
-            kmer=self.kmer_instance,
-            total=total,
-            singletons=singletons,
-            new_kmers=self.new_kmers
-        )
+    @timeit
+    def encode_words(self, words):
+        # Encode kmers
+        self.encoded_words = {}
+        for word in words:
+            self.encoded_words[self.encode(word)] = word
 
-    def process_kmers(self):
-        # Insert Kmers and Counts
-        self.insert_kmer()
-        self.insert_count()
-
-        return None
-
-    def insert_kmer(self):
+    @timeit
+    def insert_kmer(self, words):
         # Insert bit encoded kmers
-        self.new_kmers += KmerBinary.objects.bulk_create_new(self.kmer_binary)
-        self.kmer_binary = []
+        self.new_kmers += KmerBinary.objects.bulk_create_new(words)
 
         return None
 
-    def get_kmer_binary_inbulk(self, kmers):
-        self.binary_pks = {}
-
-        pks = []
-        binary = [self.encode(k) for k in kmers]
-        query = (
-            "SELECT id, string FROM kmer_kmerbinary WHERE string IN ({0});"
-        ).format(','.join([str(psycopg2.Binary(k)) for k in binary]))
+    @timeit
+    def get_kmer_binary_inbulk(self, words):
+        values = []
+        query = """
+            SELECT b.id, b.string
+            FROM kmer_kmerbinarytmp AS tmp
+            LEFT JOIN kmer_kmerbinary AS b
+            ON b.string=tmp.string;
+            """
         cursor = connection.cursor()
         cursor.execute(query)
-        rows = cursor.fetchall()
 
-        for row in rows:
-            pks.append(row[0])
-            self.binary_pks[''.join(self.decode(str(row[1])))] = row[0]
+        for row in cursor.fetchall():
+            # count, kmer_id, string_id
+            values.append('({0}, {1}, {2})'.format(
+                self.kmer_counts[self.encoded_words[str(row[1])]],
+                self.kmer_instance.pk,
+                row[0]
+            ))
 
-        self.binary_instances = KmerBinary.objects.in_bulk(pks)
+        return values
 
-    def build_counts(self, words):
-        for word in words:
-            count = self.kmer_counts[word]
-            self.binary_counts.append(
-                KmerCount(
-                    kmer=self.kmer_instance,
-                    string=self.binary_instances[self.binary_pks[word]],
-                    count=count
-                )
+    @timeit
+    @transaction.atomic
+    def insert_counts(self, values):
+        for chunk in self.chunks(values, 1000000):
+            query = (
+                "INSERT INTO kmer_kmercount (count, kmer_id, string_id) "
+                "VALUES {0}".format(','.join(chunk))
             )
-
-    def insert_count(self):
-        self.binary_counts = []
-        self.get_kmer_binary_inbulk(self.kmer_counts.keys())
-        self.build_counts(self.kmer_counts.keys())
-
-        # Insert bit encoded kmers counts
-        with transaction.atomic():
-            KmerCount.objects.bulk_create(self.binary_counts, batch_size=10000)
-
-        # Reset kmer counts
-        self.kmer_counts = {}
-
-        return None
+            cursor = connection.cursor()
+            cursor.execute(query)
 
     @transaction.atomic
     def empty_tables(self):
         # Empty Tables and Reset id counters to 1
         for table in self._tables:
             self.empty_table(table)
-            self.reset_counter(table)
 
     def empty_table(self, table):
-        cursor = connection.cursor()
-        cursor.execute("TRUNCATE TABLE {0} CASCADE;".format(table))
-
-    def reset_counter(self, table):
-        query = ("SELECT setval(pg_get_serial_sequence('{0}', 'id'), "
-                 "coalesce(max(id),0) + 1, false) FROM {0};").format(table)
+        query = "TRUNCATE TABLE {0} RESTART IDENTITY CASCADE;".format(table)
         cursor = connection.cursor()
         cursor.execute(query)

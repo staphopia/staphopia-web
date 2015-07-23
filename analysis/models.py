@@ -210,7 +210,7 @@ class VariantIndel(models.Model):
     annotation = models.ForeignKey('VariantAnnotation',
                                    on_delete=models.CASCADE)
 
-    reference_position = models.PositiveIntegerField()
+    reference_position = models.PositiveIntegerField(db_index=True)
     reference_base = models.TextField()
     alternate_base = models.TextField()
     is_deletion = models.BooleanField(default=False, db_index=True)
@@ -311,7 +311,7 @@ class VariantSNP(models.Model):
     annotation = models.ForeignKey('VariantAnnotation',
                                    on_delete=models.CASCADE)
 
-    reference_position = models.PositiveIntegerField()
+    reference_position = models.PositiveIntegerField(db_index=True)
     reference_base = models.CharField(max_length=1)
     alternate_base = models.CharField(max_length=1)
 
