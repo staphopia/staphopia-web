@@ -35,6 +35,7 @@ INSTALLED_APPS = (
     'registration',
     'crispy_forms',
     'django_email_changer',
+    'django_extensions',
 
     'staphopia',
     'autofill',
