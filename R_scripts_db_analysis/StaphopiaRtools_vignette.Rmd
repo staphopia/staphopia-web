@@ -1,0 +1,21 @@
+---
+title: "StaphopiaRtools vignette"
+author: "Tim Read"
+date: "August 10, 2015"
+output: html_document
+---
+
+Guide for using the helper function I am creating
+
+```{r}
+source("~/.staphopia_logon.R")
+db <- staphopia_logon()
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
