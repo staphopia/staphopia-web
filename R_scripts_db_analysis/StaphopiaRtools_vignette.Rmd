@@ -1,0 +1,40 @@
+---
+title: "StaphopiaRtools vignette"
+author: "Tim Read"
+date: "August 10, 2015"
+output: html_document
+---
+
+Guide for using the helper function I am creating.
+Open libraries
+```{r}
+library(dplyr)
+library(testthat)
+```
+
+Start by creating a database connection to Staphopia.
+
+```{r}
+source("~/.staphopia_logon.R")
+db <- staphopia_logon()
+```
+
+Pull down list of sample ids associated with the GWAS experiments we are planning. PRJNA239001 is the project id from the study of Alam et al 2014.
+
+```{r}
+P <- pull_ids(db,project = "PRJNA239001")
+Q <- pull_ids(db,comments = "NARSA")
+```
+
+
+Set up testing
+```{r}
+test_file("./test_dir/test_pull_ids.R")
+```
+
+
+
+```{r}
+sessionInfo()
+```
+
