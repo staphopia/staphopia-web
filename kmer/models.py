@@ -1,3 +1,9 @@
+"""
+Kmer Application Models.
+
+These are models to store information on the Kmer analysis of Staphopia
+samples.
+"""
 import psycopg2
 
 from django.db import models, connection, transaction
@@ -17,15 +23,14 @@ class Kmer(models.Model):
         unique_together = ('sample', 'version')
 
 
-class KmerString(models.Model):
+class BinaryManager(models.Manager):
 
-    """ Unique 31-mer strings. """
+    """
+    Binary Manager.
 
-    string = models.CharField(default='', max_length=31, unique=True,
-                              db_index=True)
-
-
-class KmerBinaryManager(models.Manager):
+    Use raw sql to insert binary strings into a temporary table, then only
+    insert those rows that don't exist in the binary table.
+    """
 
     def chunks(self, l, n):
         """ Yield successive n-sized chunks from l. """
@@ -34,10 +39,11 @@ class KmerBinaryManager(models.Manager):
 
     def bulk_create_new(self, recs):
         """
+        Bulk insert.
+
         bulk create recs, skipping key conflicts that would raise an
         IntegrityError return value: int count of recs written
         """
-
         if not recs:
             return 0
 
@@ -47,29 +53,30 @@ class KmerBinaryManager(models.Manager):
             # lock and empty tmp table
             sql = """
             BEGIN;
-            LOCK TABLE kmer_kmerbinarytmp IN EXCLUSIVE MODE;
-            TRUNCATE TABLE kmer_kmerbinarytmp RESTART IDENTITY;
+            LOCK TABLE kmer_binarytmp IN EXCLUSIVE MODE;
+            TRUNCATE TABLE kmer_binarytmp RESTART IDENTITY;
             """
             cursor.execute(sql)
 
             # write to tmp table
             values = ['({0})'.format(psycopg2.Binary(k)) for k in recs]
             for chunk in self.chunks(values, 1000000):
-                sql = "INSERT INTO kmer_kmerbinarytmp (string) VALUES {0};".format(','.join(chunk))
+                sql = """INSERT INTO kmer_binarytmp (string)
+                         VALUES {0};""".format(','.join(chunk))
                 cursor.execute(sql)
 
             sql = """
             BEGIN;
-            LOCK TABLE kmer_kmerbinary IN EXCLUSIVE MODE;
-            SELECT setval('kmer_kmerbinary_id_seq',
-                          (SELECT MAX(id) FROM "kmer_kmerbinary"));
-            INSERT INTO kmer_kmerbinary (string)
+            LOCK TABLE kmer_binary IN EXCLUSIVE MODE;
+            SELECT setval('kmer_binary_id_seq',
+                          (SELECT MAX(id) FROM "kmer_binary"));
+            INSERT INTO kmer_binary (string)
                 SELECT string
-                FROM kmer_kmerbinarytmp
+                FROM kmer_binarytmp
                 WHERE NOT EXISTS (
                     SELECT 1
-                    FROM kmer_kmerbinary
-                    WHERE kmer_kmerbinarytmp.string = kmer_kmerbinary.string
+                    FROM kmer_binary
+                    WHERE kmer_binarytmp.string = kmer_binary.string
                 );
             """
             cursor.execute(sql)
@@ -80,40 +87,47 @@ class KmerBinaryManager(models.Manager):
                 raise Exception("Unexpected statusmessage from INSERT")
 
 
-class KmerBinaryBase(models.Model):
+class BinaryBase(models.Model):
 
     """ Unique 31-mer strings stored as binary. """
 
-    string = models.BinaryField(max_length=8, unique=True, db_index=True)
+    string = models.BinaryField(max_length=8, unique=True)
 
     class Meta:
         abstract = True
 
 
-class KmerBinaryTmp(KmerBinaryBase):
+class BinaryTmp(BinaryBase):
+
+    """ Temporary table to check for existing kmers. """
+
     pass
 
 
-class KmerBinary(KmerBinaryBase):
-    objects = KmerBinaryManager()
+class Binary(BinaryBase):
+
+    """ Binary table manager. """
+
+    objects = BinaryManager()
 
     def __unicode__(self):
-        return "KmerBinary({})".format(self.string)
+        """ Return binary string. """
+        return "Binary({})".format(self.string)
 
 
-class KmerCount(models.Model):
+class Count(models.Model):
 
     """ Kmer counts from each sample. """
 
     kmer = models.ForeignKey('Kmer', on_delete=models.CASCADE)
-    string = models.ForeignKey('KmerBinary', on_delete=models.CASCADE)
+    string = models.ForeignKey('Binary', on_delete=models.CASCADE)
     count = models.PositiveIntegerField()
 
     class Meta:
         unique_together = ('kmer', 'string')
 
 
-class KmerTotal(models.Model):
+class Total(models.Model):
 
     """ Total kmer counts from each sample. """
 

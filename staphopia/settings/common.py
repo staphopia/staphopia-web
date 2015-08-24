@@ -36,14 +36,20 @@ INSTALLED_APPS = (
     'crispy_forms',
     'django_email_changer',
     'django_extensions',
+    'django_datatables_view',
 
+    # Staphopia Related
     'staphopia',
     'autofill',
     'samples',
     'ena',
     'analysis',
+    'assembly',
+    'gene',
+    'mlst',
+    'sequence',
+    'variant',
     'kmer',
-    'django_datatables_view',
 )
 
 # django-registration

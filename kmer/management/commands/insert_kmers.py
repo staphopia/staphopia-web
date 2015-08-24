@@ -171,8 +171,8 @@ class Command(BaseCommand):
         values = []
         query = """
             SELECT b.id, b.string
-            FROM kmer_kmerbinarytmp AS tmp
-            LEFT JOIN kmer_kmerbinary AS b
+            FROM kmer_binarytmp AS tmp
+            LEFT JOIN kmer_binary AS b
             ON b.string=tmp.string;
             """
         cursor = connection.cursor()
