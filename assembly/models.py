@@ -74,15 +74,3 @@ class Stats(models.Model):
         return self.version.version
     pipeline_version.short_description = 'Pipeline Version'
     pipeline_version.admin_order_field = 'version'
-
-
-class Contigs(models.Model):
-
-    """ Assembled contigs for each sample. """
-
-    assembly = models.ForeignKey('Stats', on_delete=models.CASCADE)
-    header = models.TextField(db_index=True)
-    contig = models.TextField()
-
-    class Meta:
-        unique_together = ('assembly', 'header')

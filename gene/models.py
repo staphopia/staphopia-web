@@ -7,7 +7,6 @@ Staphopia samples.
 from django.db import models
 
 from analysis.models import PipelineVersion
-from assembly.models import Contigs
 from samples.models import Sample
 from variant.models import Reference, Annotation
 
@@ -16,8 +15,7 @@ class Clusters(models.Model):
 
     """ UniRef90 Cluster Ids. """
 
-    cluster = models.TextField(unique=True)
-    dna = models.TextField()
+    name = models.TextField(unique=True)
     aa = models.TextField()
 
 
@@ -64,22 +62,36 @@ class References(models.Model):
     aa = models.TextField()
 
 
-class Annotation(models.Model):
+class Features(models.Model):
 
     """ Annotated info for each predicted gene. """
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     version = models.ForeignKey(PipelineVersion, on_delete=models.CASCADE)
-    contig = models.ForeignKey(Contigs, on_delete=models.CASCADE)
+    contig = models.ForeignKey('Contigs', on_delete=models.CASCADE)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
 
     start = models.PositiveIntegerField()
     end = models.PositiveIntegerField()
     is_positive = models.BooleanField()
+    is_tRNA = models.BooleanField()
     phase = models.PositiveSmallIntegerField()
 
     dna = models.TextField()
     aa = models.TextField()
 
     class Meta:
-        unique_together = ('sample', 'version', 'cluster')
+        unique_together = ('sample', 'version', 'contig', 'cluster',
+                           'start', 'end')
+
+
+class Contigs(models.Model):
+
+    """ Assembled contigs for each sample renamed by PROKKA. """
+
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    name = models.TextField(db_index=True)
+    sequence = models.TextField()
+
+    class Meta:
+        unique_together = ('sample', 'name')
