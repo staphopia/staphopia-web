@@ -3,7 +3,7 @@
 from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
-from staphopia.utils import timeit, gziplines
+from staphopia.utils import timeit, gziplines, read_fasta
 from samples.models import Sample
 from analysis.models import PipelineVersion
 from gene.models import Clusters, Contigs, Features
@@ -27,6 +27,10 @@ class Command(BaseCommand):
         parser.add_argument('proteins', metavar='FAA_GZIP',
                             help=('Predicted protein sequences from PROKKA ('
                                   'output with .faa.gz extension)'))
+        parser.add_argument('uniref90', metavar='UNIREF90_TAB',
+                            help=('All UniRef90 protein sequences in '
+                                  'compressed tab delimited format '
+                                  '(name\tsequence)'))
         parser.add_argument('--pipeline_version', type=str, default="0.1",
                             help=('Version of the pipeline used in this '
                                   'analysis. (Default: 0.1)'))
@@ -50,34 +54,17 @@ class Command(BaseCommand):
             raise CommandError('Error saving pipeline information')
 
         # Read Fasta files
-        self.contigs = self.read_fasta(opts['contigs'])
-        self.genes = self.read_fasta(opts['genes'])
-        self.proteins = self.read_fasta(opts['proteins'])
+        self.contigs = read_fasta(opts['contigs'], compressed=True)
+        self.genes = read_fasta(opts['genes'], compressed=True)
+        self.proteins = read_fasta(opts['proteins'], compressed=True)
+        self.uniref90 = opts['uniref90']
 
         # Insert contigs to database
         self.contig_pks = self.insert_contigs()
 
-        # Read GFF3 File
-        self.read_gff(opts['gff'])
-
-    @timeit
-    def read_fasta(self, fasta):
-        id = None
-        seq = []
-        records = {}
-        for line in gziplines(fasta):
-            line = line.rstrip()
-            if line.startswith('>'):
-                if len(seq):
-                    records[id] = ''.join(seq)
-                    seq = []
-                id = line[1:].split(' ')[0]
-            else:
-                seq.append(line)
-
-        records[id] = ''.join(seq)
-
-        return records
+        # Read GFF3 File and insert features
+        features = self.read_gff(opts['gff'])
+        Features.objects.bulk_create(features, batch_size=500)
 
     @timeit
     def insert_contigs(self):
@@ -91,16 +78,24 @@ class Command(BaseCommand):
                 )
                 pks[name] = contig.pk
             except IntegrityError as e:
-                raise CommandError('Error inserting contigs: {1}'.format(e))
+                raise CommandError('Error inserting contigs: {0}'.format(e))
 
         return pks
 
     def get_cluster_pk(self, cluster):
-        return Clusters.objects.get(name=cluster).values('id')
+        try:
+            cluster = Clusters.objects.get(name=cluster)
+        except Clusters.DoesNotExist:
+            from subprocess import Popen, PIPE
+            f = Popen(['grep', cluster, self.uniref90], stdout=PIPE)
+            stdout, stderr = f.communicate()
+            name, seq = stdout.rstrip().split('\t')
+            cluster = Clusters.objects.create(name=name, aa=seq)
+        return cluster.pk
 
     @timeit
     def read_gff(self, gff_file):
-        records = []
+        features = []
         types = ['CDS', 'tRNA']
 
         for line in gziplines(gff_file):
@@ -137,11 +132,12 @@ class Command(BaseCommand):
                         if attribute.startswith('ID'):
                             id = attribute.split('=')[1]
                         elif attribute.startswith('inference'):
-                            cluster = 'UniRef90_{0}'.format(
-                                attribute.split('UniRef90_')[1]
-                            )
+                            if 'UniRef90_' in attribute:
+                                cluster = 'UniRef90_{0}'.format(
+                                    attribute.split('UniRef90_')[1]
+                                )
 
-                    records.append(
+                    features.append(
                         Features(
                             sample=self.sample,
                             version=self.pipeline_version,
@@ -154,7 +150,9 @@ class Command(BaseCommand):
                             is_tRNA=True if cols[2] == 'tRNA' else False,
                             phase=int(cols[7]),
 
-                            dna=self.genes[id],
-                            aa=self.proteins[id],
+                            dna=self.genes[id] if id in self.genes else '',
+                            aa=self.proteins[id] if id in self.proteins else '',
                         )
                     )
+
+        return features

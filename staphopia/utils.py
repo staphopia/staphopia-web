@@ -18,3 +18,29 @@ def gziplines(fname):
     f = Popen(['zcat', fname], stdout=PIPE)
     for line in f.stdout:
         yield line
+
+
+def read_fasta(fasta, compressed=False):
+    id = None
+    seq = []
+    records = {}
+    fh = None
+
+    if compressed:
+        fh = gziplines(fasta)
+    else:
+        fh = open(fasta, 'r')
+
+    for line in fh:
+        line = line.rstrip()
+        if line.startswith('>'):
+            if len(seq):
+                records[id] = ''.join(seq)
+                seq = []
+            id = line[1:].split(' ')[0]
+        else:
+            seq.append(line)
+
+    records[id] = ''.join(seq)
+
+    return records
