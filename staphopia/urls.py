@@ -18,7 +18,7 @@ from django_email_changer.views import (
 #     sample_list,
 #     VariantViewSet,
 # )
-from samples.views import SummaryDatatablesView
+from sample.views import SummaryDatatablesView
 from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
 
@@ -43,8 +43,8 @@ urlpatterns = patterns(
 
     url(r'^$', 'staphopia.views.index', name='home'),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^submission/', 'samples.views.submission', name='submission'),
-    url(r'^top10/', 'samples.views.top10', name='top10'),
+    url(r'^submission/', 'sample.views.submission', name='submission'),
+    url(r'^top10/', 'sample.views.top10', name='top10'),
     url(r'^contact/', 'staphopia.views.contact', name='contact'),
     url(r'^accounts/settings/', 'staphopia.views.account_settings',
         name='account_settings'),
@@ -52,9 +52,9 @@ urlpatterns = patterns(
     # Samples
     url(r'^samples/data/$', SummaryDatatablesView.as_view(),
         name='samples_data'),
-    url(r'^samples/(?P<sample_tag>[^/]+)/', 'samples.views.samples',
+    url(r'^samples/(?P<sample_tag>[^/]+)/', 'sample.views.sample',
         name='sample_results'),
-    url(r'^samples/$', 'samples.views.samples', name='samples'),
+    url(r'^samples/$', 'sample.views.sample', name='samples'),
 
     # django-email-changer
     url(r'accounts/email/change/activate/(?P<code>[^/]+)/',

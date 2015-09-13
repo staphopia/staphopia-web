@@ -9,53 +9,20 @@ import os
 
 from django.db import models
 
-from analysis.models import PipelineVersion
-from samples.models import Sample
-
-
-class Variant(models.Model):
-
-    """ A linking table for Sample and Variant. """
-
-    sample = models.ForeignKey(Sample, related_name="variant_sample_id",
-                               on_delete=models.CASCADE)
-    version = models.ForeignKey(PipelineVersion,
-                                related_name="variant_version_id",
-                                on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('sample', 'version')
-
-    def sample_tag(self):
-        """ Display sample tag in admin view. """
-        return self.sample.sample_tag
-    sample_tag.short_description = 'Sample Tag'
-    sample_tag.admin_order_field = 'sample'
-
-    def pipeline_version(self):
-        """ Display pipeline version in admin view. """
-        return self.version.version
-    pipeline_version.short_description = 'Pipeline Version'
-    pipeline_version.admin_order_field = 'version'
+from sample.models import MetaData
 
 
 class ToIndel(models.Model):
 
     """ A linking table between samples and InDels. """
 
-    variant = models.ForeignKey('Variant', on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     indel = models.ForeignKey('Indel', on_delete=models.CASCADE)
     filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
     confidence = models.ForeignKey('Confidence', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('variant', 'indel')
-
-    def variant_id(self):
-        """ Display variant id in admin view. """
-        return self.variant.pk
-    variant_id.short_description = 'Variant ID'
-    variant_id.admin_order_field = 'variant'
+        unique_together = ('sample', 'indel')
 
     def indel_id(self):
         """ Display InDel id in admin view. """
@@ -98,26 +65,20 @@ class ToSNP(models.Model):
 
     """ A linking table between samples and SNPs. """
 
-    variant = models.ForeignKey('Variant', on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
     comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
     confidence = models.ForeignKey('Confidence', on_delete=models.CASCADE)
     filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('variant', 'snp')
+        unique_together = ('sample', 'snp')
 
     def sample_tag(self):
         """ Display sample_tag in admin view. """
         return self.variant.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'variant'
-
-    def variant_id(self):
-        """ Display variant id in admin view. """
-        return self.variant.pk
-    variant_id.short_description = 'Variant ID'
-    variant_id.admin_order_field = 'variant'
 
     def snp_id(self):
         """ Display InDel id in admin view. """

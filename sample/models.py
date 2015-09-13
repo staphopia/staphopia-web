@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-class Sample(models.Model):
+class MetaData(models.Model):
 
     """ """
 
@@ -78,13 +78,13 @@ def content_file_name(instance, filename):
 
 
 class Upload(models.Model):
-    sample = models.OneToOneField('Sample', primary_key=True,
+    sample = models.OneToOneField('MetaData', primary_key=True,
                                   on_delete=models.CASCADE)
     path = models.FileField(default='', upload_to=content_file_name)
     md5sum = models.CharField(default='', max_length=32, unique=True)
 
 
-class SamplesSummary(models.Model):
+class SampleSummary(models.Model):
 
     """ Unmananged model of a database view. """
 
@@ -208,3 +208,17 @@ class SamplesSummary(models.Model):
     class Meta:
         managed = False
         db_table = 'samples_summary'
+
+
+class Pipeline(models.Model):
+
+    """ Store pipeline version for history purposes. """
+
+    sample = models.OneToOneField('MetaData', unique=True,
+                                  on_delete=models.CASCADE)
+    assembly = models.TextField()
+    gene = models.TextField()
+    kmer = models.TextField()
+    mlst = models.TextField()
+    sequence = models.TextField()
+    variant = models.TextField()

@@ -41,9 +41,8 @@ INSTALLED_APPS = (
     # Staphopia Related
     'staphopia',
     'autofill',
-    'samples',
+    'sample',
     'ena',
-    'analysis',
     'assembly',
     'gene',
     'mlst',

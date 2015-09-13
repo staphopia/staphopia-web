@@ -6,8 +6,7 @@ Staphopia samples.
 """
 from django.db import models
 
-from analysis.models import PipelineVersion
-from samples.models import Sample
+from sample.models import MetaData
 from variant.models import Reference, Annotation
 
 
@@ -66,8 +65,7 @@ class Features(models.Model):
 
     """ Annotated info for each predicted gene. """
 
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    version = models.ForeignKey(PipelineVersion, on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     contig = models.ForeignKey('Contigs', on_delete=models.CASCADE)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
 
@@ -81,15 +79,14 @@ class Features(models.Model):
     aa = models.TextField()
 
     class Meta:
-        unique_together = ('sample', 'version', 'contig', 'cluster',
-                           'start', 'end')
+        unique_together = ('sample', 'contig', 'cluster', 'start', 'end')
 
 
 class Contigs(models.Model):
 
     """ Assembled contigs for each sample renamed by PROKKA. """
 
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     name = models.TextField(db_index=True)
     sequence = models.TextField()
 

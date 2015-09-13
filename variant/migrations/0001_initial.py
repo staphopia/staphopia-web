@@ -7,8 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('samples', '0003_auto_20150506_2138'),
-        ('analysis', '0018_auto_20150715_1758'),
+        ('sample', '0001_initial'),
     ]
 
     operations = [
@@ -103,6 +102,7 @@ class Migration(migrations.Migration):
                 ('confidence', models.ForeignKey(to='variant.Confidence')),
                 ('filters', models.ForeignKey(to='variant.Filter')),
                 ('indel', models.ForeignKey(to='variant.Indel')),
+                ('sample', models.ForeignKey(to='sample.MetaData')),
             ],
         ),
         migrations.CreateModel(
@@ -112,26 +112,9 @@ class Migration(migrations.Migration):
                 ('comment', models.ForeignKey(to='variant.Comment')),
                 ('confidence', models.ForeignKey(to='variant.Confidence')),
                 ('filters', models.ForeignKey(to='variant.Filter')),
+                ('sample', models.ForeignKey(to='sample.MetaData')),
                 ('snp', models.ForeignKey(to='variant.SNP')),
             ],
-        ),
-        migrations.CreateModel(
-            name='Variant',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('sample', models.ForeignKey(related_name='variant_sample_id', to='samples.Sample')),
-                ('version', models.ForeignKey(related_name='variant_version_id', to='analysis.PipelineVersion')),
-            ],
-        ),
-        migrations.AddField(
-            model_name='tosnp',
-            name='variant',
-            field=models.ForeignKey(to='variant.Variant'),
-        ),
-        migrations.AddField(
-            model_name='toindel',
-            name='variant',
-            field=models.ForeignKey(to='variant.Variant'),
         ),
         migrations.AddField(
             model_name='indel',
@@ -144,16 +127,12 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(to='variant.Reference'),
         ),
         migrations.AlterUniqueTogether(
-            name='variant',
-            unique_together=set([('sample', 'version')]),
-        ),
-        migrations.AlterUniqueTogether(
             name='tosnp',
-            unique_together=set([('variant', 'snp')]),
+            unique_together=set([('sample', 'snp')]),
         ),
         migrations.AlterUniqueTogether(
             name='toindel',
-            unique_together=set([('variant', 'indel')]),
+            unique_together=set([('sample', 'indel')]),
         ),
         migrations.AlterUniqueTogether(
             name='snp',

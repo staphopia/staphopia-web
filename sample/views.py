@@ -5,8 +5,8 @@ from django.db import transaction
 
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from samples.forms import SampleSubmissionForm
-from samples.models import Sample, SamplesSummary
+from sample.forms import SampleSubmissionForm
+from sample.models import MetaData, SampleSummary
 
 
 @transaction.atomic
@@ -15,12 +15,12 @@ def submission(request):
         form = None
         save_results = None
         if request.method == 'POST':
-            num_samples = Sample.objects.filter(user_id=request.user.id).count()
+            num_samples = MetaData.objects.filter(user_id=request.user.id).count()
             sample_tag = '{0}_{1}'.format(request.user.username,
                                           str(num_samples + 1).zfill(6))
             form = SampleSubmissionForm(request.user.id, request.POST,
                                         request.FILES,
-                                        instance=Sample(user=request.user,
+                                        instance=MetaData(user=request.user,
                                                         sample_tag=sample_tag))
             if form.is_valid():
                 new_sample = form.save()
@@ -38,7 +38,7 @@ def top10(request):
     return render_to_response('top10.html', {}, RequestContext(request))
 
 
-def samples(request, sample_tag=None):
+def sample(request, sample_tag=None):
     if sample_tag:
         return render_to_response('sample/results.html',
                                   {'sample_tag': sample_tag},
@@ -48,7 +48,7 @@ def samples(request, sample_tag=None):
 
 
 class SummaryDatatablesView(BaseDatatableView):
-    model = SamplesSummary
+    model = SampleSummary
     columns = [
         'sample_tag',
     ]

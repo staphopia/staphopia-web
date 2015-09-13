@@ -8,19 +8,7 @@ import psycopg2
 
 from django.db import models, connection, transaction
 
-from samples.models import Sample
-from analysis.models import PipelineVersion
-
-
-class Kmer(models.Model):
-
-    """ A linking table for Sample and Kmers. """
-
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    version = models.ForeignKey(PipelineVersion, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('sample', 'version')
+from sample.models import MetaData
 
 
 class BinaryManager(models.Manager):
@@ -119,19 +107,19 @@ class Count(models.Model):
 
     """ Kmer counts from each sample. """
 
-    kmer = models.ForeignKey('Kmer', on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     string = models.ForeignKey('Binary', on_delete=models.CASCADE)
     count = models.PositiveIntegerField()
 
     class Meta:
-        unique_together = ('kmer', 'string')
+        unique_together = ('sample', 'string')
 
 
 class Total(models.Model):
 
     """ Total kmer counts from each sample. """
 
-    kmer = models.ForeignKey('Kmer', on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     total = models.PositiveIntegerField()
     singletons = models.PositiveIntegerField()
     new_kmers = models.PositiveIntegerField()

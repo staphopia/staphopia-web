@@ -4,7 +4,7 @@ import urllib2
 from django.db import transaction
 from django.core.management.base import BaseCommand, CommandError
 
-from analysis.models import MLSTSequenceType
+from mlst.models import SequenceTypes
 
 
 class Command(BaseCommand):
@@ -26,7 +26,7 @@ class Command(BaseCommand):
                 if cols[0] == 'ST':
                     column_names = [c.replace('_', '') for c in cols]
                 else:
-                    st, created = MLSTSequenceType.objects.update_or_create(**{
+                    st, created = SequenceTypes.objects.update_or_create(**{
                         column_names[0]: cols[0],
                         column_names[1]: cols[1],
                         column_names[2]: cols[2],
@@ -36,7 +36,7 @@ class Command(BaseCommand):
                         column_names[6]: cols[6],
                         column_names[7]: cols[7],
                     })
-            print 'Total STs: {0}'.format(MLSTSequenceType.objects.count())
+            print 'Total STs: {0}'.format(SequenceTypes.objects.count())
         else:
             raise CommandError('Unable to retrieve updated STs, try again '
                                'later?')

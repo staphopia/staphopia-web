@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('samples', '__first__'),
+        ('sample', '0001_initial'),
     ]
 
     operations = [
@@ -29,9 +29,6 @@ class Migration(migrations.Migration):
                 ('library_selection', models.TextField()),
                 ('center_name', models.TextField()),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Run',
@@ -50,9 +47,6 @@ class Migration(migrations.Migration):
                 ('fastq_ftp', models.TextField()),
                 ('experiment_accession', models.ForeignKey(to='ena.Experiment', db_column=b'experiment_accession')),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Study',
@@ -62,29 +56,22 @@ class Migration(migrations.Migration):
                 ('study_title', models.TextField()),
                 ('study_alias', models.TextField()),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='ToSample',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('experiment_accession', models.ForeignKey(to='ena.Experiment', db_column=b'experiment_accession')),
-                ('sample', models.ForeignKey(to='samples.Sample')),
+                ('sample', models.ForeignKey(to='sample.MetaData')),
             ],
-            options={
-            },
-            bases=(models.Model,),
-        ),
-        migrations.AlterUniqueTogether(
-            name='tosample',
-            unique_together=set([('experiment_accession', 'sample')]),
         ),
         migrations.AddField(
             model_name='experiment',
             name='study_accession',
             field=models.ForeignKey(to='ena.Study', db_column=b'study_accession'),
-            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='tosample',
+            unique_together=set([('experiment_accession', 'sample')]),
         ),
     ]

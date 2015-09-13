@@ -11,8 +11,8 @@ from crispy_forms.layout import *
 from crispy_forms.bootstrap import *
 
 from autofill.models import AutoFill
-from samples.models import Sample, Upload
-from samples.forms_constants import *
+from sample.models import MetaData, Upload
+from sample.forms_constants import *
 
 class SampleSubmissionForm(forms.ModelForm):
     sequencing_platform = forms.ChoiceField(
@@ -27,7 +27,7 @@ class SampleSubmissionForm(forms.ModelForm):
                                required = False,)
     
     class Meta:
-        model = Sample
+        model = MetaData
         fields = SUBMISSION_FIELDS
         labels = SUBMISSION_LABELS
         widgets = SUBMISSION_WIDGETS

@@ -6,21 +6,19 @@ samples.
 """
 from django.db import models
 
-from analysis.models import PipelineVersion
-from samples.models import Sample
+from sample.models import MetaData
 
 
-class Stats(models.Model):
+class Quality(models.Model):
 
     """
-    Statistics of input FASTQ file.
+    Quality statistics of input FASTQ file.
 
     Can store original and filtered stats.
     """
 
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     is_original = models.BooleanField(default=False, db_index=True)
-    version = models.ForeignKey(PipelineVersion, on_delete=models.CASCADE)
 
     rank = models.PositiveSmallIntegerField(db_index=True)
 
@@ -39,7 +37,7 @@ class Stats(models.Model):
     qual_75th = models.DecimalField(max_digits=6, decimal_places=3)
 
     class Meta:
-        unique_together = ('sample', 'is_original', 'version')
+        unique_together = ('sample', 'is_original')
 
     def sample_tag(self):
         """ Display sample tag in admin view. """
@@ -53,9 +51,3 @@ class Stats(models.Model):
         return ranks[self.rank]
     sequence_rank.short_description = 'Rank'
     sequence_rank.admin_order_field = 'rank'
-
-    def pipeline_version(self):
-        """ Display pipeline version in admin view. """
-        return self.version.version
-    pipeline_version.short_description = 'Pipeline Version'
-    pipeline_version.admin_order_field = 'version'

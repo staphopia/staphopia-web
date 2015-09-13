@@ -1,6 +1,6 @@
 from django.db import models
 
-from samples.models import Sample
+from sample.models import MetaData
 
 
 class ToSample(models.Model):
@@ -10,7 +10,7 @@ class ToSample(models.Model):
     experiment_accession = models.ForeignKey('Experiment',
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE)
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('experiment_accession', 'sample')

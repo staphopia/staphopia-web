@@ -6,8 +6,7 @@ samples.
 """
 from django.db import models
 
-from analysis.models import PipelineVersion
-from samples.models import Sample
+from sample.models import MetaData
 
 
 class Stats(models.Model):
@@ -18,11 +17,7 @@ class Stats(models.Model):
     Both contigs and scaffolds are stored.
     """
 
-    sample = models.ForeignKey(Sample, related_name="assembly_sample_id",
-                               on_delete=models.CASCADE)
-    version = models.ForeignKey(PipelineVersion,
-                                related_name="assembly_version_id",
-                                on_delete=models.CASCADE)
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     is_scaffolds = models.BooleanField(default=False, db_index=True)
 
     total_contig = models.PositiveSmallIntegerField()
@@ -61,16 +56,10 @@ class Stats(models.Model):
     num_contig_non_acgtn = models.PositiveSmallIntegerField()
 
     class Meta:
-        unique_together = ('sample', 'is_scaffolds', 'version')
+        unique_together = ('sample', 'is_scaffolds')
 
     def sample_tag(self):
         """ Display sample tag in admin view. """
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'sample'
-
-    def pipeline_version(self):
-        """ Display pipeline version in admin view. """
-        return self.version.version
-    pipeline_version.short_description = 'Pipeline Version'
-    pipeline_version.admin_order_field = 'version'

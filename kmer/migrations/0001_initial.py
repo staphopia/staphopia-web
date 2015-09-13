@@ -7,71 +7,52 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('samples', '0003_auto_20150506_2138'),
-        ('analysis', '0017_auto_20150625_0413'),
+        ('sample', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Kmer',
+            name='Binary',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('sample', models.ForeignKey(to='samples.Sample')),
-                ('version', models.ForeignKey(to='analysis.PipelineVersion')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='KmerBinary',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('string', models.BinaryField(unique=True, max_length=8, db_index=True)),
+                ('string', models.BinaryField(unique=True, max_length=8)),
             ],
             options={
                 'abstract': False,
             },
         ),
         migrations.CreateModel(
-            name='KmerBinaryTmp',
+            name='BinaryTmp',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('string', models.BinaryField(unique=True, max_length=8, db_index=True)),
+                ('string', models.BinaryField(unique=True, max_length=8)),
             ],
             options={
                 'abstract': False,
             },
         ),
         migrations.CreateModel(
-            name='KmerCount',
+            name='Count',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('count', models.PositiveIntegerField()),
-                ('kmer', models.ForeignKey(to='kmer.Kmer')),
-                ('string', models.ForeignKey(to='kmer.KmerBinary')),
+                ('sample', models.ForeignKey(to='sample.MetaData')),
+                ('string', models.ForeignKey(to='kmer.Binary')),
             ],
         ),
         migrations.CreateModel(
-            name='KmerString',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('string', models.CharField(default=b'', unique=True, max_length=31, db_index=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='KmerTotal',
+            name='Total',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('total', models.PositiveIntegerField()),
                 ('singletons', models.PositiveIntegerField()),
                 ('new_kmers', models.PositiveIntegerField()),
-                ('kmer', models.ForeignKey(to='kmer.Kmer')),
+                ('runtime', models.PositiveIntegerField(default=0)),
+                ('sample', models.ForeignKey(to='sample.MetaData')),
             ],
         ),
         migrations.AlterUniqueTogether(
-            name='kmercount',
-            unique_together=set([('kmer', 'string')]),
-        ),
-        migrations.AlterUniqueTogether(
-            name='kmer',
-            unique_together=set([('sample', 'version')]),
+            name='count',
+            unique_together=set([('sample', 'string')]),
         ),
     ]

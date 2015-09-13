@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from samples.models import Sample, SamplesSummary
+from sample.models import MetaData, SampleSummary
 
 
-@admin.register(Sample)
+@admin.register(MetaData)
 class SampleAdmin(admin.ModelAdmin):
     list_display = (
         'user',
@@ -58,7 +58,7 @@ class SampleAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(SamplesSummary)
+@admin.register(SampleSummary)
 class SamplesSummaryAdmin(admin.ModelAdmin):
     list_display = (
         'sample_tag',

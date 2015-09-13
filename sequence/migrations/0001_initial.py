@@ -7,13 +7,12 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('samples', '0003_auto_20150506_2138'),
-        ('analysis', '0018_auto_20150715_1758'),
+        ('sample', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Stats',
+            name='Quality',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('is_original', models.BooleanField(default=False, db_index=True)),
@@ -29,12 +28,11 @@ class Migration(migrations.Migration):
                 ('qual_25th', models.DecimalField(max_digits=6, decimal_places=3)),
                 ('qual_median', models.DecimalField(max_digits=6, decimal_places=3)),
                 ('qual_75th', models.DecimalField(max_digits=6, decimal_places=3)),
-                ('sample', models.ForeignKey(to='samples.Sample')),
-                ('version', models.ForeignKey(to='analysis.PipelineVersion')),
+                ('sample', models.ForeignKey(to='sample.MetaData')),
             ],
         ),
         migrations.AlterUniqueTogether(
-            name='stats',
-            unique_together=set([('sample', 'is_original', 'version')]),
+            name='quality',
+            unique_together=set([('sample', 'is_original')]),
         ),
     ]

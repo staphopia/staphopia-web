@@ -1,5 +1,6 @@
 *.py[cod]
 *.sqlite3
+*.sh
 fabfile/*
 staphopia/settings/private.py
 logs/*

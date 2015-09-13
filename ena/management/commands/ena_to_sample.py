@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 
 from ena.models import Experiment, ToSample, Run
-from samples.models import Sample
+from sample.models import MetaData
 
 
 class Command(BaseCommand):
@@ -35,7 +35,7 @@ class Command(BaseCommand):
         else:
             user = User.objects.get(username='ena')
             ToSample.objects.all().delete()
-            Sample.objects.filter(user=user).delete()
+            MetaData.objects.filter(user=user).delete()
             sys.exit()
 
         experiment = Experiment.objects.get(pk=options['experiment'])
@@ -43,7 +43,7 @@ class Command(BaseCommand):
         try:
             # Experiment already has a sampleid
             to_sample = ToSample.objects.get(experiment_accession=experiment)
-            Sample.objects.filter(pk=to_sample.sample.pk).update(
+            MetaData.objects.filter(pk=to_sample.sample.pk).update(
                 is_paired=run.is_paired,
                 sequencing_center=experiment.center_name,
                 sequencing_platform=experiment.instrument_model,
@@ -75,7 +75,7 @@ class Command(BaseCommand):
             user = User.objects.get(username='ena')
             sample_tag = options['experiment']
 
-            sample = Sample(
+            sample = MetaData(
                 user=user,
                 sample_tag=sample_tag,
                 is_paired=run.is_paired,
