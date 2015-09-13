@@ -78,15 +78,30 @@ class Command(BaseCommand):
             raise CommandError('SAMPLE_TAG: {0} does not exist'.format(
                 sample_tag
             ))
-            
-        try:
-            variant_count = Confidence.objects.filter(sample=self.sample).count()
-            if variant_count:
+
+        confidence_count = Confidence.objects.filter(sample=self.sample).count()
+        snp_count = ToSNP.objects.filter(sample=self.sample).count()
+        indel_count = ToIndel.objects.filter(sample=self.sample).count()
+        
+        # Get if difference in counts
+        diff = confidence_count - (snp_count + indel_count)
+        if diff:
+            # File didn't completely load, delete and reload
+            print(
+                ('{0} did not complete in previous attempt, deleting '
+                 'existing records.').format(sample_tag), 
+                 file=sys.stderr
+            )
+            Confidence.objects.filter(sample=self.sample).delete()
+            ToSNP.objects.filter(sample=self.sample).delete()
+            ToIndel.objects.filter(sample=self.sample).delete()
+        # Test to make sure all counts are not 0
+        else:
+            if confidence_count and snp_count and indel_count:
+                # File has been loaded
                 raise CommandError('{0} has already been loaded'.format(
                     sample_tag
                 ))
-        except Confidence.DoesNotExist:
-            print('Sample not found in the database, loading will proceed.')
 
     @timeit
     def get_positions(self, input):
@@ -391,17 +406,17 @@ class Command(BaseCommand):
     @transaction.atomic
     @timeit
     def insert_snps(self):
-        ToSNP.objects.bulk_create(self.snps, batch_size=5000)
+        ToSNP.objects.bulk_create(self.snps, batch_size=50000)
         return None
 
     @transaction.atomic
     @timeit
     def insert_indels(self):
-        ToIndel.objects.bulk_create(self.indels, batch_size=5000)
+        ToIndel.objects.bulk_create(self.indels, batch_size=50000)
         return None
 
     @transaction.atomic
     @timeit
     def insert_confidence(self):
-        Confidence.objects.bulk_create(self.confidence, batch_size=5000)
+        Confidence.objects.bulk_create(self.confidence, batch_size=50000)
         return None
