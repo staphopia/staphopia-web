@@ -6,12 +6,7 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
-from analysis.models import (
-    VariantAnnotation,
-    VariantComment,
-    VariantReference,
-    VariantSNP
-)
+from variant.models import Annotation, Comment, Reference, SNP
 
 
 class Command(BaseCommand):
@@ -58,7 +53,7 @@ class Command(BaseCommand):
     def get_reference_instance(self):
         try:
             r = splitext(basename(self.vcf_reader.metadata['reference']))[0]
-            self.reference, created = VariantReference.objects.get_or_create(
+            self.reference, created = Reference.objects.get_or_create(
                 name=r
             )
         except IntegrityError:
@@ -67,28 +62,28 @@ class Command(BaseCommand):
     def get_locus_tags(self):
         """ Return the primary key of each locus tag. """
         self.locus_tags = {}
-        for tag in VariantAnnotation.objects.filter(reference=self.reference):
+        for tag in Annotation.objects.filter(reference=self.reference):
             self.locus_tags[tag.locus_tag] = tag.pk
 
     def get_annotation_instances(self):
         """ Return the instance for each annotation. """
         pks = []
-        for ks in VariantAnnotation.objects.filter(reference=self.reference):
+        for ks in Annotation.objects.filter(reference=self.reference):
             pks.append(ks.pk)
-        self.annotations = VariantAnnotation.objects.in_bulk(pks)
+        self.annotations = Annotation.objects.in_bulk(pks)
 
     def get_comments(self):
         """ Return the primary key of each comment. """
         self.comments = {}
-        for c in VariantComment.objects.all():
+        for c in Comment.objects.all():
             self.comments[c.comment] = c.pk
 
     def get_comment_instances(self):
         """ Return the instance for each comment. """
         pks = []
-        for ks in VariantComment.objects.all():
+        for ks in Comment.objects.all():
             pks.append(ks.pk)
-        self.comment_instances = VariantComment.objects.in_bulk(pks)
+        self.comment_instances = Comment.objects.in_bulk(pks)
 
     @transaction.atomic
     def get_annotation(self, record):
@@ -98,7 +93,7 @@ class Command(BaseCommand):
             pk = self.locus_tags[locus_tag]
             annotation = self.annotations[pk]
         elif locus_tag is not None:
-            annotation = VariantAnnotation.objects.create(
+            annotation = Annotation.objects.create(
                 reference=self.reference,
                 locus_tag=locus_tag,
                 protein_id=record.INFO['ProteinID'][0],
@@ -114,7 +109,7 @@ class Command(BaseCommand):
             self.annotations[annotation.pk] = annotation
         elif locus_tag is None:
             if 'inter_genic' not in self.locus_tags:
-                annotation = VariantAnnotation.objects.create(
+                annotation = Annotation.objects.create(
                     reference=self.reference,
                     locus_tag='inter_genic',
                     protein_id='inter_genic',
@@ -141,7 +136,7 @@ class Command(BaseCommand):
             pk = self.comments[c]
             comment = self.comment_instances[pk]
         else:
-            comment = VariantComment.objects.create(comment=c)
+            comment = Comment.objects.create(comment=c)
             self.comments[c] = comment.pk
             self.comment_instances[comment.pk] = comment
 
@@ -149,7 +144,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def create_snp(self, record, reference, annotation):
-        self.snps.append(VariantSNP(
+        self.snps.append(SNP(
             reference=reference,
             annotation=annotation,
             reference_position=record.POS,
@@ -188,5 +183,5 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def insert_snps(self):
-        VariantSNP.objects.bulk_create(self.snps, batch_size=2000)
+        SNP.objects.bulk_create(self.snps, batch_size=2000)
         return None

@@ -4,14 +4,16 @@ Variant Application Models.
 These are models to import VCF files from the Staphopia variant analysis
 pipeline.
 """
-
+import architect
 import os
 
 from django.db import models
 
 from sample.models import MetaData
 
-
+# Create partition every 5 million records
+@architect.install('partition', type='range', subtype='integer', 
+                   constraint='5000000', column='id')
 class ToIndel(models.Model):
 
     """ A linking table between samples and InDels. """
@@ -19,7 +21,6 @@ class ToIndel(models.Model):
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     indel = models.ForeignKey('Indel', on_delete=models.CASCADE)
     filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
-    confidence = models.ForeignKey('Confidence', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('sample', 'indel')
@@ -61,6 +62,9 @@ class Indel(models.Model):
     reference_strain.admin_order_field = 'reference'
 
 
+# Create partition every 5 million records
+@architect.install('partition', type='range', subtype='integer', 
+                   constraint='5000000', column='id')
 class ToSNP(models.Model):
 
     """ A linking table between samples and SNPs. """
@@ -68,7 +72,6 @@ class ToSNP(models.Model):
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
     comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
-    confidence = models.ForeignKey('Confidence', on_delete=models.CASCADE)
     filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
 
     class Meta:
@@ -134,9 +137,14 @@ class SNP(models.Model):
     reference_strain.short_description = 'Reference Strain'
     reference_strain.admin_order_field = 'reference'
 
-
+    
+# Create partition every 5 million records
+@architect.install('partition', type='range', subtype='integer', 
+                   constraint='5000000', column='id')
 class Confidence(models.Model):
     """ INFO and Qual, fields specific to each variant. """
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    reference_position = models.PositiveIntegerField()
     AC = models.TextField(default="")
     AD = models.TextField(default="")
     AF = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
@@ -187,11 +195,6 @@ class Annotation(models.Model):
     """ GenBank annotations of a reference genome. """
 
     reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
-
-    start = models.PositiveIntegerField()
-    end = models.PositiveIntegerField()
-    is_positive = models.BooleanField()
-
     locus_tag = models.CharField(max_length=24)
     protein_id = models.CharField(max_length=24)
     gene = models.CharField(max_length=12)

@@ -56,6 +56,10 @@ class References(models.Model):
 
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
     annotation = models.ForeignKey(Annotation)
+    start = models.PositiveIntegerField()
+    end = models.PositiveIntegerField()
+    is_positive = models.BooleanField()
+    is_tRNA = models.BooleanField()
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
     dna = models.TextField()
     aa = models.TextField()

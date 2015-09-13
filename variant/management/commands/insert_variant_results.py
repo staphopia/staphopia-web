@@ -1,5 +1,7 @@
 """ Insert variant analysis results into database. """
+from __future__ import print_function
 from os.path import basename, splitext
+import sys
 import time
 import vcf
 
@@ -7,32 +9,19 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
-from samples.models import Sample
-from analysis.models import (
-    PipelineVersion,
-    Variant,
-    VariantAnnotation,
-    VariantComment,
-    VariantFilter,
-    VariantIndel,
-    VariantReference,
-    VariantSNP,
-    VariantToIndel,
-    VariantToSNP
+from staphopia.utils import timeit
+from sample.models import MetaData
+from variant.models import (
+    Annotation,
+    Comment,
+    Filter,
+    Indel,
+    Reference,
+    SNP,
+    ToIndel,
+    ToSNP,
+    Confidence
 )
-
-
-def timeit(method):
-
-    def timed(*args, **kw):
-        ts = time.time()
-        result = method(*args, **kw)
-        te = time.time()
-
-        print '%r\t%2.2f sec' % (method.__name__, te - ts)
-        return result
-
-    return timed
 
 
 class Command(BaseCommand):
@@ -46,25 +35,19 @@ class Command(BaseCommand):
         parser.add_argument('input', metavar='INPUT_VCF',
                             help=('Gzipped annotated VCF formated file to '
                                   'be inserted'))
-        parser.add_argument('--pipeline_version', default='0.1',
-                            help=('Version of the pipeline used in this '
-                                  'analysis. (Default: 0.1)'))
 
     def handle(self, *args, **opts):
         """ Insert results to database. """
 
         # Get sample and pipeline instances
+        print('Working on {0}.'.format(opts['sample_tag']), file=sys.stderr)
         self.get_sample_instance(opts['sample_tag'])
-        self.get_pipeline_instance(opts['pipeline_version'])
 
         # Open VCF for reading
         self.open_vcf(opts['input'])
 
         # Get reference info
         self.get_reference_instance()
-
-        # Create Variant entry
-        self.create_new_variant()
 
         # Get data already in the DB
         self.get_annotation_instances()
@@ -78,30 +61,32 @@ class Command(BaseCommand):
         # Store variants for bulk create
         self.snps = []
         self.indels = []
+        self.confidence = []
 
-        # Read through VCF
+        # Read through VCF, and insert Confidences
         self.read_vcf()
 
-        # Ready to insert variants
+        # Ready to insert variants and confidence
         self.insert_snps()
         self.insert_indels()
+        self.insert_confidence()
 
     def get_sample_instance(self, sample_tag):
         try:
-            self.sample = Sample.objects.get(sample_tag=sample_tag)
-        except Sample.DoesNotExist:
+            self.sample = MetaData.objects.get(sample_tag=sample_tag)
+        except MetaData.DoesNotExist:
             raise CommandError('SAMPLE_TAG: {0} does not exist'.format(
                 sample_tag
             ))
-
-    def get_pipeline_instance(self, version):
+            
         try:
-            self.pipeline_version, c = PipelineVersion.objects.get_or_create(
-                module='variant',
-                version=version
-            )
-        except IntegrityError as e:
-            raise CommandError('PipelineVersion Error: {0}'.format(e))
+            variant_count = Confidence.objects.filter(sample=self.sample).count()
+            if variant_count:
+                raise CommandError('{0} has already been loaded'.format(
+                    sample_tag
+                ))
+        except Confidence.DoesNotExist:
+            print('Sample not found in the database, loading will proceed.')
 
     @timeit
     def get_positions(self, input):
@@ -119,69 +104,55 @@ class Command(BaseCommand):
     def get_reference_instance(self):
         try:
             r = splitext(basename(self.vcf_reader.metadata['reference']))[0]
-            self.reference, created = VariantReference.objects.get_or_create(
+            self.reference, created = Reference.objects.get_or_create(
                 name=r
             )
         except IntegrityError:
             raise CommandError('Error getting/saving reference information')
 
-    @transaction.atomic
-    def create_new_variant(self):
-        try:
-            self.variant = Variant.objects.create(
-                sample=self.sample,
-                version=self.pipeline_version
-            )
-        except IntegrityError:
-            raise CommandError(
-                'Variant entry already exists for {0} ({1})'.format(
-                    self.sample, self.pipeline_version
-                )
-            )
-
     @timeit
     def get_locus_tags(self):
         """ Return the primary key of each locus tag. """
         self.locus_tags = {}
-        for tag in VariantAnnotation.objects.filter(reference=self.reference):
+        for tag in Annotation.objects.filter(reference=self.reference):
             self.locus_tags[tag.locus_tag] = tag.pk
 
     @timeit
     def get_annotation_instances(self):
         """ Return the instance for each annotation. """
         pks = []
-        for ks in VariantAnnotation.objects.filter(reference=self.reference):
+        for ks in Annotation.objects.filter(reference=self.reference):
             pks.append(ks.pk)
-        self.annotations = VariantAnnotation.objects.in_bulk(pks)
+        self.annotations = Annotation.objects.in_bulk(pks)
 
     def get_comments(self):
         """ Return the primary key of each comment. """
         self.comments = {}
-        for c in VariantComment.objects.all():
+        for c in Comment.objects.all():
             self.comments[c.comment] = c.pk
 
     @timeit
     def get_comment_instances(self):
         """ Return the instance for each comment. """
         pks = []
-        for ks in VariantComment.objects.all():
+        for ks in Comment.objects.all():
             pks.append(ks.pk)
-        self.comment_instances = VariantComment.objects.in_bulk(pks)
+        self.comment_instances = Comment.objects.in_bulk(pks)
 
     @timeit
     def get_filters(self):
         """ Return the primary key of each comment. """
         self.filters = {}
-        for f in VariantFilter.objects.all():
+        for f in Filter.objects.all():
             self.filters[f.name] = f.pk
 
     @timeit
     def get_filter_instances(self):
         """ Return the instance for each comment. """
         pks = []
-        for ks in VariantFilter.objects.all():
+        for ks in Filter.objects.all():
             pks.append(ks.pk)
-        self.filter_instances = VariantFilter.objects.in_bulk(pks)
+        self.filter_instances = Filter.objects.in_bulk(pks)
 
     @transaction.atomic
     def get_annotation(self, record):
@@ -191,7 +162,7 @@ class Command(BaseCommand):
             pk = self.locus_tags[locus_tag]
             annotation = self.annotations[pk]
         elif locus_tag is not None:
-            annotation = VariantAnnotation.objects.create(
+            annotation = Annotation.objects.create(
                 reference=self.reference,
                 locus_tag=locus_tag,
                 protein_id=record.INFO['ProteinID'][0],
@@ -207,7 +178,7 @@ class Command(BaseCommand):
             self.annotations[annotation.pk] = annotation
         elif locus_tag is None:
             if 'inter_genic' not in self.locus_tags:
-                annotation = VariantAnnotation.objects.create(
+                annotation = Annotation.objects.create(
                     reference=self.reference,
                     locus_tag='inter_genic',
                     protein_id='inter_genic',
@@ -237,7 +208,7 @@ class Command(BaseCommand):
             pk = self.filters[f]
             record_filters = self.filter_instances[pk]
         else:
-            record_filters = VariantFilter.objects.create(name=f)
+            record_filters = Filter.objects.create(name=f)
             self.filters[f] = record_filters.pk
             self.filter_instances[record_filters.pk] = record_filters
 
@@ -253,7 +224,7 @@ class Command(BaseCommand):
             pk = self.comments[c]
             comment = self.comment_instances[pk]
         else:
-            comment = VariantComment.objects.create(comment=c)
+            comment = Comment.objects.create(comment=c)
             self.comments[c] = comment.pk
             self.comment_instances[comment.pk] = comment
 
@@ -262,7 +233,7 @@ class Command(BaseCommand):
     @transaction.atomic
     @timeit
     def create_snp(self, record, reference, annotation):
-        return VariantSNP.objects.create(
+        return SNP.objects.create(
             reference=reference,
             annotation=annotation,
             reference_position=record.POS,
@@ -290,7 +261,7 @@ class Command(BaseCommand):
 
     def get_snps(self):
         self.all_snps = {}
-        for snp in VariantSNP.objects.filter(
+        for snp in SNP.objects.filter(
             reference=self.reference,
             reference_position__in=[record.POS for record in self.records]
         ):
@@ -314,9 +285,9 @@ class Command(BaseCommand):
                 try:
                     snp = self.create_snp(record, reference, annotation).pk
                 except IntegrityError:
-                    print "trying SNP ({0},{1}->{2}) again".format(
+                    print("trying SNP ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT[0]
-                    )
+                    ), file=sys.stderr)
                     time.sleep(1)
                     continue
 
@@ -324,7 +295,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def create_indel(self, record, reference, annotation):
-        return VariantIndel.objects.create(
+        return Indel.objects.create(
             reference=reference,
             annotation=annotation,
             reference_position=record.POS,
@@ -339,20 +310,20 @@ class Command(BaseCommand):
         indel = False
         while not indel:
             try:
-                indel = VariantIndel.objects.get(
+                indel = Indel.objects.get(
                     reference=reference,
                     reference_position=record.POS,
                     reference_base=record.REF,
                     alternate_base=(record.ALT if len(record.ALT) > 1 else
                                     record.ALT[0]),
                 )
-            except VariantIndel.DoesNotExist:
+            except Indel.DoesNotExist:
                 try:
                     indel = self.create_indel(record, reference, annotation)
                 except IntegrityError:
-                    print "trying Indel ({0},{1}->{2}) again".format(
+                    print("trying Indel ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT
-                    )
+                    ), file=sys.stderr)
                     time.sleep(1)
                     continue
 
@@ -361,11 +332,30 @@ class Command(BaseCommand):
     @timeit
     def read_vcf(self):
         # Insert VCF Records
+        variant_count = 0
         for record in self.records:
             # Get annotation, filter, comment
             annotation = self.get_annotation(record)
             record_filters = self.get_filter(record.FILTER)
 
+            # Store variant confidence
+            self.confidence.append(
+                Confidence(
+                    sample=self.sample,
+                    reference_position=record.POS,
+                    AC=str(record.INFO['AC']),
+                    AD=str(record.samples[0]['AD']),
+                    AF=record.INFO['AF'][0],
+                    DP=record.INFO['DP'],
+                    GQ=record.samples[0]['GQ'],
+                    GT=record.samples[0]['GT'],
+                    MQ=record.INFO['MQ'],
+                    PL=str(record.samples[0]['PL']),
+                    QD=record.INFO['QD'],
+                    quality=record.QUAL
+                )
+            )
+            
             # Insert SNP/Indel
             if record.is_snp:
                 comment = self.get_comment(record.INFO['Comments'][0])
@@ -374,58 +364,44 @@ class Command(BaseCommand):
                 # Store SNP
                 try:
                     self.snps.append(
-                        VariantToSNP(
-                            variant=self.variant,
+                        ToSNP(
+                            sample=self.sample,
                             snp_id=snp,
                             comment=comment,
-                            filters=record_filters,
-                            AC=str(record.INFO['AC']),
-                            AD=str(record.samples[0]['AD']),
-                            AF=record.INFO['AF'][0],
-                            DP=record.INFO['DP'],
-                            GQ=record.samples[0]['GQ'],
-                            GT=record.samples[0]['GT'],
-                            MQ=record.INFO['MQ'],
-                            PL=str(record.samples[0]['PL']),
-                            QD=record.INFO['QD'],
-                            quality=record.QUAL
+                            filters=record_filters
                         )
                     )
                 except IntegrityError as e:
-                    raise CommandError('VariantSNP Error: {0}'.format(e))
+                    raise CommandError('ToSNP Error: {0}'.format(e))
             else:
                 indel = self.get_indel(record, self.reference, annotation)
 
                 # Insert InDel
                 try:
                     self.indels.append(
-                        VariantToIndel(
-                            variant=self.variant,
+                        ToIndel(
+                            sample=self.sample,
                             indel=indel,
                             filters=record_filters,
-                            AC=str(record.INFO['AC']),
-                            AD=str(record.samples[0]['AD']),
-                            AF=record.INFO['AF'][0],
-                            DP=record.INFO['DP'],
-                            GQ=record.samples[0]['GQ'],
-                            GT=record.samples[0]['GT'],
-                            MQ=record.INFO['MQ'],
-                            PL=str(record.samples[0]['PL']),
-                            QD=record.INFO['QD'],
-                            quality=record.QUAL
                         )
                     )
                 except IntegrityError as e:
-                    raise CommandError('VariantIndel Error: {0}'.format(e))
+                    raise CommandError('ToIndel Error: {0}'.format(e))
 
     @transaction.atomic
     @timeit
     def insert_snps(self):
-        VariantToSNP.objects.bulk_create(self.snps, batch_size=5000)
+        ToSNP.objects.bulk_create(self.snps, batch_size=5000)
         return None
 
     @transaction.atomic
     @timeit
     def insert_indels(self):
-        VariantToIndel.objects.bulk_create(self.indels, batch_size=5000)
+        ToIndel.objects.bulk_create(self.indels, batch_size=5000)
+        return None
+
+    @transaction.atomic
+    @timeit
+    def insert_confidence(self):
+        Confidence.objects.bulk_create(self.confidence, batch_size=5000)
         return None
