@@ -68,3 +68,16 @@ class Run(models.Model):
     fastq_md5 = models.TextField()
     fastq_aspera = models.TextField()
     fastq_ftp = models.TextField()
+
+
+class Publication(models.Model):
+    '''
+
+    '''
+    experiment_accession = models.ForeignKey('Experiment',
+                                             db_column='experiment_accession',
+                                             on_delete=models.CASCADE)
+    pmid = models.TextField()
+
+    class Meta:
+        unique_together = ('experiment_accession', 'pmid')
