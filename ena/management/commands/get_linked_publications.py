@@ -50,7 +50,14 @@ class Command(BaseCommand):
 
     def cook_soup(self, url):
         request = urllib2.Request(url)
-        xml = urllib2.urlopen(request).read()
+        xml = None
+        while not xml:
+            try:
+                xml = urllib2.urlopen(request).read()
+            except urllib2.URLError as e:
+                print 'Retrying: {0}'.format(e.url)
+                print 'Reason: {0}'.format(e.reason)
+                continue
         return BeautifulSoup(xml, 'lxml')
 
     def get_sra_uid(self, term):
