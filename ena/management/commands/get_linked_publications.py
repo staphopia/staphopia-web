@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
             if pmids:
                 for pmid in pmids:
-                    publication, created = Publication.get_or_create(
+                    publication, created = Publication.objects.get_or_create(
                         experiment_accession=experiment_accession,
                         pmid=pmid
                     )
