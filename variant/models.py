@@ -11,8 +11,9 @@ from django.db import models
 
 from sample.models import MetaData
 
+
 # Create partition every 5 million records
-@architect.install('partition', type='range', subtype='integer', 
+@architect.install('partition', type='range', subtype='integer',
                    constraint='5000000', column='id')
 class ToIndel(models.Model):
 
@@ -63,7 +64,7 @@ class Indel(models.Model):
 
 
 # Create partition every 5 million records
-@architect.install('partition', type='range', subtype='integer', 
+@architect.install('partition', type='range', subtype='integer',
                    constraint='5000000', column='id')
 class ToSNP(models.Model):
 
@@ -137,9 +138,9 @@ class SNP(models.Model):
     reference_strain.short_description = 'Reference Strain'
     reference_strain.admin_order_field = 'reference'
 
-    
+
 # Create partition every 5 million records
-@architect.install('partition', type='range', subtype='integer', 
+@architect.install('partition', type='range', subtype='integer',
                    constraint='5000000', column='id')
 class Confidence(models.Model):
     """ INFO and Qual, fields specific to each variant. """
@@ -160,11 +161,11 @@ class Confidence(models.Model):
 class Counts(models.Model):
     """ Cpounts for quick reference """
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
-    snp = models.PositiveIntegerField(default=0)    
-    indel = models.PositiveIntegerField(default=0)    
-    confidence = models.PositiveIntegerField(default=0)    
-    
-    
+    snp = models.PositiveIntegerField(default=0)
+    indel = models.PositiveIntegerField(default=0)
+    confidence = models.PositiveIntegerField(default=0)
+
+
 class Comment(models.Model):
 
     """ SNP related comments. """

@@ -4,10 +4,11 @@ Gene Application Models.
 These are models to store information on the predicted gene annotation of
 Staphopia samples.
 """
+import architect
 from django.db import models
 
 from sample.models import MetaData
-from variant.models import Reference, Annotation
+from variant.models import Reference
 
 
 class Clusters(models.Model):
@@ -55,16 +56,22 @@ class References(models.Model):
     """ Annotation mapping to Variant references. """
 
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
-    annotation = models.ForeignKey(Annotation)
+    contig = models.ForeignKey('Contigs', on_delete=models.CASCADE)
+    cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
+
     start = models.PositiveIntegerField()
     end = models.PositiveIntegerField()
     is_positive = models.BooleanField()
     is_tRNA = models.BooleanField()
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
+
     dna = models.TextField()
     aa = models.TextField()
 
 
+# Create partition every 2 million records
+@architect.install('partition', type='range', subtype='integer',
+                   constraint='2000000', column='id')
 class Features(models.Model):
 
     """ Annotated info for each predicted gene. """
@@ -86,6 +93,9 @@ class Features(models.Model):
         unique_together = ('sample', 'contig', 'cluster', 'start', 'end')
 
 
+# Create partition every 1 million records
+@architect.install('partition', type='range', subtype='integer',
+                   constraint='1000000', column='id')
 class Contigs(models.Model):
 
     """ Assembled contigs for each sample renamed by PROKKA. """
