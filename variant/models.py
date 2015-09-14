@@ -157,6 +157,14 @@ class Confidence(models.Model):
     quality = models.DecimalField(max_digits=8, decimal_places=3)
 
 
+class Counts(models.Model):
+    """ Cpounts for quick reference """
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    snp = models.PositiveIntegerField(default=0)    
+    indel = models.PositiveIntegerField(default=0)    
+    confidence = models.PositiveIntegerField(default=0)    
+    
+    
 class Comment(models.Model):
 
     """ SNP related comments. """

@@ -20,7 +20,8 @@ from variant.models import (
     SNP,
     ToIndel,
     ToSNP,
-    Confidence
+    Confidence,
+    Counts
 )
 
 
@@ -70,6 +71,7 @@ class Command(BaseCommand):
         self.insert_snps()
         self.insert_indels()
         self.insert_confidence()
+        self.insert_counts()
 
     def get_sample_instance(self, sample_tag):
         try:
@@ -79,29 +81,32 @@ class Command(BaseCommand):
                 sample_tag
             ))
 
-        confidence_count = Confidence.objects.filter(sample=self.sample).count()
-        snp_count = ToSNP.objects.filter(sample=self.sample).count()
-        indel_count = ToIndel.objects.filter(sample=self.sample).count()
-        
-        # Get if difference in counts
-        diff = confidence_count - (snp_count + indel_count)
-        if diff:
-            # File didn't completely load, delete and reload
+        try:
+            count = Counts.objects.get(sample=self.sample)
+
+            # Get difference in counts
+            diff = count.confidence - (count.snp + count.indel)
+            if diff:
+                # File didn't completely load, delete and reload
+                print(
+                    ('{0} did not complete in previous attempt, deleting '
+                     'existing records.').format(sample_tag), 
+                     file=sys.stderr
+                )
+                self.delete_objects()
+            # Test to make sure all counts are not 0
+            else:
+                if count.confidence and count.snp and count.indel:
+                    # File has been loaded
+                    raise CommandError('{0} has been loaded, exiting.'.format(
+                        sample_tag
+                    ))
+        except Counts.DoesNotExist:
+            self.delete_objects()
             print(
-                ('{0} did not complete in previous attempt, deleting '
-                 'existing records.').format(sample_tag), 
+                ('{0} will be loaded.').format(sample_tag), 
                  file=sys.stderr
             )
-            Confidence.objects.filter(sample=self.sample).delete()
-            ToSNP.objects.filter(sample=self.sample).delete()
-            ToIndel.objects.filter(sample=self.sample).delete()
-        # Test to make sure all counts are not 0
-        else:
-            if confidence_count and snp_count and indel_count:
-                # File has been loaded
-                raise CommandError('{0} has already been loaded'.format(
-                    sample_tag
-                ))
 
     @timeit
     def get_positions(self, input):
@@ -405,6 +410,14 @@ class Command(BaseCommand):
 
     @transaction.atomic
     @timeit
+    def delete_objects(self): 
+        Confidence.objects.filter(sample=self.sample).delete()
+        ToSNP.objects.filter(sample=self.sample).delete()
+        ToIndel.objects.filter(sample=self.sample).delete()
+        Counts.objects.filter(sample=self.sample).delete()
+                    
+    @transaction.atomic
+    @timeit
     def insert_snps(self):
         ToSNP.objects.bulk_create(self.snps, batch_size=50000)
         return None
@@ -419,4 +432,15 @@ class Command(BaseCommand):
     @timeit
     def insert_confidence(self):
         Confidence.objects.bulk_create(self.confidence, batch_size=50000)
+        return None
+        
+    @transaction.atomic
+    @timeit
+    def insert_counts(self):
+        Counts.objects.create(
+            sample=self.sample,
+            snp=len(self.snps),
+            indel=len(self.indels),
+            confidence=len(self.confidence)
+        )
         return None
