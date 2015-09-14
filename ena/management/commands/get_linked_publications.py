@@ -21,27 +21,33 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        experiment_accessions = Experiment.objects.values_list(
-            'experiment_accession', flat=True
-        )
-
-        for experiment_accession in experiment_accessions:
-            sra_uid = self.get_sra_uid(experiment_accession)
+        experiments = Experiment.objects.all()
+        i = 0
+        total = experiments.count()
+        print 'Completed {0} of {1} experiments.'.format(i, total)
+        for experiment in experiments.iterator():
+            sra_uid = self.get_sra_uid(experiment.experiment_accession)
             pmids = self.get_pubmed_link(sra_uid)
-
             if pmids:
                 for pmid in pmids:
-                    publication, created = Publication.objects.get_or_create(
-                        experiment_accession=experiment_accession,
-                        pmid=pmid
-                    )
-                    print '{0}\t{1}\t{2}'.format(
-                        experiment_accession,
-                        pmid,
-                        created
-                    )
-
+                    self.insert_publication(experiment, pmid)
             time.sleep(1)
+
+            i += 1
+            if i % 1000 == 0:
+                print 'Completed {0} of {1} experiments.'.format(i, total)
+
+    @transaction.atomic
+    def insert_publication(self, experiment, pmid):
+        publication, created = Publication.objects.get_or_create(
+            experiment_accession=experiment,
+            pmid=pmid
+        )
+        print '{0}\t{1}\t{2}'.format(
+            experiment.experiment_accession,
+            pmid,
+            created
+        )
 
     def cook_soup(self, url):
         request = urllib2.Request(url)
