@@ -19,7 +19,6 @@ ELINK = EUTILS + '/elink.fcgi?dbfrom=sra&db=pubmed&id'
 class Command(BaseCommand):
     help = 'Insert experiments without a sample id into the queue.'
 
-    @transaction.atomic
     def handle(self, *args, **options):
         experiments = Experiment.objects.all()
         i = 0
