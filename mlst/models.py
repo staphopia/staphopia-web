@@ -12,7 +12,7 @@ class SequenceTypes(models.Model):
 
     """ Sequence type mappings from MLST database. """
 
-    ST = models.PositiveIntegerField(unique=True)
+    st = models.PositiveIntegerField(unique=True)
     arcc = models.PositiveIntegerField()
     aroe = models.PositiveIntegerField()
     glpf = models.PositiveIntegerField()
@@ -53,7 +53,7 @@ class Srst2(models.Model):
     """ SRST2 results from mapping of FASTQ files. """
 
     sample = models.OneToOneField(MetaData, on_delete=models.CASCADE)
-    ST = models.TextField()
+    st = models.TextField()
     arcc = models.TextField()
     aroe = models.TextField()
     glpf = models.TextField()

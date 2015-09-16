@@ -12,7 +12,7 @@ from mlst.models import Blast, Srst2
 class Command(BaseCommand):
     """ Insert results into database. """
     help = 'Insert the analysis results into the database.'
-    
+
     def add_arguments(self, parser):
         parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
                             help='Sample tag of the data.')
@@ -76,16 +76,16 @@ class Command(BaseCommand):
 
         if not results[0]:
             results = ['-'] * 13
-        
+
         if len(results) == 12:
             results.append('-')
-        
+
         try:
-            # 0:Sample  1:ST    2:arcc  3:aroe  4:glpf  5:gmk_  6:pta_  7:tpi_
+            # 0:Sample  1:st    2:arcc  3:aroe  4:glpf  5:gmk_  6:pta_  7:tpi_
             # 8:yqil    9:mismatches    10:uncertainty  11:depth    12:maxMAF
             Srst2.objects.create(
                 sample=sample,
-                ST=results[1],
+                st=results[1],
                 arcc=results[2],
                 aroe=results[3],
                 glpf=results[4],
