@@ -1,5 +1,6 @@
 """ Insert MLST results into database. """
 import os.path
+import re
 
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -83,9 +84,13 @@ class Command(BaseCommand):
         try:
             # 0:Sample  1:st    2:arcc  3:aroe  4:glpf  5:gmk_  6:pta_  7:tpi_
             # 8:yqil    9:mismatches    10:uncertainty  11:depth    12:maxMAF
+            st_stripped, is_exact = self.determine_st(results[1])
+
             Srst2.objects.create(
                 sample=sample,
-                st=results[1],
+                st_original=results[1],
+                st_stripped=st_stripped,
+                is_exact=is_exact,
                 arcc=results[2],
                 aroe=results[3],
                 glpf=results[4],
@@ -104,3 +109,18 @@ class Command(BaseCommand):
         except IntegrityError as e:
             raise CommandError('{0} MLSTSrst2 Error: {1}'.format(
                                opts['sample_tag'], e))
+
+    def determine_st(self, st):
+        exact_st = re.compile('^(\d+)$')
+        likely_st = re.compile('^(\d+)(.*)$')
+
+        if exact_st.match(st):
+            # Exact match
+            return [int(st), True]
+        elif likely_st.match(st):
+            # Good idea, there is either mismatches or uncertainity
+            m = likely_st.match(st)
+            return [m.group(1), False]
+        else:
+            # Unable to determine ST
+            return [0, False]

@@ -53,7 +53,9 @@ class Srst2(models.Model):
     """ SRST2 results from mapping of FASTQ files. """
 
     sample = models.OneToOneField(MetaData, on_delete=models.CASCADE)
-    st = models.TextField()
+    st_original = models.TextField()
+    st_stripped = models.PositiveIntegerField(default=0, db_index=True)
+    is_exact = models.BooleanField(default=False, db_index=True)
     arcc = models.TextField()
     aroe = models.TextField()
     glpf = models.TextField()
