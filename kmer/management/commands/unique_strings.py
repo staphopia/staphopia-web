@@ -31,6 +31,10 @@ class Command(BaseCommand):
                                   'files to pull unique kmers from.'))
         parser.add_argument('output', metavar='OUTPUT_PREFIX',
                             help='Prefix to output unique kmers to.')
+        parser.add_argument(
+            '--memory', metavar='MAX_MEMORY', type=int, default=50000,
+            help='Max memory (in MB) consuption before dumping to text file.'
+        )
 
     def handle(self, *args, **opts):
         # Read Jellyfish file
@@ -38,18 +42,20 @@ class Command(BaseCommand):
         self.total = 1
         self.count = 1
         self.prefix = opts['output']
+        print 'Memory threshold set to {0} MB'.format(opts['memory'])
         with open(opts['jellyfish'], 'r') as fh:
             for line in fh:
                 line = line.rstrip()
                 if valid_gzfile(line):
                     self.read_jellyfish_counts(line.rstrip())
 
-                    if current_memory() > 50000:
+                    if current_memory() > opts['memory']:
                         self.dump_kmers()
                 else:
                     self.dump_bad_file(line)
 
-        self.dump_kmers()
+        if len(self.kmers):
+            self.dump_kmers()
         sys.exit()
 
     @timeit

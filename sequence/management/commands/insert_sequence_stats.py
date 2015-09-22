@@ -9,10 +9,11 @@ from django.core.management.base import BaseCommand, CommandError
 from sample.models import MetaData
 from sequence.models import Quality
 
+
 class Command(BaseCommand):
     """ Insert results into database. """
     help = 'Insert the analysis results into the database.'
-    
+
     def add_arguments(self, parser):
         parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
                             help='Sample tag of the data.')
@@ -57,7 +58,6 @@ class Command(BaseCommand):
 
         # Everything checks out, load it up
 
-
         try:
             is_original = False if opts['table'] == 'cleanup' else True
             table_object = Quality(
@@ -73,7 +73,6 @@ class Command(BaseCommand):
                 ('{0}. Either the data is already in there or the pipeline '
                  'version should be updated.').format(e)
             )
-
 
     def get_rank(self, data):
         """
