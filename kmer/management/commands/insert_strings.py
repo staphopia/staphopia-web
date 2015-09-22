@@ -1,13 +1,14 @@
 """ Insert Jellyfish output into the database. """
+import glob
 import sys
-import time
 
 from bitarray import bitarray
 
 from django.db import connection, transaction
 from django.core.management.base import BaseCommand
 
-from kmer.models import KmerBinary
+from kmer.models import Binary
+from staphopia.utils import timeit, gziplines
 
 
 class Command(BaseCommand):
@@ -20,12 +21,12 @@ class Command(BaseCommand):
         'T': bitarray('10')
     }
 
-    _tables = ['kmer_kmerbinary']
+    _tables = ['kmer_binary']
 
     def add_arguments(self, parser):
         parser.add_argument('jellyfish', metavar='JELLYFISH_COUNTS',
-                            help=('Compressed (gzip) Jellyfish counts to be '
-                                  'inserted.'))
+                            help=('Directory of compressed (gzip) Jellyfish '
+                                  'counts to be inserted.'))
         parser.add_argument('--empty', action='store_true',
                             help='Empty tables and reset counts.')
 
@@ -36,7 +37,16 @@ class Command(BaseCommand):
             sys.exit()
 
         # Read Jellyfish file
-        self.read_jellyfish_counts(opts['jellyfish'])
+        self.kmers = {}
+        total = 0
+        for jellyfish_file in glob.glob(opts['jellyfish']):
+            self.read_jellyfish_counts(jellyfish_file)
+            total += 1
+            print total
+            if total == 50:
+                break
+
+        print len(self.kmers.keys())
 
     def encode(self, seq):
         a = bitarray()
@@ -48,36 +58,21 @@ class Command(BaseCommand):
         a.frombytes(seq)
         return a.decode(self._code)[0:31]
 
+    @timeit
     def read_jellyfish_counts(self, jellyfish_file):
-        # Inititalize values
-        self.kmer_binary = []
-        total = 0
-        new_mers = 0
-        start_time = time.time()
-
-        fh = open(jellyfish_file)
-        for line in fh:
-            if total % 1000000 == 0 and total > 0:
-                new_mers += self.insert_kmer()
-                runtime = int(time.time() - start_time)
-                print "{0:,}\t{1:,}\t{2}".format(total, new_mers, runtime)
-                new_mers = 0
-                start_time = time.time()
-
+        for line in gziplines(jellyfish_file):
             word, count = line.rstrip().split(' ')
-            self.kmer_binary.append(word)
-            total += 1
+            self.kmers[self.encode(word)] = True
 
-        # Process remaining kmers and insert totals
-        print "{0}\t{1}".format(total, self.insert_kmer())
-
+    @timeit
     def encode_words(self, words):
         # Encode kmers
         return [self.encode(word) for word in words]
 
+    @timeit
     def insert_kmer(self):
         # Insert bit encoded kmers
-        new_kmers = KmerBinary.objects.bulk_create_new(
+        new_kmers = Binary.objects.bulk_create_new(
             self.encode_words(self.kmer_binary)
         )
         self.kmer_binary = []
@@ -92,11 +87,6 @@ class Command(BaseCommand):
             self.reset_counter(table)
 
     def empty_table(self, table):
-        cursor = connection.cursor()
-        cursor.execute("TRUNCATE TABLE {0} CASCADE;".format(table))
-
-    def reset_counter(self, table):
-        query = ("SELECT setval(pg_get_serial_sequence('{0}', 'id'), "
-                 "coalesce(max(id),0) + 1, false) FROM {0};").format(table)
+        query = "TRUNCATE TABLE {0} RESTART IDENTITY CASCADE;".format(table)
         cursor = connection.cursor()
         cursor.execute(query)

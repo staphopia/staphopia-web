@@ -6,12 +6,10 @@ import time
 from bitarray import bitarray
 
 from django.db import connection, transaction
-from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
-from samples.models import Sample
-from analysis.models import PipelineVersion
-from kmer.models import Kmer, KmerBinary, KmerTotal
+from sample.models import MetaData
+from kmer.models import Binary, Total
 
 
 def timeit(method):
@@ -38,10 +36,9 @@ class Command(BaseCommand):
     }
 
     _tables = [
-        'kmer_kmerbinarytmp',
-        'kmer_kmercount',
-        'kmer_kmertotal',
-        'kmer_kmer',
+        'kmer_binarytmp',
+        'kmer_count',
+        'kmer_total'
     ]
 
     def add_arguments(self, parser):
@@ -50,9 +47,6 @@ class Command(BaseCommand):
         parser.add_argument('jellyfish', metavar='JELLYFISH_COUNTS',
                             help=('Compressed (gzip) Jellyfish counts to be '
                                   'inserted.'))
-        parser.add_argument('--pipeline_version', type=str, default="0.1",
-                            help=('Version of the pipeline used in this '
-                                  'analysis. (Default: 0.1)'))
         parser.add_argument('--empty', action='store_true',
                             help='Empty tables and reset counts.')
 
@@ -64,33 +58,11 @@ class Command(BaseCommand):
 
         # Get Sample instance
         try:
-            sample = Sample.objects.get(sample_tag=opts['sample_tag'])
-        except Sample.DoesNotExist:
+            self.sample = MetaData.objects.get(sample_tag=opts['sample_tag'])
+        except MetaData.DoesNotExist:
             raise CommandError('sample_tag {0} does not exist'.format(
                 opts['sample_tag']
             ))
-
-        # Get PipelineVersion instance
-        try:
-            pipeline_version = PipelineVersion.objects.get_or_create(
-                module='kmer',
-                version=opts['pipeline_version']
-            )[0]
-        except PipelineVersion.DoesNotExist:
-            raise CommandError('Error saving pipeline information')
-
-        # Create kmer instance
-        try:
-            self.kmer_instance = Kmer.objects.create(
-                sample=sample,
-                version=pipeline_version
-            )
-        except IntegrityError:
-            raise CommandError(
-                'Kmer entry already exists for {0} ({1})'.format(
-                    sample, pipeline_version
-                )
-            )
 
         # Inititalize values
         self.total = 0
@@ -116,7 +88,7 @@ class Command(BaseCommand):
 
         # Process remaining kmers and insert totals
         runtime = int(time.time() - start_time)
-        KmerTotal.objects.create(
+        Total.objects.create(
             kmer=self.kmer_instance,
             total=self.total,
             singletons=self.singletons,
@@ -162,7 +134,7 @@ class Command(BaseCommand):
     @timeit
     def insert_kmer(self, words):
         # Insert bit encoded kmers
-        self.new_kmers += KmerBinary.objects.bulk_create_new(words)
+        self.new_kmers += Binary.objects.bulk_create_new(words)
 
         return None
 
