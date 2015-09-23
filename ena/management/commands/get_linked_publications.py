@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 # Check if there are any new entries on SRA, if so retrieve them.
-# Cron: 0 0 1 * * /data1/home/rpetit/staphopia/bin/UpdateMLST.py
 import urllib2
 import time
 from bs4 import BeautifulSoup

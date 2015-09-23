@@ -16,3 +16,5 @@ bitarray==0.8.1
 architect==0.5.2
 django-extensions
 pygraphviz
+git+https://github.com/staphopia/scholar.py.git#egg=scholar
+psutil==3.2.1

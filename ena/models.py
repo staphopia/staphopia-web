@@ -81,3 +81,14 @@ class Publication(models.Model):
 
     class Meta:
         unique_together = ('experiment_accession', 'pmid')
+
+
+class GoogleScholar(models.Model):
+    '''
+
+    '''
+    accession = models.TextField(db_index=True)
+    title = models.TextField()
+    url = models.TextField()
+    cluster_id = models.TextField()
+    url_citations = models.TextField()

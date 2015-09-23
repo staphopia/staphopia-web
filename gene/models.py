@@ -56,7 +56,7 @@ class References(models.Model):
     """ Annotation mapping to Variant references. """
 
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
-    contig = models.ForeignKey('Contigs', on_delete=models.CASCADE)
+    contig = models.ForeignKey('Contigs', on_delete=models.CASCADE, default=0)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
 
     start = models.PositiveIntegerField()
@@ -77,7 +77,7 @@ class Features(models.Model):
     """ Annotated info for each predicted gene. """
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
-    contig = models.ForeignKey('Contigs', on_delete=models.CASCADE)
+    contig = models.ForeignKey('Contigs', on_delete=models.CASCADE, default=0)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
 
     start = models.PositiveIntegerField()
