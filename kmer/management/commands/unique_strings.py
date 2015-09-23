@@ -39,6 +39,7 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         # Read Jellyfish file
         self.kmers = {}
+        self.completed = []
         self.total = 1
         self.count = 1
         self.prefix = opts['output']
@@ -66,6 +67,7 @@ class Command(BaseCommand):
         print '{0}:{1}:{2}:{3}'.format(
             self.total, current_memory(), len(self.kmers), jellyfish_file
         )
+        self.completed.append(jellyfish_file)
         self.total += 1
 
     @timeit
@@ -77,8 +79,17 @@ class Command(BaseCommand):
             for kmer in self.kmers:
                 fh_out.write("{0}\n".format(kmer))
 
+        output = "{0}_completed.txt".format(self.prefix)
+        print '{0}:Dumping completed files to {1}...'.format(
+            len(self.completed), output
+        )
+        with open(output, 'a') as fh_out:
+            for jellyfish_file in self.completed:
+                fh_out.write("{0}\n".format(jellyfish_file))
+
         # Clear kmer dict to free up memory
         self.kmers.clear()
+        del self.completed[:]
 
     @timeit
     def dump_bad_file(self, bad_file):
