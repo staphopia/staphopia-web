@@ -26,29 +26,30 @@
     <footer class="row">
         <div>
             <hr />
-            <div class="copyright">Copyright &#169; 2012-2014 Emory University. All rights reserved.</div>
+            <div class="copyright">Copyright &#169; 2012-2015 Emory University. All rights reserved.</div>
         </div>
     </footer>
     <!-- End Footer -->
 
     {% if user.is_authenticated %}
-    logged in
+        logged in
     {% else %}
-    not logged in
+        not logged in
     {% endif %}
     </div>
 
     <!-- Javascipt -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script src="{% static "js/bootstrap.min.js" %}"></script>
+    <script src="{% static "/static/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "/static/js/staphopia.js" %}"></script>
 
     {% if user.is_authenticated %}
     <script>
         $(document).ready(function() {
             $("body").tooltip({ selector: '[data-toggle=tooltip]' });
         });
-        {% endif %}
     </script>
+    {% endif %}
 
     {% block js %}
     {% endblock %}

@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW samples_summary AS
+CREATE OR REPLACE VIEW sample_summary AS
 SELECT
     -- Sample
     sample.id,
@@ -85,27 +85,14 @@ SELECT
     (assembly.contig_percent_g + assembly.contig_percent_c) AS gc_content,
 
     -- Variants
-    (SELECT COUNT(variant_id) FROM analysis_varianttosnp WHERE variant_id=variant.id) AS total_snps,
-    (SELECT COUNT(variant_id) FROM analysis_varianttoindel WHERE variant_id=variant.id) AS total_indels,
+    (SELECT COUNT(sample_id) FROM variant_tosnp WHERE sample_id=sample.id) AS total_snps,
+    (SELECT COUNT(sample_id) FROM variant_toindel WHERE sample_id=sample.id) AS total_indels,
 
     -- MLST
-    (SELECT "ST" FROM analysis_mlstsrst2 WHERE mlst_id=mlst.id) AS st_srst,
-    COALESCE((SELECT "ST" FROM analysis_mlstsequencetype WHERE arcc.locus_id=arcc
-        AND aroe.locus_id=aroe AND glpf.locus_id=glpf AND gmk.locus_id=gmk
-        AND pta.locus_id=pta AND tpi.locus_id=tpi AND yqil.locus_id=yqil
-        AND arcc.pident=100 AND aroe.pident=100 AND glpf.pident=100
-        AND gmk.pident=100 AND pta.pident=100 AND tpi.pident=100
-        AND yqil.pident=100), 0) AS st_blast
-FROM analysis_assemblystat as assembly
-LEFT JOIN analysis_fastqstat AS fq ON assembly.sample_id=fq.sample_id AND fq.is_original is FALSE
-LEFT JOIN samples_sample AS sample ON sample.id=assembly.sample_id
-LEFT JOIN analysis_mlst AS mlst ON assembly.sample_id=mlst.sample_id
-LEFT JOIN analysis_variant AS variant ON assembly.sample_id=variant.sample_id
-LEFT JOIN analysis_mlstblast AS arcc ON mlst.id=arcc.id AND arcc.locus_name='arcc'
-LEFT JOIN analysis_mlstblast AS aroe ON mlst.id=aroe.id AND aroe.locus_name='aroe'
-LEFT JOIN analysis_mlstblast AS glpf ON mlst.id=glpf.id AND glpf.locus_name='glpf'
-LEFT JOIN analysis_mlstblast AS gmk ON mlst.id=gmk.id AND gmk.locus_name='gmk'
-LEFT JOIN analysis_mlstblast AS pta ON mlst.id=pta.id AND pta.locus_name='pta'
-LEFT JOIN analysis_mlstblast AS tpi ON mlst.id=tpi.id AND tpi.locus_name='tpi'
-LEFT JOIN analysis_mlstblast AS yqil ON mlst.id=yqil.id AND yqil.locus_name='yqil'
+    (SELECT "st" FROM analysis_mlstsrst2 WHERE mlst_id=mlst.id) AS st_srst,
+FROM assembly_stats as assembly
+LEFT JOIN sequence_quality AS fq ON assembly.sample_id=fq.sample_id AND fq.is_original is FALSE
+LEFT JOIN sequence_quality AS fq_original ON assembly.sample_id=fq.sample_id AND fq.is_original is TRUE
+LEFT JOIN sample_metadata AS sample ON sample.id=assembly.sample_id
+LEFT JOIN mlst_srst2 AS mlst ON assembly.sample_id=mlst.sample_id
 WHERE assembly.is_scaffolds is FALSE;

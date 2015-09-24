@@ -1,0 +1,140 @@
+<div id="meta-data_panel" class="panel panel-info hide">
+    <div class="panel-heading">Collected Meta-Data</div>
+    <div class="panel-body">
+        <div class="row">
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Owner</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.user.username }}_bot
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Sample Visibility</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.is_public }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">ENA Link</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.sample_tag }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Publication Link</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.is_published }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Funding Agency</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.funding_agency|default:"-" }}
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Contact Name</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.contact_name|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Contact Email</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.contact_email|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Contact Link</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.contact_link|default:"-" }}
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Sequencing Date</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.sequencing_date.year == 1900 %}
+                            -
+                        {% else %}
+                            {{ sample.sequencing_date }}
+                        {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Sequencing Center</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.sequencing_center|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Sequencing Platform</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.sequencing_platform|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Library Method</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.sequencing_library_method|default:"-" }}
+                    </li>
+                </ul>
+            </div>
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Strain</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.strain|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Isolation Date</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.isolation_date.year == 1900 %}
+                            -
+                        {% else %}
+                            {{ sample.isolation_date }}
+                        {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Isolation Country</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.isolation_country|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Isolation City</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.isolation_city|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Isolation Region</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.isolation_region|default:"-" }}
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Host Name</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.hsot_name|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Host Gender</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.host_gender|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Host Age</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.host_age|default:"-" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Host Health</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.host_health|default:"-" }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row sample-summary">
+            <ul class="list-group row no-border condensed">
+                <li class="list-group-item col-xs-4 col-md-3 text-right">Comments</li>
+                <li class="list-group-item col-xs-8 col-md-9">
+                    <textarea disabled="">{{ sample.comments|default:"-" }}</textarea>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

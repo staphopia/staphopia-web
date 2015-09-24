@@ -1,0 +1,102 @@
+{% load humanize %}
+{% load summary %}
+
+<div id="sequence_panel" class="panel panel-info hide">
+    <div class="panel-heading">Sequence Quality</div>
+    <div class="panel-body">
+        <div class="row">
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-12 text-center">
+                        <strong><u>Original FASTQ</u></strong>
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Estimated Coverage</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.0.coverage }}x
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Average Quality</li>
+                    <li class="list-group-item col-xs-6">
+                        Q{{ fq.0.qual_mean|floatformat:"0" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Total Base Count</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.0.total_bp|intcomma }} bp
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Total Read Count</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.0.total_reads|intcomma }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Mean Read Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.0.mean_read_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Minimum Read Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.0.min_read_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Maximum Read Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.0.max_read_length|intcomma }} bp
+                    </li>
+                </ul>
+            </div>
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-12 text-center">
+                        <strong><u>Processed FASTQ</u></strong>
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Estimated Coverage</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.1.coverage }}x
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Average Quality</li>
+                    <li class="list-group-item col-xs-6">
+                        Q{{ fq.1.qual_mean|floatformat:"0" }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Total Base Count</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.1.total_bp|intcomma }} bp
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Total Read Count</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.1.total_reads|intcomma }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Mean Read Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.1.mean_read_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Minimum Read Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.1.min_read_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Maximum Read Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ fq.1.max_read_length|intcomma }} bp
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

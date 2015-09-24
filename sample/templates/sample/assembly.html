@@ -1,0 +1,92 @@
+{% load humanize %}
+{% load summary %}
+{% get_assembly_stats sample_tag as assembly %}
+<div id="assembly_panel" class="panel panel-info hide">
+    <div class="panel-heading">Assembly Results</div>
+    <div class="panel-body">
+        <div class="row">
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Total Contigs</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.total_contig|intcomma}}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Total Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.total_contig_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">N50 Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.n50_contig_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">GC Content</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.gc }} %
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Mean Contig Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.mean_contig_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Median Contig Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.median_contig_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Minimum Contig Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.min_contig_length|intcomma }} bp
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Maximum Contig Length</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.max_contig_length|intcomma }} bp
+                    </li>
+                </ul>
+            </div>
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Program</li>
+                    <li class="list-group-item col-xs-6">{{sample_tag}}</li>
+
+                    <li class="list-group-item col-xs-6 text-right"></li>
+                    <li class="list-group-item col-xs-6">&nbsp</li>
+
+                    <li class="list-group-item col-xs-6 text-right"></li>
+                    <li class="list-group-item col-xs-6">&nbsp</li>
+
+                    <li class="list-group-item col-xs-6 text-right"></li>
+                    <li class="list-group-item col-xs-6">&nbsp</li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Contigs >= 1Kb</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.contigs_greater_1k|intcomma }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Contigs >= 10Kb</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.contigs_greater_10k|intcomma }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Contigs >= 100Kb</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.contigs_greater_100k|intcomma }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Contigs >= 1Mb</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.contigs_greater_1m|intcomma }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

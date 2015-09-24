@@ -1,0 +1,119 @@
+<div id="phenotype_panel" class="panel panel-info hide">
+    <div class="panel-heading">Phenotype Information</div>
+    <div class="panel-body">
+        <div class="row">
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Source</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.source|default:"-" }}
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Vancomycin</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.vancomycin_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.vancomycin_mic }}
+                        {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Penicillin</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.penicillin_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.penicillin_mic }}
+                        {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Oxacillin</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.oxacillin_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.oxacillin_mic }}
+                        {% endif %}
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Clindamycin</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.clindamycin_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.clindamycin_mic }}
+                        {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Daptomycin</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.daptomycin_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.daptomycin_mic }}
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right"></li>
+                    <li class="list-group-item col-xs-6">&nbsp</li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Rifampin</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.rifampin_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.rifampin_mic }}
+                        {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Tetracycline</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.tetracycline_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.tetracycline_mic }}
+                        {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Trimethoprim-Sulfamethoxazole</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.trimethoprim_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.trimethoprim_mic }}
+                        {% endif %}
+                    </li>
+                </ul>
+
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right">Levofloxacin</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.levofloxacin_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.levofloxacin_mic }}
+                        {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Linezolid</li>
+                    <li class="list-group-item col-xs-6">
+                        {% if sample.linezolid_mic == -200 %}
+                            -
+                        {% else %}
+                            {{ sample.linezolid_mic }}
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

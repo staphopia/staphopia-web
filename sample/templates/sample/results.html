@@ -1,11 +1,38 @@
 {% extends 'base.html' %}
+{% load staticfiles %}
+{% load summary %}
+
 
 {% block container %}
+{% get_sequence_quality sample_tag as fq %}
+{% get_meta_data sample_tag as sample %}
 <div class="row">
-    {% include "sample/left-navbar.html" %}
-    <div class='col-sm-9 col-md-10'>
-    
-    
+    <div class='col-sm-3 col-md-2'>
+        {% include "sample/left-navbar.html" with rank=fq.1.rank %}
     </div>
- </div>
+    <div class='col-sm-9 col-md-10'>
+        <!-- Summary -->
+        {% include "sample/meta-data.html" with sample=sample %}
+        {% include "sample/phenotype.html" with sample=sample %}
+        {% include "sample/sequence.html" with fq=fq %}
+        {% include "sample/assembly.html" %}
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+    <script>
+    var current_result = 'show-meta-data'
+    $(document).ready(function() {
+        show_panel(current_result);
+        $("div.panel-collapse a").click(function() {
+            $('#' + current_result).removeClass('active');
+            hide_panel(current_result);
+            $(this).addClass('active');
+            current_result = $(this).attr('id');
+            show_panel(current_result);
+        });
+    });
+
+    </script>
 {% endblock %}

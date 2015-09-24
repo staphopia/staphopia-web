@@ -48,6 +48,19 @@ div.fix-top-margin {
     width: 110px;
 }
 
+.no-border {
+    border: none !important;
+}
+
+ul.no-border li {
+    border: none !important;
+}
+
+ul.condensed li {
+    padding: 5px 8px !important;
+    font-size: 16px;
+}
+
 /* ------------------------------------
     index.html
 ------------------------------------ */
@@ -108,3 +121,14 @@ table thead  td{
     background-color: #E2E4FF;
 }
 
+div.sample-summary {
+    font-size: 16px;
+}
+
+textarea {
+    width: 75%;
+}
+
+div.hide {
+    display: none;
+}
