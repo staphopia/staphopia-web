@@ -6,16 +6,20 @@
         <div>
             <h3>Contact Us</h3>
             <p class="indent">
-                Here at Staphopia, we are always looking for feedback from our 
-                userbase. Feel free to ask questions, provide suggestions to 
-                improve Staphopia, or even submit any feature requests you 
+                Here at Staphopia, we are always looking for feedback from our
+                userbase. Feel free to ask questions, provide suggestions to
+                improve Staphopia, or even submit any feature requests you
                 might have.
             </p>
             <hr />
         </div>
     </div>
     <div class="row">
+
         <div class="col-sm-6 col-md-6 col-sm-offset-3 col-md-offset-3">
+            {% if email %}
+                {% include "contact/success.html" %}
+            {% endif %}
             {% crispy form %}
         </div>
     </div>
