@@ -70,6 +70,14 @@ class Run(models.Model):
     fastq_ftp = models.TextField()
 
 
+class CenterNames(models.Model):
+    '''
+
+    '''
+    ena_name = models.TextField()
+    name = models.TextField()
+
+
 class Publication(models.Model):
     '''
 

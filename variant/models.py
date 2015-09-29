@@ -143,7 +143,9 @@ class SNP(models.Model):
 @architect.install('partition', type='range', subtype='integer',
                    constraint='5000000', column='id')
 class Confidence(models.Model):
+
     """ INFO and Qual, fields specific to each variant. """
+
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     reference_position = models.PositiveIntegerField()
     AC = models.TextField(default="")
@@ -159,11 +161,24 @@ class Confidence(models.Model):
 
 
 class Counts(models.Model):
-    """ Cpounts for quick reference """
+
+    """ Counts for quick reference. """
+
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     snp = models.PositiveIntegerField(default=0)
     indel = models.PositiveIntegerField(default=0)
     confidence = models.PositiveIntegerField(default=0)
+
+
+# Create partition every 5 million records
+@architect.install('partition', type='range', subtype='integer',
+                   constraint='5000000', column='id')
+class SNPCounts(models.Model):
+
+    """ SNP counts across all sampels for quick reference. """
+
+    snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
+    count = models.PositiveIntegerField(default=0, db_index=True)
 
 
 class Comment(models.Model):

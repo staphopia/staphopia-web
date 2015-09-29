@@ -1,26 +1,21 @@
-{% if col_title == "Sequencing Center" %}
-<div class="col-sm-8 col-md-6 col-lg-6">
-{% else %}
-<div class="col-sm-8 col-md-6 col-lg-3">
-{% endif %}
-    <div class="panel panel-default">
-        <div class="panel-heading text-center">{{ title }}</div>
-        <table class="table text-center">
-            <thead>
-                <tr>
-                    <td>{{ col_title }}</td>
-                    <td>Total Genomes</td>
-                </tr>
-            <thead>
-            <tbody>
-                
-            </tbody>
-            {% for name,count in top_list %}
-                <tr>
-                    <td>{{ name }}</td>
-                    <td>{{ count }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    </div>
+{% load humanize %}
+<div class="panel panel-info">
+    <div class="panel-heading text-center">{{ title }}</div>
+    <table class="table text-center">
+        <thead>
+            <tr>
+                <td>{{ col_title }}</td>
+                <td>Total Samples</td>
+            </tr>
+        <thead>
+        <tbody>
+
+        </tbody>
+        {% for name,count in top_list %}
+            <tr>
+                <td>{{ name }}</td>
+                <td>{{ count|intcomma }}</td>
+            </tr>
+        {% endfor %}
+    </table>
 </div>

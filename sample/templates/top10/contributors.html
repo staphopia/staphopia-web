@@ -1,0 +1,22 @@
+{% load humanize %}
+<div class="col-sm-8 col-md-6 col-lg-6">
+    <div class="panel panel-info">
+        <div class="panel-heading text-center">Top Contributors</div>
+        <table class="table text-center">
+            <thead>
+                <tr>
+                    <td>Sequencing Center</td>
+                    <td>Total Samples</td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for name,count in top_list %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ count|intcomma }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

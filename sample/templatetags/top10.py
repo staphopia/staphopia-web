@@ -1,12 +1,15 @@
 from django import template
-from samples.models import SamplesSummary
-from collections import Counter
+from django.db import connection
+
 register = template.Library()
 
 
-@register.inclusion_tag('base_top10.html')
-def top10_table(title, col_title, col_name):
-    return {'title': title, 'col_title': col_title,
-            'top_list': Counter(SamplesSummary.objects.values_list(
-                col_name, flat=True)
-            ).most_common(10)}
+@register.inclusion_tag('top10/contributors.html')
+def top10_sequencing_centers():
+    cursor = connection.cursor()
+    q = "SELECT sequencing_center, count FROM top_sequencing_centers(10)"
+    cursor.execute(q)
+
+    return {
+        'top_list': cursor.fetchall()
+    }
