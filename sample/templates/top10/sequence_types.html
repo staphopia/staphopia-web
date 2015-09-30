@@ -1,0 +1,22 @@
+{% load humanize %}
+<div class="col-sm-4 col-md-3 col-lg-3">
+    <div class="panel panel-info">
+        <div class="panel-heading text-center">Top Sequence Types</div>
+        <table class="table text-center">
+            <thead>
+                <tr>
+                    <td>Sequence Type</td>
+                    <td>Total Samples</td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for name,count in top_list %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ count|intcomma }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
