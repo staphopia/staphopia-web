@@ -31,7 +31,7 @@
                 <ul class="list-group row no-border condensed">
                     <li class="list-group-item col-xs-6 text-right">Mean Contig Length</li>
                     <li class="list-group-item col-xs-6">
-                        {{ assembly.mean_contig_length|intcomma }} bp
+                        {{ assembly.mean_contig_length|floatformat:"0"|intcomma }} bp
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Median Contig Length</li>

@@ -1,3 +1,4 @@
+{% load summary %}
 <div id="meta-data_panel" class="panel panel-info hide">
     <div class="panel-heading">Collected Meta-Data</div>
     <div class="panel-body">
@@ -59,7 +60,7 @@
 
                     <li class="list-group-item col-xs-6 text-right">Sequencing Center</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.sequencing_center|default:"-" }}
+                        {% get_center_name sample.sequencing_center %}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Sequencing Platform</li>

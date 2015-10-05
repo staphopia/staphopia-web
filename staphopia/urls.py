@@ -18,7 +18,7 @@ from django_email_changer.views import (
 #     sample_list,
 #     VariantViewSet,
 # )
-from sample.views import SummaryDatatablesView
+
 from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
 
@@ -50,9 +50,9 @@ urlpatterns = patterns(
         name='account_settings'),
 
     # Samples
-    url(r'^samples/data/$', SummaryDatatablesView.as_view(),
+    url(r'^samples/data/$', 'sample.views.sample_summary',
         name='samples_data'),
-    url(r'^samples/(?P<sample_tag>[^/]+)/', 'sample.views.sample',
+    url(r'^samples/(?P<sample_tag>[^/]+)/$', 'sample.views.sample',
         name='sample_results'),
     url(r'^samples/$', 'sample.views.sample', name='samples'),
 

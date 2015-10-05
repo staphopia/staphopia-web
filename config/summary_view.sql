@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW sample_summary AS
+CREATE OR REPLACE VIEW sample_summary_view AS
 SELECT
     -- Sample
     sample.id,
@@ -7,7 +7,7 @@ SELECT
     sample.contact_name,
     sample.contact_email,
     sample.contact_link,
-    sample.sequencing_center,
+    (SELECT name from ena_centernames where ena_name=sample.sequencing_center) AS sequencing_center,
     sample.sequencing_center_link,
     sample.sequencing_date,
     sample.sequencing_libaray_method,
@@ -50,6 +50,7 @@ SELECT
     fq.min_read_length,
     fq.mean_read_length,
     fq.max_read_length,
+    CASE WHEN fq.qual_mean > 41 THEN (fq.qual_mean - 31) ELSE fq.qual_mean END as q_score,
     fq.qual_mean,
     fq.qual_std,
     fq.qual_25th,
@@ -85,14 +86,20 @@ SELECT
     (assembly.contig_percent_g + assembly.contig_percent_c) AS gc_content,
 
     -- Variants
-    (SELECT COUNT(sample_id) FROM variant_tosnp WHERE sample_id=sample.id) AS total_snps,
-    (SELECT COUNT(sample_id) FROM variant_toindel WHERE sample_id=sample.id) AS total_indels,
+    variant.snp AS total_snps,
+    variant.indel AS total_indels,
 
     -- MLST
-    (SELECT "st" FROM analysis_mlstsrst2 WHERE mlst_id=mlst.id) AS st_srst,
+    mlst.st_stripped,
+    mlst.st_original,
+    mlst.is_exact
+
 FROM assembly_stats as assembly
 LEFT JOIN sequence_quality AS fq ON assembly.sample_id=fq.sample_id AND fq.is_original is FALSE
-LEFT JOIN sequence_quality AS fq_original ON assembly.sample_id=fq.sample_id AND fq.is_original is TRUE
 LEFT JOIN sample_metadata AS sample ON sample.id=assembly.sample_id
 LEFT JOIN mlst_srst2 AS mlst ON assembly.sample_id=mlst.sample_id
+LEFT JOIN variant_counts as variant ON assembly.sample_id=variant.sample_id
 WHERE assembly.is_scaffolds is FALSE;
+
+CREATE TABLE sample_summary
+AS SELECT * FROM sample_summary_view;

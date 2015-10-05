@@ -1,10 +1,9 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db import transaction
 
-from django_datatables_view.base_datatable_view import BaseDatatableView
-
+from sample.datatable import DataTable
 from sample.forms import SampleSubmissionForm
 from sample.models import MetaData, SampleSummary
 
@@ -13,18 +12,20 @@ from sample.models import MetaData, SampleSummary
 def submission(request):
     if request.user.is_authenticated:
         form = None
-        save_results = None
         if request.method == 'POST':
-            num_samples = MetaData.objects.filter(user_id=request.user.id).count()
+            num_samples = MetaData.objects.filter(
+                user_id=request.user.id
+            ).count()
             sample_tag = '{0}_{1}'.format(request.user.username,
                                           str(num_samples + 1).zfill(6))
-            form = SampleSubmissionForm(request.user.id, request.POST,
-                                        request.FILES,
-                                        instance=MetaData(user=request.user,
-                                                        sample_tag=sample_tag))
+            form = SampleSubmissionForm(
+                request.user.id, request.POST,
+                request.FILES,
+                instance=MetaData(user=request.user, sample_tag=sample_tag)
+            )
             if form.is_valid():
                 new_sample = form.save()
-                save_upload = form.save_upload(new_sample.pk, request.FILES)
+                form.save_upload(new_sample.pk, request.FILES)
                 return HttpResponseRedirect('/')
         else:
             form = SampleSubmissionForm(request.user.id)
@@ -47,11 +48,38 @@ def sample(request, sample_tag=None):
         return render_to_response('samples.html', {}, RequestContext(request))
 
 
-class SummaryDatatablesView(BaseDatatableView):
-    model = SampleSummary
-    columns = [
-        'sample_tag',
+def sample_summary(request):
+
+    # Columns to include in table
+    cols = [
+        'sample_tag', 'rank', 'sequencing_center', 'q_score', 'coverage',
+        'gc_content', 'mean_read_length', 'st_stripped'
     ]
-    order_columns = [
-        'sample_tag',
+
+    # Columns to search text against
+    searchable = [
+        'sample_tag', 'username', 'sequencing_center'
     ]
+
+    # Initialize a DataTable
+    dt = DataTable(SampleSummary, cols, searchable)
+
+    # Filter the based on query
+    query = request.GET['search[value]'].lower()
+    if query:
+        dt.filter_table(query)
+
+    # Sort the table
+    dt.sort_table(
+        request.GET['order[0][dir]'],
+        int(request.GET['order[0][column]'])
+    )
+
+    # Produce JSON
+    dt.produce_json(
+        int(request.GET['start']),
+        int(request.GET['length'])
+    )
+
+    # Return JSON output
+    return HttpResponse(dt.get_json_response())

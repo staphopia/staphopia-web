@@ -49,6 +49,7 @@ INSTALLED_APPS = (
     'sequence',
     'variant',
     'kmer',
+    'resistance',
 )
 
 # django-registration
@@ -126,7 +127,7 @@ DEFAULT_FROM_EMAIL = "Staphopia's Friendly Robot <usa300@staphopia.com>"
 LOGIN_URL = '/accounts/login/'
 LOGIN_EXEMPT_URLS = (
     r'^$',
-    r'^genomes/',
+    r'^samples/',
     r'^top10/',
     r'^contact/',
     r'^accounts/login/',

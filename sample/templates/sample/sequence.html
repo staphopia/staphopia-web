@@ -15,7 +15,7 @@
                 <ul class="list-group row no-border condensed">
                     <li class="list-group-item col-xs-6 text-right">Estimated Coverage</li>
                     <li class="list-group-item col-xs-6">
-                        {{ fq.0.coverage }}x
+                        {{ fq.0.coverage|floatformat:"0"|intcomma }}x
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Average Quality</li>
@@ -37,7 +37,7 @@
 
                     <li class="list-group-item col-xs-6 text-right">Mean Read Length</li>
                     <li class="list-group-item col-xs-6">
-                        {{ fq.0.mean_read_length|intcomma }} bp
+                        {{ fq.0.mean_read_length|floatformat:"0"|intcomma }} bp
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Minimum Read Length</li>
@@ -61,7 +61,7 @@
                 <ul class="list-group row no-border condensed">
                     <li class="list-group-item col-xs-6 text-right">Estimated Coverage</li>
                     <li class="list-group-item col-xs-6">
-                        {{ fq.1.coverage }}x
+                        {{ fq.1.coverage|floatformat:"0"|intcomma }}x
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Average Quality</li>
@@ -83,7 +83,7 @@
 
                     <li class="list-group-item col-xs-6 text-right">Mean Read Length</li>
                     <li class="list-group-item col-xs-6">
-                        {{ fq.1.mean_read_length|intcomma }} bp
+                        {{ fq.1.mean_read_length|floatformat:"0"|intcomma }} bp
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Minimum Read Length</li>

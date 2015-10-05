@@ -18,6 +18,13 @@
                 <thead>
                     <tr>
                         <th>Sample Tag</th>
+                        <th>Rank</th>
+                        <th>Sequencing Center</th>
+                        <th>Q-Score</th>
+                        <th>Coverage</th>
+                        <th>GC Content</th>
+                        <th>Mean Read Length</th>
+                        <th>Sequence Type</th>
                     </tr>
                 </thead>
             </table>
@@ -28,7 +35,7 @@
 
 {% block js %}
     <script type="text/javascript" language="javascript"
-            src="//cdn.datatables.net/1.10.2/js/jquery.dataTables.js"></script>
+            src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.js"></script>
     <script type="text/javascript" language="javascript"
             src="//cdn.datatables.net/plug-ins/725b2a2115b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
     <script>
@@ -40,6 +47,7 @@
             "scrollY": "700px",
             "scrollX": true,
             "autoWidth": true,
+            "searchDelay": 1250,
             "displayLength": 50,
             "ajax": "{% url 'samples_data' %}",
             "paginationType": "full_numbers",
@@ -47,6 +55,10 @@
                 $(row).prop('title', "Views details on sample " + data[0] + " in another window.");
             }
         });
+
+        table.on( 'search.dt', function () {
+            console.log(table.search());
+        } );
 
         $('#samples_table tbody').on( 'click', 'tr', function () {
             var rowData = table.row( this ).data();

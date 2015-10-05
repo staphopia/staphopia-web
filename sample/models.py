@@ -147,6 +147,8 @@ class SampleSummary(models.Model):
     mean_read_length = models.DecimalField(max_digits=10, decimal_places=3,
                                            blank=True, null=True)
     max_read_length = models.IntegerField(blank=True, null=True)
+    q_score = models.DecimalField(max_digits=6, decimal_places=3,
+                                  blank=True, null=True)
     qual_mean = models.DecimalField(max_digits=6, decimal_places=3,
                                     blank=True, null=True)
     qual_std = models.DecimalField(max_digits=6, decimal_places=3,
@@ -200,14 +202,15 @@ class SampleSummary(models.Model):
     num_contig_non_acgtn = models.SmallIntegerField(blank=True, null=True)
     gc_content = models.DecimalField(max_digits=65535, decimal_places=65535,
                                      blank=True, null=True)
-    total_snps = models.BigIntegerField(blank=True, null=True)
-    total_indels = models.BigIntegerField(blank=True, null=True)
-    st_srst = models.TextField(blank=True)
-    st_blast = models.IntegerField(blank=True, null=True)
+    total_snps = models.PositiveIntegerField(blank=True, null=True)
+    total_indels = models.PositiveIntegerField(blank=True, null=True)
+    st_stripped = models.PositiveIntegerField(blank=True)
+    st_original = models.TextField(blank=True, null=True)
+    is_exact = models.BooleanField(blank=True)
 
     class Meta:
         managed = False
-        db_table = 'samples_summary'
+        db_table = 'sample_summary'
 
 
 class Pipeline(models.Model):

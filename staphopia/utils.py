@@ -44,3 +44,17 @@ def read_fasta(fasta, compressed=False):
     records[id] = ''.join(seq)
 
     return records
+
+
+class REMatcher(object):
+
+    def __init__(self, matchstring):
+        self.matchstring = matchstring
+
+    def match(self, regexp):
+        import re
+        self.rematch = re.match(regexp, self.matchstring)
+        return bool(self.rematch)
+
+    def group(self, i):
+        return self.rematch.group(i)

@@ -1,5 +1,6 @@
 from django import template
 
+from ena.models import CenterNames
 from sample.models import MetaData
 from assembly.models import Stats
 from sequence.models import Quality
@@ -11,6 +12,15 @@ register = template.Library()
 def get_meta_data(sample_tag):
     sample = MetaData.objects.get(sample_tag=sample_tag)
     return sample
+
+
+@register.simple_tag
+def get_center_name(center_name):
+    try:
+        center = CenterNames.objects.get(ena_name=center_name)
+        return center.name
+    except CenterNames.DoesNotExist:
+        return '-'
 
 
 @register.assignment_tag

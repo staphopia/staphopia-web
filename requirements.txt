@@ -2,7 +2,7 @@ Django==1.8.2
 git+git://github.com/macropin/django-registration
 django-crispy-forms-ng==2.0.0
 python-magic==0.4.6
-django-datatables-view==1.12
+django-datatables-view==1.12.1
 psycopg2==2.6
 django-email-changer==0.1.2
 django-storages-redux==1.2.3
