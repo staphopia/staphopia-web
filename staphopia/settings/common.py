@@ -50,6 +50,7 @@ INSTALLED_APPS = (
     'variant',
     'kmer',
     'resistance',
+    'sccmec'
 )
 
 # django-registration

@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         # Read Fasta files
-        self.proteins = read_fasta(opts['proteins'], compressed=True)
+        self.proteins = read_fasta(opts['proteins'])
 
         # Read cluster IDs and append
         clusters = []

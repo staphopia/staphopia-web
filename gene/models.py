@@ -56,17 +56,34 @@ class References(models.Model):
     """ Annotation mapping to Variant references. """
 
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
-    contig = models.ForeignKey('Contigs', on_delete=models.CASCADE, default=0)
+    contig = models.ForeignKey(
+        'ReferenceSequence', on_delete=models.CASCADE, default=0
+    )
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
 
     start = models.PositiveIntegerField()
     end = models.PositiveIntegerField()
     is_positive = models.BooleanField()
     is_tRNA = models.BooleanField()
-    cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
+    phase = models.PositiveSmallIntegerField()
 
     dna = models.TextField()
     aa = models.TextField()
+
+    class Meta:
+        unique_together = ('reference', 'contig', 'cluster', 'start', 'end')
+
+
+class ReferenceSequence(models.Model):
+
+    """ Sequence for each reference renamed by PROKKA. """
+
+    reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
+    name = models.TextField(db_index=True)
+    sequence = models.TextField()
+
+    class Meta:
+        unique_together = ('reference', 'name')
 
 
 # Create partition every 2 million records
