@@ -20,14 +20,20 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         """ Print SCCmec status by ST.. """
-        st = {}
+        status = {'undetermined': {
+            'MSSA': 0,
+            'MRSA': 0,
+        }}
 
-        for mlst in Srst2.objects.filter(is_exact=True):
-            if mlst.st_stripped not in st:
-                st[mlst.st_stripped] = {
-                    'MSSA': 0,
-                    'MRSA': 0,
-                }
+        for mlst in Srst2.objects.filter():
+            st = 'undetermined'
+            if mlst.is_exact:
+                st = mlst.st_stripped
+                if st not in status:
+                    status[mlst.st_stripped] = {
+                        'MSSA': 0,
+                        'MRSA': 0,
+                    }
 
             meca = Coverage.objects.filter(
                 sample=mlst.sample,
@@ -35,9 +41,12 @@ class Command(BaseCommand):
             ).count()
 
             if meca:
-                st[mlst.st_stripped]['MRSA'] += 1
+                status[st]['MRSA'] += 1
             else:
-                st[mlst.st_stripped]['MSSA'] += 1
+                status[st]['MSSA'] += 1
 
-        for key, val in st.items():
-            print '{0}\t{1}\t{2}'.format(key, val['MRSA'], val['MSSA'])
+        for key, val in status.items():
+            freq_mrsa = float(val['MRSA']) / (val['MRSA'] + val['MSSA'])
+            print '{0}\t{1}\t{2}\t{3:.2f}'.format(
+                key, val['MRSA'], val['MSSA'], freq_mrsa
+            )
