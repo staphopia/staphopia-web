@@ -4,7 +4,6 @@ Kmer Application Models.
 These are models to store information on the Kmer analysis of Staphopia
 samples.
 """
-import architect
 import psycopg2
 
 from django.db import models, connection, transaction
@@ -86,13 +85,6 @@ class BinaryBase(models.Model):
         abstract = True
 
 
-class BinaryTemporary(models.Model):
-
-    """ Unique 31-mer strings stored as binary. """
-
-    string = models.BinaryField(max_length=8)
-
-
 class BinaryTmp(BinaryBase):
 
     """ Temporary table to check for existing kmers. """
@@ -100,9 +92,6 @@ class BinaryTmp(BinaryBase):
     pass
 
 
-# Create partition every 20 million records
-@architect.install('partition', type='range', subtype='integer',
-                   constraint='20000000', column='id')
 class Binary(BinaryBase):
 
     """ Binary table manager. """
@@ -114,9 +103,6 @@ class Binary(BinaryBase):
         return "Binary({})".format(self.string)
 
 
-# Create partition every 20 million records
-@architect.install('partition', type='range', subtype='integer',
-                   constraint='20000000', column='id')
 class Count(models.Model):
 
     """ Kmer counts from each sample. """
