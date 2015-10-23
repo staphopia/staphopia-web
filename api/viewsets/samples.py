@@ -21,12 +21,3 @@ class SampleViewSet(viewsets.ReadOnlyModelViewSet):
         sample = MetaData.objects.get(sample_tag=pk)
         serializer = MetaDataSerializer(sample)
         return Response(serializer.data)
-
-    @detail_route(methods=['get'])
-    def variants(self, request, pk=None):
-        """
-        Stored variant information for a given sample.
-        """
-        sample = MetaData.objects.get(sample_tag=pk)
-        serializer = VariantSerializer(sample)
-        return Response(serializer.data)
