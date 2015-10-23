@@ -15,7 +15,7 @@ from staphopia.settings.private import *
 Common
 ----------------------------------------------------------------------------'''
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 
 '''----------------------------------------------------------------------------
 Applications
@@ -70,10 +70,11 @@ REST API
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ],
-    'PAGINATE_BY': 10
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    # ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGINATE_BY': 25
 }
 
 '''----------------------------------------------------------------------------

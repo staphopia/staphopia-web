@@ -1,33 +1,37 @@
 """ . """
 from rest_framework import serializers
-from django.contrib.auth.models import User
-from samples.models import Sample
-from analysis.models import (
-    Variant,
-    VariantToSNP
-)
+from sample.models import MetaData
+
 
 class SampleSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.SerializerMethodField('get_https_url')
+    metadata = serializers.SerializerMethodField()
+    variants = serializers.SerializerMethodField()
+    kmers = serializers.SerializerMethodField()
+    genes = serializers.SerializerMethodField()
 
-    def get_https_url(self, obj):
+    def get_metadata(self, obj):
         url = self.context['request'].build_absolute_uri()
-        url = url.replace('http', 'https')
-        return '{0}{1}/'.format(url, obj.id)
+        return '{0}{1}/metadata/'.format(url, obj.sample_tag)
+
+    def get_linking_url(self, obj, link):
+        url = self.context['request'].build_absolute_uri()
+        url = url.replace('samples', link)
+        return '{0}{1}/'.format(url, obj.sample_tag)
+
+    def get_variants(self, obj):
+        return self.get_linking_url(obj, 'variants')
+
+    def get_kmers(self, obj):
+        return self.get_linking_url(obj, 'kmers')
+
+    def get_genes(self, obj):
+        return self.get_linking_url(obj, 'genes')
 
     class Meta:
-        model = Sample
-        fields = ('url', 'id', 'sample_tag')
+        model = MetaData
+        fields = ('metadata', 'variants', 'kmers', 'genes', 'id', 'sample_tag')
 
-class VariantSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.SerializerMethodField('get_https_url')
 
-    def get_https_url(self, obj):
-        url = self.context['request'].build_absolute_uri()
-        url = url.replace('http', 'https')
-        sample_tag = obj.sample.sample_tag
-        return '{0}{1}/'.format(url, sample_tag)
-
+class MetaDataSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Variant
-        fields = ('url', 'sample_tag')
+        model = MetaData

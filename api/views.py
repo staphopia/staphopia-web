@@ -1,39 +1,42 @@
-from django.contrib.auth.models import User, Group
-from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from api.serializers import (
-    SampleSerializer,
-    VariantSerializer
-)
-
-from samples.models import Sample
-from analysis.models import (
-    Variant,
-    VariantToSNP,
-    VariantSNP
-)
+from api.serializers import SampleSerializer
 
 
-class VariantViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows users to be viewed or edited.
-    """
-    queryset = Variant.objects.all()
-    serializer_class = VariantSerializer
+from sample.models import MetaData
 
 
 @api_view(['GET'])
-def sample_list(request, sample_tag):
+def sample_list(request):
     """
     API endpoint that allows users to be viewed or edited.
     """
     try:
-        sample = Sample.objects.get(sample_tag=sample_tag)
-    except Sample.DoesNotExist:
+        samples = MetaData.objects.all()
+        paginator = PageNumberPagination()
+        subset = paginator.paginate_queryset(samples, request)
+    except MetaData.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        serializer = SampleSerializer(sample)
+        serializer = SampleSerializer(
+            subset, context={'request': request}, many=True
+        )
+        return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(['GET'])
+def sample_info(request, sample_tag):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+    try:
+        sample = MetaData.objects.get(sample_tag=sample_tag)
+    except MetaData.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = SampleSerializer(sample, context={'request': request})
         return Response(serializer.data)
