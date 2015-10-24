@@ -25,7 +25,7 @@ class MLSTViewSet(viewsets.ReadOnlyModelViewSet):
             result.append({
                 'st': row[0],
                 'count': row[1],
-                'url': '{0}{1}/'.format(base_url, row[0])
+                'url': '{0}{1}/samples/'.format(base_url, row[0])
             })
 
         return Response(result)
@@ -35,6 +35,8 @@ class MLSTViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Stored metadata information for a given sample.
         """
-        queryset = Srst2.objects.filter(st_stripped=pk).prefetch_related("sample")
-        serializer = SequenceTypeSerializer(queryset, many=True)
+        q = Srst2.objects.filter(st_stripped=pk).prefetch_related("sample")
+        serializer = SequenceTypeSerializer(
+            q, many=True, context={'request': request}
+        )
         return Response(serializer.data)

@@ -38,8 +38,14 @@ class MetaDataSerializer(serializers.ModelSerializer):
         model = MetaData
 
 
-class SequenceTypeSerializer(serializers.ModelSerializer):
+class SequenceTypeSerializer(serializers.HyperlinkedModelSerializer):
+    sample_url = serializers.SerializerMethodField()
+
+    def get_sample_url(self, obj):
+        return 'https://dev.staphopia.com/api/samples/{0}/metadata/'.format(
+            obj.sample.sample_tag
+        )
 
     class Meta:
         model = Srst2
-        fields = ('sample_tag', 'st_stripped')
+        fields = ('sample_tag', 'st_stripped', 'sample_url')
