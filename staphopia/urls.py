@@ -18,6 +18,7 @@ from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
 
 from api.viewsets.samples import SampleViewSet
+from api.viewsets.sequence_type import MLSTViewSet
 from api.viewsets.top import TopViewSet
 
 admin.autodiscover()
@@ -27,6 +28,7 @@ admin.autodiscover()
 router = routers.DefaultRouter()
 router.register(r'samples', SampleViewSet)
 router.register(r'top', TopViewSet, 'Top')
+router.register(r'mlst', MLSTViewSet, 'MSLT')
 
 urlpatterns = patterns(
     '',

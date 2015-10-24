@@ -1,5 +1,6 @@
 """ . """
 from rest_framework import serializers
+from mlst.models import Srst2
 from sample.models import MetaData
 
 
@@ -35,3 +36,10 @@ class SampleSerializer(serializers.HyperlinkedModelSerializer):
 class MetaDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetaData
+
+
+class SequenceTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Srst2
+        fields = ('sample_tag', 'st_stripped')
