@@ -51,6 +51,11 @@ class MLSTViewSet(viewsets.ReadOnlyModelViewSet):
         """
         sequence_type = pk
         cutoff = request.GET['cutoff'] if 'cutoff' in request.GET else 0.70
+        try:
+            cutoff = float(cutoff)
+        except ValueError:
+            cutoff = 0.70
+
         only_positive = True if 'only_positive' in request.GET else False
 
         cursor = connection.cursor()
@@ -60,7 +65,7 @@ class MLSTViewSet(viewsets.ReadOnlyModelViewSet):
         results = []
         exact_matches = 0
         for row in cursor.fetchall():
-            status = 'positive' if row[2] >= float(cutoff) else 'negative'
+            status = 'positive' if row[2] >= cutoff else 'negative'
             if only_positive and status is 'negative':
                 continue
 
