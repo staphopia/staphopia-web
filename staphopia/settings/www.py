@@ -37,3 +37,8 @@ https://docs.djangoproject.com/en/1.6/howto/static-files/
 STATIC_URL = '/static/'
 SITE_ID = 1
 SITE_ENV = 'www'
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_EXEMPT_URLS = (
+    r'^*$',
+)

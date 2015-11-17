@@ -126,17 +126,6 @@ Staphopia
 ROOT_URLCONF = 'staphopia.urls'
 WSGI_APPLICATION = 'staphopia.wsgi.application'
 DEFAULT_FROM_EMAIL = "Staphopia's Friendly Robot <usa300@staphopia.com>"
-LOGIN_URL = '/accounts/login/'
-LOGIN_EXEMPT_URLS = (
-    r'^$',
-    r'^samples/',
-    r'^top10/',
-    r'^contact/',
-    r'^accounts/login/',
-    r'^accounts/register/',
-    r'^accounts/activate/',
-    r'^admin/',
-)
 
 '''----------------------------------------------------------------------------
 Internationalization

@@ -33,3 +33,8 @@ STATIC_URL = '/static/'
 
 SITE_ID = 2
 SITE_ENV = 'dev'
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_EXEMPT_URLS = (
+    r'^accounts/login/',
+)
