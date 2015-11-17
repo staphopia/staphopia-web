@@ -1,4 +1,6 @@
 {% load staticfiles %}
+{% load settings %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,8 +36,9 @@
     {% if user.is_authenticated %}
         logged in
     {% else %}
-        not logged in
+        not logged in...
     {% endif %}
+    {% site_env %} settings
     </div>
 
     <!-- Javascipt -->

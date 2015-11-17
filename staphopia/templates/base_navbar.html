@@ -30,6 +30,7 @@
                 <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>
             </ul>
             <!-- Right Nav Section -->
+            {% if site_env == 'dev' %}
             <ul class="nav navbar-nav navbar-right">
             {% if user.is_authenticated %}
                 <li>
@@ -60,6 +61,7 @@
                 </li>
             {% endif %}
             </ul>
+            {% endif %}
         </div>
     </div>
 {% endblock %}
