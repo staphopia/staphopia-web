@@ -42,3 +42,6 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_EXEMPT_URLS = (
     r'^.*$',
 )
+
+GOOGLE_ANALYTICS_PROPERTY_ID = 'UA-37140301-1'
+GOOGLE_ANALYTICS_DOMAIN = 'staphopia.com'
