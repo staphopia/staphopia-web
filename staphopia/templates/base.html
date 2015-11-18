@@ -12,6 +12,11 @@
     {% block css %}{% endblock %}
     <title>{% block title %}Staphopia{% endblock %}</title>
     <link rel="shortcut icon" href="{% static "img/favicon.ico" %}" />
+
+    {% if GOOGLE_ANALYTICS_PROPERTY_ID %}
+      {% include "google_analytics.html" %}
+    {% endif %}
+
 </head>
 
 <body>
@@ -46,7 +51,6 @@
         });
     </script>
     {% endif %}
-
     {% block js %}
     {% endblock %}
     <!-- End Javascript -->
