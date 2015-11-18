@@ -1,6 +1,6 @@
 from django import template
 
-from ena.models import CenterNames
+from ena.models import CenterNames, Experiment
 from sample.models import MetaData
 from assembly.models import Stats
 from sequence.models import Quality
@@ -12,6 +12,12 @@ register = template.Library()
 def get_meta_data(sample_tag):
     sample = MetaData.objects.get(sample_tag=sample_tag)
     return sample
+
+
+@register.assignment_tag
+def get_taxon_id(sample_tag):
+    exp = Experiment.objects.get(experiment_accession=sample_tag)
+    return exp.tax_id
 
 
 @register.simple_tag
