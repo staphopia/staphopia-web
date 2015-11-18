@@ -5,6 +5,6 @@ register = template.Library()
 
 
 # settings value
-@register.simple_tag
+@register.assignment_tag
 def site_env():
     return getattr(settings, 'SITE_ENV', "")

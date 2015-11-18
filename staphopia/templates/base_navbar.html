@@ -4,6 +4,7 @@
 {% url 'top10' as top10 %}
 {% url 'contact' as contact %}
 {% load navbar %}
+{% load settings %}
 
 {% block navbar %}
     <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
@@ -30,7 +31,8 @@
                 <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>
             </ul>
             <!-- Right Nav Section -->
-            {% if site_env == 'dev' %}
+            {% site_env as env %}
+            {% if env == "dev" %}
             <ul class="nav navbar-nav navbar-right">
             {% if user.is_authenticated %}
                 <li>

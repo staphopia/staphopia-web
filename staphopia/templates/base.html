@@ -38,7 +38,8 @@
     {% else %}
         not logged in...
     {% endif %}
-    {% site_env %} settings
+    {% site_env as env %}
+    {{ env }} settings
     </div>
 
     <!-- Javascipt -->
