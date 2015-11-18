@@ -4,6 +4,11 @@
 function show_panel(navbar_id) {
     panel_id = get_panel_id(navbar_id);
     $(panel_id).removeClass('hide')
+
+    if (panel_id == '#mlst_related_panel') {
+        var table = $('#mlst_related_table').DataTable();
+        table.columns.adjust().draw();
+    }
 }
 
 function hide_panel(navbar_id) {
@@ -25,6 +30,12 @@ function get_panel_id(navbar_id) {
             break;
           case "show-assembly":
             panel_id = '#assembly_panel'
+            break;
+          case "show-mlst":
+            panel_id = '#mlst_panel'
+            break;
+          case "show-mlst-related":
+            panel_id = '#mlst_related_panel'
             break;
           default:
             break;

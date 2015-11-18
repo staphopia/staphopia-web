@@ -52,8 +52,8 @@ def sample_summary(request):
 
     # Columns to include in table
     cols = [
-        'sample_tag', 'rank', 'sequencing_center', 'q_score', 'coverage',
-        'gc_content', 'mean_read_length', 'st_stripped'
+        'sample_tag', 'rank', 'sequencing_center', 'st_stripped', 'q_score',
+        'coverage', 'mean_read_length'
     ]
 
     # Columns to search text against

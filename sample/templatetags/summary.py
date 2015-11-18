@@ -3,15 +3,22 @@ from django import template
 from ena.models import CenterNames, Experiment
 from sample.models import MetaData
 from assembly.models import Stats
+from mlst.models import Srst2
 from sequence.models import Quality
 
 register = template.Library()
 
 
-@register.assignment_tag
-def get_meta_data(sample_tag):
+@register.assignment_tag(takes_context=True)
+def get_meta_data(context, sample_tag):
     sample = MetaData.objects.get(sample_tag=sample_tag)
     return sample
+
+
+@register.assignment_tag(takes_context=True)
+def get_mlst_data(context, sample):
+    mlst = Srst2.objects.get(sample=sample)
+    return mlst
 
 
 @register.assignment_tag

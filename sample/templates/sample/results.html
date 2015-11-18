@@ -2,10 +2,15 @@
 {% load staticfiles %}
 {% load summary %}
 
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="//cdn.datatables.net/plug-ins/725b2a2115b/integration/bootstrap/3/dataTables.bootstrap.css">
+{% endblock %}
 
 {% block container %}
 {% get_sequence_quality sample_tag as fq %}
 {% get_meta_data sample_tag as sample %}
+{% get_mlst_data sample as mlst %}
 <div class="row">
     <div class='col-sm-3 col-md-2'>
         {% include "sample/left-navbar.html" with rank=fq.1.rank %}
@@ -16,11 +21,19 @@
         {% include "sample/phenotype.html" with sample=sample %}
         {% include "sample/sequence.html" with fq=fq %}
         {% include "sample/assembly.html" %}
+        {% include "sample/mlst.html" with mlst=mlst %}
+        {% include "sample/mlst-related.html"%}
     </div>
 </div>
+<span id='st_stripped' hidden>{{ mlst.st_stripped }}</span>
 {% endblock %}
 
 {% block js %}
+    <script type="text/javascript" language="javascript"
+            src="//cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" language="javascript"
+            src="//cdn.datatables.net/plug-ins/725b2a2115b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+
     <script>
     var current_result = 'show-meta-data'
     $(document).ready(function() {
@@ -32,6 +45,42 @@
             current_result = $(this).attr('id');
             show_panel(current_result);
         });
+
+        $("div.list-group a.title-group").click(function() {
+            title_group = $(this).attr('id');
+            if (title_group == 'summary') {
+                $('#show-meta-data').click()
+            } else if (title_group == 'mlst') {
+                $('#show-mlst').click()
+            }
+        });
+
+        var st = "st=" + $("#st_stripped").text();
+
+        var table = $('#mlst_related_table').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "scrollY": "500px",
+            "scrollX": true,
+            "autoWidth": true,
+            "searchDelay": 1250,
+            "displayLength": 30,
+            "search": {
+                "search": st
+            },
+            "ajax": "{% url 'samples_data' %}",
+            "paginationType": "full_numbers",
+            "dom": '<"H"r>t<"F"p>',
+            "rowCallback": function( row, data ) {
+                $(row).prop('title', "Views details on sample " + data[0] + " in another window.");
+            }
+        });
+
+        $('#mlst_related_table tbody').on( 'click', 'tr', function () {
+            var rowData = table.row( this ).data();
+            window.open(rowData[0]+'/', '_blank');
+            window.focus();
+        } );
     });
 
     </script>
