@@ -52,8 +52,8 @@
             </div>
             <div class='col-xs-12 col-md-6'>
                 <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Program</li>
-                    <li class="list-group-item col-xs-6">{{sample_tag}}</li>
+                    <li class="list-group-item col-xs-6 text-right"></li>
+                    <li class="list-group-item col-xs-6">&nbsp</li>
 
                     <li class="list-group-item col-xs-6 text-right"></li>
                     <li class="list-group-item col-xs-6">&nbsp</li>
@@ -66,14 +66,9 @@
                 </ul>
 
                 <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Contigs >= 1Kb</li>
+                    <li class="list-group-item col-xs-6 text-right">Contigs >= 1Mb</li>
                     <li class="list-group-item col-xs-6">
-                        {{ assembly.contigs_greater_1k|intcomma }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Contigs >= 10Kb</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ assembly.contigs_greater_10k|intcomma }}
+                        {{ assembly.contigs_greater_1m|intcomma }}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Contigs >= 100Kb</li>
@@ -81,9 +76,14 @@
                         {{ assembly.contigs_greater_100k|intcomma }}
                     </li>
 
-                    <li class="list-group-item col-xs-6 text-right">Contigs >= 1Mb</li>
+                    <li class="list-group-item col-xs-6 text-right">Contigs >= 10Kb</li>
                     <li class="list-group-item col-xs-6">
-                        {{ assembly.contigs_greater_1m|intcomma }}
+                        {{ assembly.contigs_greater_10k|intcomma }}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Contigs >= 1Kb</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ assembly.contigs_greater_1k|intcomma }}
                     </li>
                 </ul>
             </div>

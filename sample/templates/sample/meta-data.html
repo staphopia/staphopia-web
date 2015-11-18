@@ -7,12 +7,20 @@
                 <ul class="list-group row no-border condensed">
                     <li class="list-group-item col-xs-6 text-right">Owner</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.user.username }}_bot
+                        {% if sample.user.username == "ena" %}
+                            {{ sample.user.username }}_bot
+                        {% else %}
+                            {{ sample.user.username }}
+                        {% endif %}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Sample Visibility</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.is_public }}
+                        {% if sample.is_public %}
+                            Public
+                        {% else %}
+                            Private
+                        {% endif %}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">ENA Link</li>
@@ -22,7 +30,7 @@
 
                     <li class="list-group-item col-xs-6 text-right">Publication Link</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.is_published }}
+                        {{ sample.is_published|default:"-" }}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Funding Agency</li>
@@ -78,7 +86,10 @@
                 <ul class="list-group row no-border condensed">
                     <li class="list-group-item col-xs-6 text-right">Strain</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.strain|default:"-" }}
+                        {% get_taxon_id sample.sample_tag as tax_id %}
+                        <a target="_blank" href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={{ tax_id }}">
+                            {{ sample.strain|default:"-" }}
+                        </a>
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Isolation Date</li>
@@ -131,9 +142,10 @@
         </div>
         <div class="row sample-summary">
             <ul class="list-group row no-border condensed">
-                <li class="list-group-item col-xs-4 col-md-3 text-right">Comments</li>
-                <li class="list-group-item col-xs-8 col-md-9">
-                    <textarea disabled="">{{ sample.comments|default:"-" }}</textarea>
+                <li class="list-group-item col-xs-3 col-xs-offset-1 col-md-2 col-md-offset-1 text-right">Comments</li>
+                <li class="list-group-item col-xs-7 col-md-8">
+                    <textarea rows="9" disabled="">{{ sample.comments|default:"-" }}
+                    </textarea>
                 </li>
             </ul>
         </div>
