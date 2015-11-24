@@ -18,3 +18,7 @@ insert_variant.*
 .Rproj.user
 screenlog.*
 *.*~
+all_*.txt
+multiple_*.txt
+singleton_*.txt
+insert_strings.*
