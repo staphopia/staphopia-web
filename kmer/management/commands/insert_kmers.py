@@ -1,7 +1,7 @@
 """ Insert Jellyfish output into the database. """
-import gzip
 import sys
 import time
+import datetime
 
 from bitarray import bitarray
 
@@ -10,19 +10,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from sample.models import MetaData
 from kmer.models import Binary, Total
-
-
-def timeit(method):
-
-    def timed(*args, **kw):
-        ts = time.time()
-        result = method(*args, **kw)
-        te = time.time()
-
-        print '%r\t%2.2f sec' % (method.__name__, te - ts)
-        return result
-
-    return timed
+from staphopia.utils import gziplines, timeit
 
 
 class Command(BaseCommand):
@@ -38,7 +26,8 @@ class Command(BaseCommand):
     _tables = [
         'kmer_binarytmp',
         'kmer_count',
-        'kmer_total'
+        'kmer_total',
+        'kmer_counttemporary'
     ]
 
     def add_arguments(self, parser):
@@ -47,6 +36,11 @@ class Command(BaseCommand):
         parser.add_argument('jellyfish', metavar='JELLYFISH_COUNTS',
                             help=('Compressed (gzip) Jellyfish counts to be '
                                   'inserted.'))
+        parser.add_argument('--size', type=int, default=500,
+                            help='Size of each batch. (Default: 500)')
+        parser.add_argument('--exists', action='store_true',
+                            help=('Assume the kmer already exists in the '
+                                  'database.'))
         parser.add_argument('--empty', action='store_true',
                             help='Empty tables and reset counts.')
 
@@ -65,35 +59,62 @@ class Command(BaseCommand):
             ))
 
         # Inititalize values
+        self.multiplier = 10
         self.total = 0
         self.singletons = 0
         self.kmer_counts = {}
         self.kmer_binary = []
         self.new_kmers = 0
+        start_time = time.time()
 
         # Read Jellyfish file
         self.read_jellyfish_counts(opts['jellyfish'])
+        print 'Total kmers: {0}'.format(self.total)
         self.encode_words(self.kmer_counts.keys())
 
-        # Split words into 100k chunks
-        start_time = time.time()
-        self.insert_kmer(self.encoded_words.keys())
-        values = self.get_kmer_binary_inbulk(self.encoded_words.keys())
-        # for chunk in self.chunks(values, 20):
-        self.insert_counts(values)
-        print '{0}\t{1:.2f}'.format(
-            len(self.encoded_words),
-            (time.time() - start_time)
-        )
+        # Split encoded words into batches
+        progress = 0
+        progress_time = time.time()
+        for batch in self.batches(self.encoded_words.keys(), opts['size']):
+            values = None
+            if opts['exists']:
+                self.get_kmer_ids(batch, opts['exists'])
+            else:
+                self.insert_kmer(batch)
+                self.get_kmer_ids(batch, opts['exists'])
+
+            values = self.get_count_values()
+            self.insert_counts(values)
+
+            progress += opts['size']
+            if progress % (opts['size'] * self.multiplier) == 0:
+                self.print_progress(
+                    opts['size'],
+                    float(time.time() - progress_time),
+                    progress
+                )
+                progress_time = time.time()
 
         # Process remaining kmers and insert totals
         runtime = int(time.time() - start_time)
         Total.objects.create(
-            kmer=self.kmer_instance,
+            sample=self.sample,
             total=self.total,
             singletons=self.singletons,
             new_kmers=self.new_kmers,
             runtime=runtime
+        )
+
+    def print_progress(self, size, run_time, progress):
+        total_remaining = ((self.total - progress) / (size * self.multiplier))
+        time_left = run_time * total_remaining
+        print('Progess {0} of {1} ({2:.2f}%, {3} kmers/sec) inserted. '
+              'Estimated time remaining: {4}').format(
+            progress,
+            self.total,
+            (float(progress) / self.total * 100),
+            int((size * self.multiplier) / run_time),
+            datetime.timedelta(seconds=time_left)
         )
 
     def encode(self, seq):
@@ -106,15 +127,14 @@ class Command(BaseCommand):
         a.frombytes(seq)
         return a.decode(self._code)[0:31]
 
-    def chunks(self, l, n):
-        """ Yield successive n-sized chunks from l. """
+    def batches(self, l, n):
+        """ Yield successive n-sized batches from l. """
         for i in xrange(0, len(l), n):
             yield l[i:i + n]
 
     @timeit
     def read_jellyfish_counts(self, jellyfish_file):
-        fh = gzip.open(jellyfish_file)
-        for line in fh:
+        for line in gziplines(jellyfish_file):
             word, count = line.rstrip().split(' ')
             self.kmer_counts[word] = int(count)
 
@@ -122,7 +142,6 @@ class Command(BaseCommand):
             self.total += 1
             if int(count) == 1:
                 self.singletons += 1
-        fh.close()
 
     @timeit
     def encode_words(self, words):
@@ -139,37 +158,46 @@ class Command(BaseCommand):
         return None
 
     @timeit
-    def get_kmer_binary_inbulk(self, words):
-        values = []
-        query = """
-            SELECT b.id, b.string
-            FROM kmer_binarytmp AS tmp
-            LEFT JOIN kmer_binary AS b
-            ON b.string=tmp.string;
-            """
-        cursor = connection.cursor()
-        cursor.execute(query)
+    def get_kmer_ids(self, words, existing):
+        if existing:
+            self.kmer_ids = Binary.objects.in_bulk_existing(words)
+        else:
+            self.kmer_ids = {}
+            query = """
+                SELECT b.id, b.string
+                FROM kmer_binarytmp AS tmp
+                LEFT JOIN kmer_binary AS b
+                ON b.string=tmp.string;
+                """
+            cursor = connection.cursor()
+            cursor.execute(query)
 
-        for row in cursor.fetchall():
-            # count, kmer_id, string_id
+            for row in cursor.fetchall():
+                self.kmer_ids[str(row[1])] = row[0]
+
+        return None
+
+    @timeit
+    def get_count_values(self):
+        values = []
+        for string, string_id in self.kmer_ids.items():
+            # count, sample_id, string_id
             values.append('({0}, {1}, {2})'.format(
-                self.kmer_counts[self.encoded_words[str(row[1])]],
-                self.kmer_instance.pk,
-                row[0]
+                self.kmer_counts[self.encoded_words[string]],
+                self.sample.pk,
+                string_id
             ))
 
         return values
 
     @timeit
-    @transaction.atomic
     def insert_counts(self, values):
-        for chunk in self.chunks(values, 1000000):
-            query = (
-                "INSERT INTO kmer_kmercount (count, kmer_id, string_id) "
-                "VALUES {0}".format(','.join(chunk))
-            )
-            cursor = connection.cursor()
-            cursor.execute(query)
+        query = (
+            "INSERT INTO kmer_counttemporary (count, sample_id, string_id) "
+            "VALUES {0}".format(','.join(values))
+        )
+        cursor = connection.cursor()
+        cursor.execute(query)
 
     @transaction.atomic
     def empty_tables(self):
