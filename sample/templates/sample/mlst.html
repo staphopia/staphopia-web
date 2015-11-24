@@ -1,0 +1,92 @@
+{% load humanize %}
+{% load summary %}
+<div id="mlst_panel" class="panel panel-info hide">
+    <div class="panel-heading">MLST Outline</div>
+    <div class="panel-body">
+        <div class="row">
+            <div class='col-xs-12 col-md-10 col-md-offset-1'>
+                {% if mlst.is_exact %}
+                    {{ sample_tag }} is an exact match to <strong>ST{{mlst.st_stripped}}</strong>.
+                {% elif mlst.st_stripped > 0 %}
+                    {{ sample_tag }} is <strong>similar to ST{{mlst.st_stripped}}</strong>, although it is not an exact match.
+                    This could be due to low coverage coverage or poor mapping quality.
+                {% else %}
+                    Given the data, a <strong>sequence type was not determined</strong> for {{sample_tag}}.
+                    One or more loci has multiple mismatches or poor coverage.
+                {% endif %}
+                Please see the summary below.
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 text-right"></li>
+                    <li class="list-group-item col-xs-6">&nbsp</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 col-md-6 col-md-offset-3 text-center">
+                        <strong><u>Identified Alleles</u></strong>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <td>Locus</td>
+                                    <td>Allele<sup>1</sup></td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><em>arcC</em></td><td>{{ mlst.arcc }}</td>
+                                </tr>
+                                <tr>
+                                    <td><em>aroE</em></td><td>{{ mlst.aroe }}</td>
+                                </tr>
+                                <tr>
+                                    <td><em>glpF</em></td><td>{{ mlst.glpf }}</td>
+                                </tr>
+                                <tr>
+                                    <td><em>gmk</em></td><td>{{ mlst.gmk }}</td>
+                                </tr>
+                                <tr>
+                                    <td><em>pta</em></td><td>{{ mlst.pta }}</td>
+                                </tr>
+                                <tr>
+                                    <td><em>tpi</em></td><td>{{ mlst.tpi }}</td>
+                                </tr>
+                                <tr>
+                                    <td><em>yqiL</em></td><td>{{ mlst.yqil }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </li>
+                </ul>
+            </div>
+            <div class='col-xs-12 col-md-6'>
+                <ul class="list-group row no-border condensed">
+                    <li class="list-group-item col-xs-6 col-md-6 col-md-offset-3 text-center">
+                        <strong><u>SRST2 Statistics<sup>2</sup></u></strong>
+                    </li>
+                    <li class="list-group-item col-xs-6 text-right">Mismatches</li>
+                    <li class="list-group-item col-xs-6">{{ mlst.mismatches }}</li>
+
+                    <li class="list-group-item col-xs-6 text-right">Depth</li>
+                    <li class="list-group-item col-xs-6">{{ mlst.depth }}</li>
+
+                    <li class="list-group-item col-xs-6 text-right">Maximum MAF</li>
+                    <li class="list-group-item col-xs-6">{{ mlst.maxMAF }}</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class='col-xs-12 col-md-12 footnote'>
+            1: '*' means the best allele had at least 1 mismatch.
+               '?' means the best allele has areas of low coverage.
+               '-' means no allele could be assigned.<br>
+            2: Brief note about SRST2 statistics.
+            <em>Mismatches</em> are the total number of mismatches for each loci (lower is better).
+            <em>Depth</em> is the mean coverage across each loci (higher is better).
+            <em>maxMAF</em> is the highest minor allele frequency across each loci (lower is better).
+            For more detailed information please see <a target="_blank" href="https://github.com/katholt/srst2#mlst-results">SRST2's documentation</a>.
+            </div>
+        </div>
+    </div>
+</div>

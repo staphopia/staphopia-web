@@ -1,4 +1,6 @@
 {% load staticfiles %}
+{% load settings %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +12,11 @@
     {% block css %}{% endblock %}
     <title>{% block title %}Staphopia{% endblock %}</title>
     <link rel="shortcut icon" href="{% static "img/favicon.ico" %}" />
+
+    {% if GOOGLE_ANALYTICS_PROPERTY_ID %}
+      {% include "google_analytics.html" %}
+    {% endif %}
+
 </head>
 
 <body>
@@ -30,12 +37,6 @@
         </div>
     </footer>
     <!-- End Footer -->
-
-    {% if user.is_authenticated %}
-        logged in
-    {% else %}
-        not logged in
-    {% endif %}
     </div>
 
     <!-- Javascipt -->
@@ -50,7 +51,6 @@
         });
     </script>
     {% endif %}
-
     {% block js %}
     {% endblock %}
     <!-- End Javascript -->

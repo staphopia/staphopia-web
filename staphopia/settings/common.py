@@ -118,6 +118,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
     'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.request',
+    'staphopia.context_processors.google_analytics',
 )
 
 '''----------------------------------------------------------------------------
@@ -126,17 +127,6 @@ Staphopia
 ROOT_URLCONF = 'staphopia.urls'
 WSGI_APPLICATION = 'staphopia.wsgi.application'
 DEFAULT_FROM_EMAIL = "Staphopia's Friendly Robot <usa300@staphopia.com>"
-LOGIN_URL = '/accounts/login/'
-LOGIN_EXEMPT_URLS = (
-    r'^$',
-    r'^samples/',
-    r'^top10/',
-    r'^contact/',
-    r'^accounts/login/',
-    r'^accounts/register/',
-    r'^accounts/activate/',
-    r'^admin/',
-)
 
 '''----------------------------------------------------------------------------
 Internationalization

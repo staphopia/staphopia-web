@@ -32,3 +32,13 @@ https://docs.djangoproject.com/en/1.6/howto/static-files/
 STATIC_URL = '/static/'
 
 SITE_ID = 2
+SITE_ENV = 'dev'
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_EXEMPT_URLS = (
+    r'^accounts/login/',
+)
+
+GOOGLE_ANALYTICS_PROPERTY_ID = 'UA-70312420-1'
+GOOGLE_ANALYTICS_DOMAIN = 'staphopia.com'
+
