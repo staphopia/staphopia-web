@@ -90,8 +90,8 @@ class Command(BaseCommand):
                 # File didn't completely load, delete and reload
                 print(
                     ('{0} did not complete in previous attempt, deleting '
-                     'existing records.').format(sample_tag), 
-                     file=sys.stderr
+                     'existing records.').format(sample_tag),
+                    file=sys.stderr
                 )
                 self.delete_objects()
             # Test to make sure all counts are not 0
@@ -104,8 +104,8 @@ class Command(BaseCommand):
         except Counts.DoesNotExist:
             self.delete_objects()
             print(
-                ('{0} will be loaded.').format(sample_tag), 
-                 file=sys.stderr
+                ('{0} will be loaded.').format(sample_tag),
+                file=sys.stderr
             )
 
     @timeit
@@ -352,7 +352,6 @@ class Command(BaseCommand):
     @timeit
     def read_vcf(self):
         # Insert VCF Records
-        variant_count = 0
         for record in self.records:
             # Get annotation, filter, comment
             annotation = self.get_annotation(record)
@@ -375,7 +374,7 @@ class Command(BaseCommand):
                     quality=record.QUAL
                 )
             )
-            
+
             # Insert SNP/Indel
             if record.is_snp:
                 comment = self.get_comment(record.INFO['Comments'][0])
@@ -410,12 +409,12 @@ class Command(BaseCommand):
 
     @transaction.atomic
     @timeit
-    def delete_objects(self): 
+    def delete_objects(self):
         Confidence.objects.filter(sample=self.sample).delete()
         ToSNP.objects.filter(sample=self.sample).delete()
         ToIndel.objects.filter(sample=self.sample).delete()
         Counts.objects.filter(sample=self.sample).delete()
-                    
+
     @transaction.atomic
     @timeit
     def insert_snps(self):
@@ -433,7 +432,7 @@ class Command(BaseCommand):
     def insert_confidence(self):
         Confidence.objects.bulk_create(self.confidence, batch_size=50000)
         return None
-        
+
     @transaction.atomic
     @timeit
     def insert_counts(self):
