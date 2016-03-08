@@ -1,4 +1,9 @@
-""" Insert variant analysis results into database. """
+"""
+Useful functions associated with variant.
+
+To use:
+from variant.tools import UTIL1, UTIL2, etc...
+"""
 from __future__ import print_function
 from os.path import basename, splitext
 import sys
@@ -7,10 +12,9 @@ import vcf
 
 from django.db import transaction
 from django.db.utils import IntegrityError
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 
 from staphopia.utils import timeit
-from sample.models import MetaData
 from variant.models import (
     Annotation,
     Comment,
@@ -25,32 +29,15 @@ from variant.models import (
 )
 
 
-class Command(BaseCommand):
+class Variants(object):
+    """Insert VCF into the database."""
 
-    """ Insert results into database. """
-    help = 'Insert the analysis results into the database.'
+    def __init__(self, input, sample):
+        """Initialize variables."""
+        self.sample = sample
 
-    def add_arguments(self, parser):
-        parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
-                            help='Sample tag for which the data is for')
-        parser.add_argument('input', metavar='INPUT_VCF',
-                            help=('Gzipped annotated VCF formated file to '
-                                  'be inserted'))
-
-    def handle(self, *args, **opts):
-        """ Insert results to database. """
-
-        # Get sample and pipeline instances
-        print('Working on {0}.'.format(opts['sample_tag']), file=sys.stderr)
-        self.get_sample_instance(opts['sample_tag'])
-
-        # Open VCF for reading
-        self.open_vcf(opts['input'])
-
-        # Get reference info
-        self.get_reference_instance()
-
-        # Get data already in the DB
+        # Read VCF and get required data from database
+        self.open_vcf(input)
         self.get_annotation_instances()
         self.get_locus_tags()
         self.get_comments()
@@ -59,58 +46,20 @@ class Command(BaseCommand):
         self.get_filter_instances()
         self.get_snps()
 
-        # Store variants for bulk create
+        # Lists for bulk creation
         self.snps = []
         self.indels = []
         self.confidence = []
 
-        # Read through VCF, and insert Confidences
+        # Read through VCF
         self.read_vcf()
 
-        # Ready to insert variants and confidence
+    def insert_variants(self):
+        """Insert variants into the database."""
         self.insert_snps()
         self.insert_indels()
         self.insert_confidence()
         self.insert_counts()
-
-    def get_sample_instance(self, sample_tag):
-        try:
-            self.sample = MetaData.objects.get(sample_tag=sample_tag)
-        except MetaData.DoesNotExist:
-            raise CommandError('SAMPLE_TAG: {0} does not exist'.format(
-                sample_tag
-            ))
-
-        try:
-            count = Counts.objects.get(sample=self.sample)
-
-            # Get difference in counts
-            diff = count.confidence - (count.snp + count.indel)
-            if diff:
-                # File didn't completely load, delete and reload
-                print(
-                    ('{0} did not complete in previous attempt, deleting '
-                     'existing records.').format(sample_tag),
-                    file=sys.stderr
-                )
-                self.delete_objects()
-            # Test to make sure all counts are not 0
-            else:
-                if count.confidence and count.snp and count.indel:
-                    # File has been loaded
-                    raise CommandError('{0} has been loaded, exiting.'.format(
-                        sample_tag
-                    ))
-        except Counts.DoesNotExist:
-            self.delete_objects()
-            print(
-                ('{0} will be loaded.').format(sample_tag),
-                file=sys.stderr
-            )
-
-    @timeit
-    def get_positions(self):
-        self.positions = [record.POS for record in self.records]
 
     @timeit
     def open_vcf(self, input):
@@ -132,28 +81,28 @@ class Command(BaseCommand):
 
     @timeit
     def get_locus_tags(self):
-        """ Return the primary key of each locus tag. """
+        """Return the primary key of each locus tag."""
         self.locus_tags = {}
         for tag in Annotation.objects.filter(reference=self.reference):
             self.locus_tags[tag.locus_tag] = tag.pk
 
     @timeit
     def get_annotation_instances(self):
-        """ Return the instance for each annotation. """
+        """Return the instance for each annotation."""
         pks = []
         for ks in Annotation.objects.filter(reference=self.reference):
             pks.append(ks.pk)
         self.annotations = Annotation.objects.in_bulk(pks)
 
     def get_comments(self):
-        """ Return the primary key of each comment. """
+        """Return the primary key of each comment."""
         self.comments = {}
         for c in Comment.objects.all():
             self.comments[c.comment] = c.pk
 
     @timeit
     def get_comment_instances(self):
-        """ Return the instance for each comment. """
+        """Return the instance for each comment."""
         pks = []
         for ks in Comment.objects.all():
             pks.append(ks.pk)
@@ -161,14 +110,14 @@ class Command(BaseCommand):
 
     @timeit
     def get_filters(self):
-        """ Return the primary key of each comment. """
+        """Return the primary key of each comment."""
         self.filters = {}
         for f in Filter.objects.all():
             self.filters[f.name] = f.pk
 
     @timeit
     def get_filter_instances(self):
-        """ Return the instance for each comment. """
+        """Return the instance for each comment."""
         pks = []
         for ks in Filter.objects.all():
             pks.append(ks.pk)
