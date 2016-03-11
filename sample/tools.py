@@ -99,18 +99,19 @@ def validate_analysis(directory):
                 files['variants'] = file
 
     for key, val in files.items():
-        if not val:
-            files['missing'].append(message[key])
+        if 'missing' not in key:
+            if not val:
+                files['missing'].append(message[key])
 
-        if key == "annotation":
-            if not files[key]['genes']:
-                files['missing'].append(message[key]['genes'])
-            if not files[key]['proteins']:
-                files['missing'].append(message[key]['proteins'])
-            if not files[key]['contigs']:
-                files['missing'].append(message[key]['contigs'])
-            if not files[key]['gff']:
-                files['missing'].append(message[key]['gff'])
+            if key == "annotation":
+                if not files[key]['genes']:
+                    files['missing'].append(message[key]['genes'])
+                if not files[key]['proteins']:
+                    files['missing'].append(message[key]['proteins'])
+                if not files[key]['contigs']:
+                    files['missing'].append(message[key]['contigs'])
+                if not files[key]['gff']:
+                    files['missing'].append(message[key]['gff'])
 
     return files
 

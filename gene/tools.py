@@ -99,6 +99,10 @@ def __read_gff(gff_file, sample, contig_pks, genes, proteins):
                                 attribute.split('UniRef90_')[1]
                             )
 
+                if cols[7] == '.':
+                    # tRNA gives '.' for phase,lets make it 9
+                    cols[7] = 9
+
                 features.append(
                     Features(
                         sample=sample,

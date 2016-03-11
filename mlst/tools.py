@@ -82,7 +82,7 @@ def insert_mlst_srst2(srst2, sample):
                 mismatches=cols[9],
                 uncertainty=cols[10],
                 depth=float(cols[11]),
-                maxMAF=float("{0:.7f}".format(cols[12]))
+                maxMAF=float("{0:.7f}".format(float(cols[12])))
             )
             print("SRST2 Results Saved")
         except IntegrityError as e:
@@ -91,7 +91,7 @@ def insert_mlst_srst2(srst2, sample):
             ))
 
 
-def determine_st(self, st):
+def determine_st(st):
     """Determine stipped vs exact match ST."""
     import re
     exact_st = re.compile('^(\d+)$')

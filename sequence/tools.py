@@ -33,7 +33,7 @@ def insert_sequence_stats(stats, sample, is_original=False):
         )
 
 
-def __get_rank(self, data):
+def __get_rank(data):
         """
         Determine the rank of the reads.
 

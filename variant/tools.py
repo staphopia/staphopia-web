@@ -38,6 +38,7 @@ class Variants(object):
 
         # Read VCF and get required data from database
         self.open_vcf(input)
+        self.get_reference_instance()
         self.get_annotation_instances()
         self.get_locus_tags()
         self.get_comments()

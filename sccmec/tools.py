@@ -27,7 +27,7 @@ def insert_sccmec_coverage(coverage, sample):
         start = cassette.meca_start - 1
         stop = cassette.meca_stop - 1
         meca_total = 0
-        meca = sccmec[cassette]['coverage'][start:stop]
+        meca = sccmec[cassette.header]['coverage'][start:stop]
         for pos in meca:
             if int(pos):
                 meca_total += 1

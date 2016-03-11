@@ -55,7 +55,7 @@ class Command(BaseCommand):
 
             # Create new sample
             try:
-                sample_tag = create_sample_tag(user, opts['sample_tag'])
+                sample_tag = create_sample_tag(user)
                 print("Creating new sample: {0}".format(sample_tag))
                 sample = MetaData(
                     user=user,
@@ -72,6 +72,7 @@ class Command(BaseCommand):
                 )
 
             # Verify
+            '''
             print(json.dumps({
                 'sample_id': sample.pk,
                 'sample_tag': sample.sample_tag,
@@ -80,6 +81,7 @@ class Command(BaseCommand):
                 'is_paired': sample.is_paired,
                 'comment': sample.comments
             }))
+            '''
 
             # Insert analysis results
             print("\tInserting Sequence Stats...")
