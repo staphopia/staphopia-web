@@ -86,8 +86,7 @@ class Upload(models.Model):
 
 
 class SampleSummary(models.Model):
-
-    """ Unmananged model of a database view. """
+    """Unmananged model of a database view."""
 
     id = models.IntegerField(primary_key=True)
     sample_tag = models.TextField(blank=True)
@@ -215,8 +214,7 @@ class SampleSummary(models.Model):
 
 
 class Pipeline(models.Model):
-
-    """ Store pipeline version for history purposes. """
+    """Store pipeline version for history purposes."""
 
     sample = models.OneToOneField('MetaData', unique=True,
                                   on_delete=models.CASCADE)

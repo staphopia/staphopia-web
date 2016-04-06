@@ -12,16 +12,14 @@ from variant.models import Reference
 
 
 class Clusters(models.Model):
-
-    """ UniRef90 Cluster Ids. """
+    """UniRef90 Cluster Ids."""
 
     name = models.TextField(unique=True)
     aa = models.TextField()
 
 
 class ClusterMembers(models.Model):
-
-    """ Each member of a given UniRef90 Cluster. """
+    """Each member of a given UniRef50 Cluster."""
 
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
     member = models.TextField(unique=True)
@@ -37,23 +35,20 @@ class ClusterMembers(models.Model):
 
 
 class Names(models.Model):
-
-    """ Gene names, and protein products. """
+    """Gene names, and protein products."""
 
     name = models.TextField()
 
 
 class Organism(models.Model):
-
-    """ The organism of origin for a given protein. """
+    """The organism of origin for a given protein."""
 
     taxon_id = models.PositiveIntegerField()
     name = models.TextField()
 
 
 class References(models.Model):
-
-    """ Annotation mapping to Variant references. """
+    """Annotation mapping to Variant references."""
 
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
     contig = models.ForeignKey(
@@ -75,8 +70,7 @@ class References(models.Model):
 
 
 class ReferenceSequence(models.Model):
-
-    """ Sequence for each reference renamed by PROKKA. """
+    """Sequence for each reference renamed by PROKKA."""
 
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
     name = models.TextField(db_index=True)
@@ -86,12 +80,11 @@ class ReferenceSequence(models.Model):
         unique_together = ('reference', 'name')
 
 
-# Create partition every 2 million records
+# Create partition every 10 million records
 @architect.install('partition', type='range', subtype='integer',
-                   constraint='2000000', column='id')
+                   constraint='10000000', column='id')
 class Features(models.Model):
-
-    """ Annotated info for each predicted gene. """
+    """Annotated info for each predicted gene."""
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     contig = models.ForeignKey('Contigs', on_delete=models.CASCADE, default=0)
@@ -110,12 +103,11 @@ class Features(models.Model):
         unique_together = ('sample', 'contig', 'cluster', 'start', 'end')
 
 
-# Create partition every 1 million records
+# Create partition every 5 million records
 @architect.install('partition', type='range', subtype='integer',
-                   constraint='1000000', column='id')
+                   constraint='5000000', column='id')
 class Contigs(models.Model):
-
-    """ Assembled contigs for each sample renamed by PROKKA. """
+    """Assembled contigs for each sample renamed by PROKKA."""
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     name = models.TextField(db_index=True)

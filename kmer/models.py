@@ -11,7 +11,6 @@ from kmer.partitions import PARTITIONS
 
 
 class StringManager(models.Manager):
-
     """
     String Manager.
     Use raw sql to insert strings into a temporary table, then only
@@ -19,13 +18,14 @@ class StringManager(models.Manager):
     """
 
     def chunks(self, l, n):
-        """ Yield successive n-sized chunks from l. """
+        """Yield successive n-sized chunks from l."""
         for i in xrange(0, len(l), n):
             yield l[i:i + n]
 
     def bulk_create_new(self, recs):
         """
         Bulk insert.
+
         bulk create recs, skipping key conflicts that would raise an
         IntegrityError return value: int count of recs written
         """
@@ -104,8 +104,7 @@ class StringManager(models.Manager):
 
 
 class FixedCharField(models.Field):
-
-    """ Force creation of a CHAR field not VARCHAR. """
+    """Force creation of a CHAR field not VARCHAR."""
 
     def __init__(self, max_length, *args, **kwargs):
         self.max_length = max_length
@@ -118,8 +117,7 @@ class FixedCharField(models.Field):
 
 
 class StringBase(models.Model):
-
-    """ Unique 31-mer strings stored as strings. """
+    """Unique 31-mer strings stored as strings."""
 
     string = FixedCharField(max_length=31, unique=True)
 
@@ -128,22 +126,19 @@ class StringBase(models.Model):
 
 
 class StringTmp(StringBase):
-
-    """ Temporary table to check for existing kmers. """
+    """Temporary table to check for existing kmers."""
 
     pass
 
 
 class String(StringBase):
-
-    """ Unique 31-mer strings stored as strings. """
+    """Unique 31-mer strings stored as strings."""
 
     objects = StringManager()
 
 
 class Count(models.Model):
-
-    """ Kmer counts from each sample. """
+    """Kmer counts from each sample."""
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     string = models.ForeignKey('String', on_delete=models.CASCADE)
@@ -154,8 +149,7 @@ class Count(models.Model):
 
 
 class Total(models.Model):
-
-    """ Total kmer counts from each sample. """
+    """Total kmer counts from each sample."""
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     total = models.PositiveIntegerField()

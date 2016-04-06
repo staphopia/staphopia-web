@@ -10,7 +10,6 @@ from sample.models import MetaData
 
 
 class Quality(models.Model):
-
     """
     Quality statistics of input FASTQ file.
 
@@ -40,13 +39,13 @@ class Quality(models.Model):
         unique_together = ('sample', 'is_original')
 
     def sample_tag(self):
-        """ Display sample tag in admin view. """
+        """Display sample tag in admin view."""
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'sample'
 
     def sequence_rank(self):
-        """ Display medal rank in admin view. """
+        """Display medal rank in admin view."""
         ranks = {1: 'Bronze', 2: 'Silver', 3: 'Gold'}
         return ranks[self.rank]
     sequence_rank.short_description = 'Rank'

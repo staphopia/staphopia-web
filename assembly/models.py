@@ -10,7 +10,6 @@ from sample.models import MetaData
 
 
 class Stats(models.Model):
-
     """
     Statistics of the assembled genome.
 
@@ -59,7 +58,7 @@ class Stats(models.Model):
         unique_together = ('sample', 'is_scaffolds')
 
     def sample_tag(self):
-        """ Display sample tag in admin view. """
+        """Display sample tag in admin view."""
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'sample'

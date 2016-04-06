@@ -8,6 +8,7 @@ from registration.backends.default.views import (
     ActivationView,
     RegistrationView
 )
+import registration.backends.default.urls
 from django_email_changer.views import (
     ActivateUserEmailModification,
     ActivationEmailSentSuccessView,
@@ -16,6 +17,9 @@ from django_email_changer.views import (
 
 from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
+import staphopia.views
+import sample.views
+
 
 from api.viewsets.samples import SampleViewSet
 from api.viewsets.sequence_type import MLSTViewSet
@@ -23,15 +27,14 @@ from api.viewsets.top import TopViewSet
 
 admin.autodiscover()
 
-
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
 router.register(r'samples', SampleViewSet)
 router.register(r'top', TopViewSet, 'Top')
 router.register(r'mlst', MLSTViewSet, 'MSLT')
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
+
     # Django REST Framework
     url(r'^api/', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls',
@@ -41,20 +44,20 @@ urlpatterns = patterns(
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', include(admin.site.urls)),
 
-    url(r'^$', 'staphopia.views.index', name='home'),
+
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^submission/', 'sample.views.submission', name='submission'),
-    url(r'^top10/', 'sample.views.top10', name='top10'),
-    url(r'^contact/', 'staphopia.views.contact', name='contact'),
-    url(r'^accounts/settings/', 'staphopia.views.account_settings',
+    url(r'^submission/', sample.views.submission, name='submission'),
+    url(r'^top10/', sample.views.top10, name='top10'),
+    url(r'^contact/', staphopia.views.contact, name='contact'),
+    url(r'^accounts/settings/', staphopia.views.account_settings,
         name='account_settings'),
 
     # Samples
-    url(r'^samples/data/$', 'sample.views.sample_summary',
+    url(r'^samples/data/$', sample.views.sample_summary,
         name='samples_data'),
-    url(r'^samples/(?P<sample_tag>[^/]+)/$', 'sample.views.sample',
+    url(r'^samples/(?P<sample_tag>[^/]+)/$', sample.views.sample,
         name='sample_results'),
-    url(r'^samples/$', 'sample.views.sample', name='samples'),
+    url(r'^samples/$', sample.views.sample, name='samples'),
 
     # django-email-changer
     url(r'accounts/email/change/activate/(?P<code>[^/]+)/',
@@ -83,8 +86,7 @@ urlpatterns = patterns(
         name='password_change_done'),
     url(r'^accounts/password/reset/confirm/$',
         RedirectView.as_view(url='/',)),
-    url(r'^accounts/password/reset/$',
-        'django.contrib.auth.views.password_reset',
+    url(r'^accounts/password/reset/$', auth_views.password_reset,
         {'post_reset_redirect': '/accounts/password/reset/done/'},
         name="password_reset"),
     url('^accounts/activate/$', ActivationView.as_view(),
@@ -94,5 +96,7 @@ urlpatterns = patterns(
     url(r'^accounts/register/$',
         RegistrationView.as_view(form_class=RegistrationFormWithName),
         name='registration_register'),
-    url(r'^accounts/', include('registration.backends.default.urls')),
-)
+    url(r'^accounts/', include(registration.backends.default.urls)),
+
+    url(r'^$', staphopia.views.index, name='home'),
+]

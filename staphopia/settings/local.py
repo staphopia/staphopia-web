@@ -5,7 +5,6 @@ from staphopia.settings.private import DEV_PASS
 SECURITY WARNING: don't run with debug turned on in production
 ----------------------------------------------------------------------------'''
 DEBUG = True
-TEMPLATE_DEBUG = True
 ALLOWED_HOSTS = ['0.0.0.0:80']
 
 
@@ -19,8 +18,8 @@ DATABASES = {
         'NAME': 'staphopia',
         'USER': 'staphopia',
         'PASSWORD': DEV_PASS,
-        'HOST': 'staphopia.cpphjf4vstco.us-east-1.rds.amazonaws.com',
-        'PORT': '30022',
+        'HOST': 'localhost',
+        'PORT': '5433',
     }
 }
 

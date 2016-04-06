@@ -105,21 +105,23 @@ STATICFILES_FINDERS = (
 '''----------------------------------------------------------------------------
 Template
 ----------------------------------------------------------------------------'''
-TEMPLATE_DIRS = (
-    os.path.join(BASE_DIR, "templates"),
-)
-
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-)
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.core.context_processors.request',
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.request',
-    'staphopia.context_processors.google_analytics',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'staphopia.context_processors.google_analytics',
+            ],
+            'loaders':[
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ],
+        },
+    },
+]
 
 '''----------------------------------------------------------------------------
 Staphopia

@@ -9,8 +9,7 @@ from sample.models import MetaData
 
 
 class SequenceTypes(models.Model):
-
-    """ Sequence type mappings from MLST database. """
+    """Sequence type mappings from MLST database."""
 
     st = models.PositiveIntegerField(unique=True)
     arcc = models.PositiveIntegerField()
@@ -24,8 +23,7 @@ class SequenceTypes(models.Model):
 
 
 class Blast(models.Model):
-
-    """ Blast results from contigs against MLST loci. """
+    """Blast results from contigs against MLST loci."""
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     locus_name = models.CharField(max_length=4)
@@ -49,8 +47,7 @@ class Blast(models.Model):
 
 
 class Srst2(models.Model):
-
-    """ SRST2 results from mapping of FASTQ files. """
+    """SRST2 results from mapping of FASTQ files."""
 
     sample = models.OneToOneField(MetaData, on_delete=models.CASCADE)
     st_original = models.TextField()

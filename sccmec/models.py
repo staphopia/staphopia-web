@@ -10,10 +10,7 @@ from sample.models import MetaData
 
 
 class Cassette(models.Model):
-
-    """
-    Basic info for each SCCmec cassette.
-    """
+    """Basic info for each SCCmec cassette."""
 
     name = models.TextField()
     header = models.TextField()
@@ -27,10 +24,7 @@ class Cassette(models.Model):
 
 
 class Coverage(models.Model):
-
-    """
-    Coverage statistics for each SCCmec cassette.
-    """
+    """Coverage statistics for each SCCmec cassette."""
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     cassette = models.ForeignKey('Cassette', on_delete=models.CASCADE)
@@ -50,7 +44,7 @@ class Coverage(models.Model):
     meca_maximum = models.PositiveIntegerField(default=0)
 
     def sample_tag(self):
-        """ Display sample tag in admin view. """
+        """Display sample tag in admin view."""
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'sample'
