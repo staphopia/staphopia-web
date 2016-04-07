@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 
 from sample.models import MetaData
 
-from sample.tools import create_sample_tag, validate_analysis
+from sample.tools import create_sample_tag, validate_analysis, validate_time
 from assembly.tools import insert_assembly_stats
 from gene.tools import insert_gene_annotations
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
@@ -29,6 +29,8 @@ class Command(BaseCommand):
                             help=('User name for the owner of the sample.'))
         parser.add_argument('sample_dir', metavar='SAMPLE_DIRECTORY',
                             help=('User name for the owner of the sample.'))
+        parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
+                            help=('Sample tag associated with sample.'))
         parser.add_argument('--project_tag', type=str, default="",
                             help='(Associate sample with a given tag. ('
                                  'Example: ga-outbreak, vanA-samples, etc...')
@@ -38,13 +40,22 @@ class Command(BaseCommand):
                             help=('Any comments aboutthe sample.'))
         parser.add_argument('--is_paired', action='store_true',
                             help='Sample contains paired reads.')
+        parser.add_argument('--runtime', action='store_true',
+                            help='Insert runtimes as well.')
 
     @transaction.atomic
     def handle(self, *args, **opts):
         """Insert the results of sample analysis into the database."""
         # Validate all files are present
         print("Validating required files are present...")
-        files = validate_analysis(opts['sample_dir'])
+        files = validate_analysis(opts['sample_dir'], opts['sample_tag'])
+
+        print(files)
+
+        if opts['runtime']:
+            runtimes = validate_time(opts['sample_dir'])
+            print(runtimes)
+        """
         if not files["missing"]:
             try:
                 user = User.objects.get(username=opts['user'])
@@ -117,3 +128,4 @@ class Command(BaseCommand):
                     '\n'.join(files['missing'])
                 )
             )
+        """

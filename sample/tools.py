@@ -11,109 +11,88 @@ from django.core.management.base import CommandError
 from sample.models import MetaData
 
 
-def validate_analysis(directory):
-    """
-    Walk through a sample directory to check for required files.
+def test_files(directory, sample_tag, files, optional=False):
+    """Read a dict of files, and test if they exist."""
+    missing = []
+    full_path = {}
+    for key, file in files.items():
+        if '{1}' in file:
+            file = file.format(directory, sample_tag)
+        else:
+            file = file.format(directory)
 
-    Required Files
-    ./SAMPLE.cleanup.fastq.stats
-    ./SAMPLE.original.fastq.stats
+        if os.path.exists(file):
+            full_path[key] = file
+        else:
+            missing.append(file)
 
-    ./SAMPLE.contigs.stats
-    ./SAMPLE.scaffolds.stats
+    if len(missing) and not optional:
+        raise CommandError(
+            'One or required files are missing.\nMissing Files...\n{0}'.format(
+                '\n'.join(missing)
+            )
+        )
+    else:
+        return full_path
 
-    ./mlst/blastn/blastn.txt
-    ./mlst/srst2/srst2__mlst__Staphylococcus_aureus__results.txt
 
-    ./sccmec/cassettes/sccmec.coverage.gz
+def validate_time(directory):
+    """Test if optional runtime files exist."""
+    return test_files(directory, None, {
+        'illumina_assembly': '{0}/logs/time/illumina_assembly.txt',
+        'predict_mlst': '{0}/logs/time/predict_mlst.txt',
+        'fastq_cleanup': '{0}/logs/time/fastq_cleanup.txt',
+        'kmer_analysis': '{0}/logs/time/kmer_analysis.txt',
+        'submit_job': '{0}/logs/time/submit_job.txt',
+        'predict_sccmec': '{0}/logs/time/predict_sccmec.time',
+        'call_variants': '{0}/logs/time/call_variants.txt',
+        'annotation': '{0}/logs/time/annotation.txt'
+    }, optional=True
+    )
 
-    ./annotation/SAMPLE.gff.gz
-    ./annotation/SAMPLE.fna.gz
-    ./annotation/SAMPLE.ffn.gz
-    ./annotation/SAMPLE.faa.gz
 
-    ./SAMPLE.variants.vcf.gz
-    """
-    files = {
-        'stats_filter': None,
-        'stats_original': None,
-        'contigs': None,
-        'scaffolds': None,
-        'mlst_blast': None,
-        'mlst_srst2': None,
-        'sccmec_coverage': None,
-        'annotation': {
-            'genes': None,
-            'proteins': None,
-            'contigs': None,
-            'gff': None,
-        },
-        'variants': None,
-        'missing': []
-    }
+def validate_analysis(directory, sample_tag):
+    """Test if required files exist."""
+    return test_files('{0}/analyses'.format(directory), sample_tag, {
+        # FASTQ
+        'stats_filter': '{0}/fastq-stats/{1}.cleanup.fastq.json',
+        'stats_original': '{0}/fastq-stats/{1}.original.fastq.json',
 
-    message = {
-        'stats_filter': "Missing ./SAMPLE.cleanup.fastq.stats",
-        'stats_original': "Missing ./SAMPLE.original.fastq.stats",
-        'contigs': "Missing ./SAMPLE.contigs.stats",
-        'scaffolds': "Missing ./SAMPLE.scaffolds.stats",
-        'mlst_blast': "Missing ./mlst/blastn/blastn.txt",
-        'mlst_srst2': ("Missing ./mlst/srst2/srst2__mlst__Staphylococcus_"
-                       "aureus__results.txt"),
-        'sccmec_coverage': "Missing ./sccmec/cassettes/sccmec.coverage.gz",
-        'annotation': {
-            'genes': "Missing ./annotation/SAMPLE.gff.gz",
-            'proteins': "Missing ./annotation/SAMPLE.fna.gz",
-            'contigs': "Missing ./annotation/SAMPLE.ffn.gz",
-            'gff': "Missing ./annotation/SAMPLE.faa.gz",
-        },
-        'variants': "Missing ./SAMPLE.variants.vcf.gz",
-    }
+        # Assembly
+        'contigs': '{0}/assembly/{1}.contigs.json',
+        'scaffolds': '{0}/assembly/{1}.scaffolds.json',
 
-    for root, dirs, filelist in os.walk(directory, topdown=False):
-        for name in filelist:
-            file = os.path.join(root, name)
-            if "cleanup.fastq.stats" in name:
-                files['stats_filter'] = file
-            elif "original.fastq.stats" in name:
-                files['stats_original'] = file
-            elif "contigs.stats" in name:
-                files['contigs'] = file
-            elif "scaffolds.stats" in name:
-                files['scaffolds'] = file
-            elif "mlst/blastn/blastn.txt" in file:
-                files['mlst_blast'] = file
-            elif "srst2__mlst__Staphylococcus_aureus__results.txt" in name:
-                files['mlst_srst2'] = file
-            elif "sccmec.coverage.gz" in name:
-                files['sccmec_coverage'] = file
-            elif "gff.gz" in name:
-                files['annotation']['gff'] = file
-            elif "fna.gz" in name:
-                files['annotation']['contigs'] = file
-            elif "ffn.gz" in name:
-                files['annotation']['genes'] = file
-            elif "faa.gz" in name:
-                files['annotation']['proteins'] = file
-            elif "variants.vcf.gz" in name:
-                files['variants'] = file
+        # MLST
+        'mlst_blast': '{0}/mlst/mlst-blastn.json',
+        'mlst_srst2': ('{0}/mlst/srst2__mlst__Staphylococcus_aureus__'
+                       'results.txt'),
 
-    for key, val in files.items():
-        if 'missing' not in key:
-            if not val:
-                files['missing'].append(message[key])
+        # SCCmec
+        'sccmec_coverage': '{0}/sccmec/cassette-coverages.gz',
+        'sccmec_primers': '{0}/sccmec/primers.json',
+        'sccmec_proteins': '{0}/sccmec/proteins.json',
 
-            if key == "annotation":
-                if not files[key]['genes']:
-                    files['missing'].append(message[key]['genes'])
-                if not files[key]['proteins']:
-                    files['missing'].append(message[key]['proteins'])
-                if not files[key]['contigs']:
-                    files['missing'].append(message[key]['contigs'])
-                if not files[key]['gff']:
-                    files['missing'].append(message[key]['gff'])
+        # Annotation
+        'annotation_genes': '{0}/annotation/{1}.ffn.gz',
+        'annotation_proteins': '{0}/annotation/{1}.faa.gz',
+        'annotation_contigs': '{0}/annotation/{1}.fna.gz',
+        'annotation_gff': '{0}/annotation/{1}.gff.gz',
+        'annotation_blastp_sprot': (
+            '{0}/annotation/blastp-sprot.json.gz'
+        ),
+        'annotation_blastp_proteins': (
+            '{0}/annotation/blastp-proteins.json.gz'
+        ),
+        'annotation_blastp_staph': (
+            '{0}/annotation/blastp-Staphylococcus-uniref50.json.gz'
+        ),
 
-    return files
+        # Variants
+        'variants': '{0}/variants/{1}.variants.vcf.gz',
+
+        # Kmers
+        'kmers': '{0}/kmer/{1}.jf',
+    })
 
 
 def get_sample(sample_tag):
