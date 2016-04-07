@@ -96,6 +96,10 @@ class Command(BaseCommand):
         insert_fastq_stats(files['stats_filter'], sample, is_original=False)
         insert_fastq_stats(files['stats_original'], sample, is_original=True)
 
+        print("\tInserting Assembly Stats...")
+        insert_assembly_stats(files['contigs'], sample, is_scaffolds=False)
+        insert_assembly_stats(files['scaffolds'], sample, is_scaffolds=True)
+
         if opts['runtime']:
             runtimes = validate_time(opts['sample_dir'])
         """
