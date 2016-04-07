@@ -10,23 +10,28 @@ from django.core.management.base import CommandError
 
 from staphopia.utils import read_json
 
-from sequence.models import Quality
+from sequence.models import Stat, Length, Quality
+
+
+@transaction.atomic
+def insert_fastq_stats(stats, sample, is_original=False):
+    """Insert seqeunce quality metrics into database."""
+    json_data = read_json(stats)
+    insert_sequence_stats(json_data["qc_stats"], sample, is_original)
+    insert_read_lengths(json_data["read_lengths"], sample, is_original)
+    insert_per_base_quality(json_data["per_base_quality"], sample, is_original)
 
 
 @transaction.atomic
 def insert_sequence_stats(stats, sample, is_original=False):
-    """Insert seqeunce quality metrics into database."""
-    json_data = read_json(stats)
+    """Insert sequence quality metrics into database."""
     try:
-        table_object = Quality(
+        Stat.objects.create(
             sample=sample,
             is_original=is_original,
-            rank=__get_rank(json_data),
-            **json_data
+            rank=__get_rank(stats),
+            **stats
         )
-        table_object.save()
-        print('Sequence quality stats saved.')
-        return True
     except IntegrityError as e:
         raise CommandError(
             'An error occured when inserting stats. Error {0}'.format(e)
@@ -34,17 +39,58 @@ def insert_sequence_stats(stats, sample, is_original=False):
 
 
 def __get_rank(data):
-        """
-        Determine the rank of the reads.
+    """
+    Determine the rank of the reads.
 
-        3: Gold, 2: Silver, 1: Bronze
-        """
-        if data['mean_read_length'] >= 95:
-            if data['coverage'] >= 45 and data['qual_mean'] >= 30:
-                return 3
-            elif data['coverage'] >= 20 and data['qual_mean'] >= 20:
-                return 2
-            else:
-                return 1
+    3: Gold, 2: Silver, 1: Bronze
+    """
+    if data['read_mean'] >= 95:
+        if data['coverage'] >= 45 and data['qual_mean'] >= 30:
+            return 3
+        elif data['coverage'] >= 20 and data['qual_mean'] >= 20:
+            return 2
         else:
             return 1
+    else:
+        return 1
+
+
+@transaction.atomic
+def insert_read_lengths(stats, sample, is_original=False):
+    """Insert read lengths into database."""
+    try:
+        counts = []
+        for length, count in sorted(stats.items()):
+            counts.append(Length(
+                sample=sample,
+                is_original=is_original,
+                length=length,
+                count=count
+            ))
+
+        Length.objects.bulk_create(counts)
+    except IntegrityError as e:
+        raise CommandError(
+            'An error occured when inserting read lengths. Error {0}'.format(e)
+        )
+
+
+@transaction.atomic
+def insert_per_base_quality(stats, sample, is_original=False):
+    """Insert per base quality into database."""
+    try:
+        positions = []
+        for position, quality in sorted(stats.items()):
+            positions.append(Quality(
+                sample=sample,
+                is_original=is_original,
+                position=position,
+                quality=quality
+            ))
+
+        Quality.objects.bulk_create(positions)
+    except IntegrityError as e:
+        raise CommandError(
+            ('An error occured when inserting per base quality.'
+             ' Error {0}').format(e)
+        )

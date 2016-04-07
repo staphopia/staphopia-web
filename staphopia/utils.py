@@ -46,7 +46,7 @@ def read_json(json_file):
     if file_exists(json_file):
         try:
             with open(json_file, 'r') as f:
-                json_data = json.loads(f.readline().rstrip())
+                json_data = json.load(f)
         except ValueError:
             raise CommandError('{0}: invalid JSON'.format(json_file))
 

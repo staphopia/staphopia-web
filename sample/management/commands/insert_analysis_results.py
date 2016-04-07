@@ -14,7 +14,7 @@ from assembly.tools import insert_assembly_stats
 from gene.tools import insert_gene_annotations
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
 from sccmec.tools import insert_sccmec_coverage
-from sequence.tools import insert_sequence_stats
+from sequence.tools import insert_fastq_stats
 from variant.tools import Variants
 
 
@@ -81,15 +81,20 @@ class Command(BaseCommand):
                 'Error, unable to create Sample object. {0}'.format(e)
             )
 
-            # Verify
-            print(json.dumps({
-                'sample_id': sample.pk,
-                'sample_tag': sample.sample_tag,
-                'project_tag': sample.project_tag,
-                'strain': sample.strain,
-                'is_paired': sample.is_paired,
-                'comment': sample.comments
-            }))
+        # Verify
+        print(json.dumps({
+            'sample_id': sample.pk,
+            'sample_tag': sample.sample_tag,
+            'project_tag': sample.project_tag,
+            'strain': sample.strain,
+            'is_paired': sample.is_paired,
+            'comment': sample.comments
+        }))
+
+        # Insert analysis results
+        print("\tInserting Sequence Stats...")
+        insert_fastq_stats(files['stats_filter'], sample, is_original=False)
+        insert_fastq_stats(files['stats_original'], sample, is_original=True)
 
         if opts['runtime']:
             runtimes = validate_time(opts['sample_dir'])

@@ -70,7 +70,7 @@ class Length(models.Model):
     count = models.BigIntegerField()
 
     class Meta:
-        unique_together = ('sample', 'is_original')
+        unique_together = ('sample', 'is_original', 'length')
 
 
 class Quality(models.Model):
@@ -86,4 +86,4 @@ class Quality(models.Model):
     quality = models.DecimalField(max_digits=7, decimal_places=4)
 
     class Meta:
-        unique_together = ('sample', 'is_original')
+        unique_together = ('sample', 'is_original', 'position')

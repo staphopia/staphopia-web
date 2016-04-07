@@ -13,4 +13,5 @@ staphopia/settings/private.py
 staphopia/static/admin
 staphopia/static/grappelli
 staphopia/static/rest_framework
+staphopia/static/django_extensions/
 
