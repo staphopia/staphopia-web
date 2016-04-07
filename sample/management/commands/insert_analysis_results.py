@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 
 from sample.models import MetaData
 
-from sample.tools import create_sample_tag, validate_analysis, validate_time
+from sample.tools import create_db_tag, validate_analysis, validate_time
 from assembly.tools import insert_assembly_stats
 from gene.tools import insert_gene_annotations
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
@@ -34,6 +34,8 @@ class Command(BaseCommand):
         parser.add_argument('--project_tag', type=str, default="",
                             help='(Associate sample with a given tag. ('
                                  'Example: ga-outbreak, vanA-samples, etc...')
+        parser.add_argument('--db_tag', type=str, default="",
+                            help=('Sample tag associated with sample.'))
         parser.add_argument('--strain', type=str, default="",
                             help=('Strain name of the input sample.'))
         parser.add_argument('--comment', type=str, default="",
@@ -50,11 +52,47 @@ class Command(BaseCommand):
         print("Validating required files are present...")
         files = validate_analysis(opts['sample_dir'], opts['sample_tag'])
 
-        print(files)
+        # Get User
+        try:
+            user = User.objects.get(username=opts['user'])
+        except User.DoesNotExist:
+            raise CommandError('user: {0} does not exist'.format(
+                opts['user']
+            ))
+
+        # Create new sample
+        try:
+            db_tag = create_db_tag(user, db_tag=opts['db_tag'])
+            sample, created = MetaData.objects.get_or_create(
+                user=user,
+                db_tag=db_tag,
+                sample_tag=opts['sample_tag'],
+                project_tag=opts['project_tag'],
+                strain=opts['strain'],
+                is_paired=opts['is_paired'],
+                comments=opts['comment']
+            )
+            if created:
+                print("Created new sample: {0}".format(db_tag))
+            else:
+                print("Found existing sample: {0}".format(db_tag))
+        except IntegrityError as e:
+            raise CommandError(
+                'Error, unable to create Sample object. {0}'.format(e)
+            )
+
+            # Verify
+            print(json.dumps({
+                'sample_id': sample.pk,
+                'sample_tag': sample.sample_tag,
+                'project_tag': sample.project_tag,
+                'strain': sample.strain,
+                'is_paired': sample.is_paired,
+                'comment': sample.comments
+            }))
 
         if opts['runtime']:
             runtimes = validate_time(opts['sample_dir'])
-            print(runtimes)
         """
         if not files["missing"]:
             try:

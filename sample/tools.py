@@ -95,41 +95,43 @@ def validate_analysis(directory, sample_tag):
     })
 
 
-def get_sample(sample_tag):
+def get_sample(db_tag):
     """Return MetaData object is it exists, else raise error."""
     try:
-        return MetaData.objects.get(sample_tag=sample_tag)
+        return MetaData.objects.get(db_tag=db_tag)
     except MetaData.DoesNotExist:
-        raise CommandError('sample_tag: {0} does not exist'.format(sample_tag))
+        raise CommandError('db_tag: {0} does not exist'.format(db_tag))
 
 
-def create_sample_tag(user, sample_tag=None, force=False):
+def create_db_tag(user, db_tag=None, force=False):
     """
-    Get or create a sample tag for a user.
+    Get or create a unique database tag for a user.
 
-    An error is raised if the sample tag already exists for the use, unless
+    An error is raised if the database tag already exists for the use, unless
     force is set to True.
     """
-    if sample_tag:
+    if db_tag:
         try:
-            MetaData.objects.get(user=user, sample_tag=sample_tag)
+            MetaData.objects.get(user=user, db_tag=db_tag)
             if not force:
                 raise CommandError((
                     'A sample is already associated with {0}. Will not use'
                     ' {0} unless --force is given, exiting.').format(
-                    sample_tag
+                    db_tag
                 ))
             else:
-                print('Focibly using the existing sample_tag {0}'.format(
-                    sample_tag
+                print('Focibly using the existing db_tag {0}'.format(
+                    db_tag
                 ))
         except MetaData.DoesNotExist:
-            pass
+            raise CommandError('specified db_tag "{0}"" does not exist'.format(
+                db_tag
+            ))
     else:
         num_samples = MetaData.objects.filter(user=user).count()
-        sample_tag = '{0}_{1}'.format(
+        db_tag = '{0}_{1}'.format(
             user.username,
             str(num_samples + 1).zfill(6)
         )
 
-    return sample_tag
+    return db_tag

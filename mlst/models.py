@@ -40,7 +40,7 @@ class Blast(models.Model):
         unique_together = ('sample', 'locus_name', 'locus_id')
 
     def sample_tag(self):
-        """ Display sample tag in admin view. """
+        """Display sample tag in admin view."""
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'mlst'
@@ -66,7 +66,7 @@ class Srst2(models.Model):
     maxMAF = models.DecimalField(max_digits=11, decimal_places=7)
 
     def sample_tag(self):
-        """ Display sample tag in admin view. """
+        """Display sample tag in admin view."""
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'mlst'

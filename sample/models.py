@@ -7,7 +7,8 @@ class MetaData(models.Model):
     """ """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    sample_tag = models.TextField(unique=True)
+    db_tag = models.TextField(unique=True, default='')
+    sample_tag = models.TextField(db_index=True, blank=True, default='')
     project_tag = models.TextField(db_index=True, blank=True, default='')
 
     # Project Information
