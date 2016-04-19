@@ -25,6 +25,15 @@ def timeit(method):
     return timed
 
 
+def md5sum(fname):
+    """Get md5sum of a file."""
+    from subprocess import Popen, PIPE
+    f = Popen(['md5sum', fname], stdout=PIPE)
+    stdout, stderr = f.communicate()
+
+    return stdout.split()[0]
+
+
 def gziplines(fname):
     """Use zcat to deliver lines from gzipped input."""
     from subprocess import Popen, PIPE

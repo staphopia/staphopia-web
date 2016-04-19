@@ -10,6 +10,7 @@ class MetaData(models.Model):
     db_tag = models.TextField(unique=True, default='')
     sample_tag = models.TextField(db_index=True, blank=True, default='')
     project_tag = models.TextField(db_index=True, blank=True, default='')
+    md5sum = models.CharField(default='', max_length=32, unique=True)
 
     # Project Information
     contact_name = models.TextField(default='')

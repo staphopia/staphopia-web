@@ -7,6 +7,7 @@ from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 
+from staphopia.utils import md5sum
 from sample.models import MetaData
 
 from sample.tools import create_db_tag, validate_analysis, validate_time
@@ -39,11 +40,13 @@ class Command(BaseCommand):
         parser.add_argument('--strain', type=str, default="",
                             help=('Strain name of the input sample.'))
         parser.add_argument('--comment', type=str, default="",
-                            help=('Any comments aboutthe sample.'))
+                            help=('Any comments about the sample.'))
         parser.add_argument('--is_paired', action='store_true',
                             help='Sample contains paired reads.')
         parser.add_argument('--runtime', action='store_true',
                             help='Insert runtimes as well.')
+        parser.add_argument('--force', action='store_true',
+                            help='Force updates for existing entries.')
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -51,7 +54,10 @@ class Command(BaseCommand):
         # Validate all files are present
         print("Validating required files are present...")
         files = validate_analysis(opts['sample_dir'], opts['sample_tag'])
-
+        fq_md5sum = md5sum('{0}/{1}.cleanup.fastq.gz'.format(
+            opts['sample_dir'], opts['sample_tag']
+        ))
+        print fq_md5sum
         # Get User
         try:
             user = User.objects.get(username=opts['user'])
@@ -60,28 +66,46 @@ class Command(BaseCommand):
                 opts['user']
             ))
 
-        # Create new sample
+        # Test if results already inserted
+        sample = None
         try:
-            db_tag = create_db_tag(user, db_tag=opts['db_tag'])
-            sample, created = MetaData.objects.get_or_create(
-                user=user,
-                db_tag=db_tag,
-                sample_tag=opts['sample_tag'],
-                project_tag=opts['project_tag'],
-                strain=opts['strain'],
-                is_paired=opts['is_paired'],
-                comments=opts['comment']
-            )
-            if created:
-                print("Created new sample: {0}".format(db_tag))
+            sample = MetaData.objects.get(md5sum=fq_md5sum)
+            print("Found existing sample: {0} ({1})".format(
+                sample.db_tag, sample.md5sum
+            ))
+            if not opts['force']:
+                raise CommandError(
+                    'Sample exists, please use --force to use it.'
+                )
             else:
-                print("Found existing sample: {0}".format(db_tag))
-        except IntegrityError as e:
-            raise CommandError(
-                'Error, unable to create Sample object. {0}'.format(e)
-            )
+                sample.sample_tag = opts['sample_tag']
+                sample.project_tag=opts['project_tag'],
+                sample.strain=opts['strain'],
+                sample.is_paired=opts['is_paired'],
+                sample.comments=opts['comment']
+                sample.save()
+        except MetaData.DoesNotExist:
+            # Create new sample
+            try:
+                db_tag = create_db_tag(user, db_tag=opts['db_tag'])
+                sample = MetaData.objects.create(
+                    user=user,
+                    db_tag=db_tag,
+                    sample_tag=opts['sample_tag'],
+                    project_tag=opts['project_tag'],
+                    md5sum=fq_md5sum,
+                    strain=opts['strain'],
+                    is_paired=opts['is_paired'],
+                    comments=opts['comment']
+                )
+                print("Created new sample: {0}".format(db_tag))
+            except IntegrityError as e:
+                raise CommandError(
+                    'Error, unable to create Sample object. {0}'.format(e)
+                )
 
         # Verify
+        """
         print(json.dumps({
             'sample_id': sample.pk,
             'sample_tag': sample.sample_tag,
@@ -90,18 +114,23 @@ class Command(BaseCommand):
             'is_paired': sample.is_paired,
             'comment': sample.comments
         }))
+        """
 
         # Insert analysis results
         print("\tInserting Sequence Stats...")
-        insert_fastq_stats(files['stats_filter'], sample, is_original=False)
-        insert_fastq_stats(files['stats_original'], sample, is_original=True)
+        insert_fastq_stats(files['stats_filter'], sample, is_original=False,
+                           force=opts['force'])
+        insert_fastq_stats(files['stats_original'], sample, is_original=True,
+                           force=opts['force'])
 
         print("\tInserting Assembly Stats...")
-        insert_assembly_stats(files['contigs'], sample, is_scaffolds=False)
-        insert_assembly_stats(files['scaffolds'], sample, is_scaffolds=True)
+        insert_assembly_stats(files['contigs'], sample, is_scaffolds=False,
+                              force=opts['force'])
+        insert_assembly_stats(files['scaffolds'], sample, is_scaffolds=True,
+                              force=opts['force'])
 
-        if opts['runtime']:
-            runtimes = validate_time(opts['sample_dir'])
+        #if opts['runtime']:
+        #    runtimes = validate_time(opts['sample_dir'])
         """
         if not files["missing"]:
             try:

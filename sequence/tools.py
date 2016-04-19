@@ -14,12 +14,23 @@ from sequence.models import Stat, Length, Quality
 
 
 @transaction.atomic
-def insert_fastq_stats(stats, sample, is_original=False):
+def insert_fastq_stats(stats, sample, is_original=False, force=False):
     """Insert seqeunce quality metrics into database."""
     json_data = read_json(stats)
+    if force:
+        delete_stats(sample, is_original)
     insert_sequence_stats(json_data["qc_stats"], sample, is_original)
     insert_read_lengths(json_data["read_lengths"], sample, is_original)
     insert_per_base_quality(json_data["per_base_quality"], sample, is_original)
+
+
+@transaction.atomic
+def delete_stats(sample, is_original):
+    """Force update, so remove from table."""
+    print("\t\tForce used, emptying FASTQ related tables.")
+    Stat.objects.filter(sample=sample, is_original=is_original).delete()
+    Length.objects.filter(sample=sample, is_original=is_original).delete()
+    Quality.objects.filter(sample=sample, is_original=is_original).delete()
 
 
 @transaction.atomic

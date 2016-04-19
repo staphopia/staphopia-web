@@ -14,10 +14,15 @@ from assembly.models import Stats
 
 
 @transaction.atomic
-def insert_assembly_stats(assembly, sample, is_scaffolds=False):
+def insert_assembly_stats(assembly, sample, is_scaffolds=False, force=False):
     """Insert assembly statistics for a given sample."""
     json_data = read_json(assembly)
     try:
+        if force:
+            print("\t\tForce used, emptying Assembly related tables.")
+            Stats.objects.filter(
+                sample=sample, is_scaffolds=is_scaffolds
+            ).delete()
         assembly = Stats(
             sample=sample,
             is_scaffolds=is_scaffolds,
