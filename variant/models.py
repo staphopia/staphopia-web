@@ -37,6 +37,7 @@ class Indel(models.Model):
 
     reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
     annotation = models.ForeignKey('Annotation', on_delete=models.CASCADE)
+    feature = models.ForeignKey('Feature', on_delete=models.CASCADE)
 
     reference_position = models.PositiveIntegerField(db_index=True)
     reference_base = models.TextField()
@@ -98,6 +99,7 @@ class SNP(models.Model):
 
     reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
     annotation = models.ForeignKey('Annotation', on_delete=models.CASCADE)
+    feature = models.ForeignKey('Feature', on_delete=models.CASCADE)
 
     reference_position = models.PositiveIntegerField(db_index=True)
     reference_base = models.CharField(max_length=1)
@@ -195,10 +197,18 @@ class Reference(models.Model):
     """Reference genome used for SNP calling."""
 
     name = models.TextField(db_index=True, unique=True)
+    length = models.PositiveIntegerField(default=0)
 
     def __unicode__(self):
         """Display reference name in admin view."""
         return u"%s" % self.name
+
+
+class Feature(models.Model):
+    """Genbank feature type for quick sorting of SNP/InDel Tables."""
+
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    feature = models.TextField()
 
 
 class Annotation(models.Model):
@@ -206,11 +216,11 @@ class Annotation(models.Model):
 
     reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
     locus_tag = models.CharField(max_length=24)
-    protein_id = models.CharField(max_length=24)
+    protein_id = models.CharField(max_length=24, default="not_applicable")
     gene = models.CharField(max_length=12)
-    db_xref = models.TextField()
     product = models.TextField()
     note = models.TextField()
+    is_pseudo = models.PositiveSmallIntegerField()
 
     def fixed_note(self):
         """Display note with appropriate replacements in admin view."""

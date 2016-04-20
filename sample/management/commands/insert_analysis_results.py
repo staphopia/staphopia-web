@@ -16,7 +16,7 @@ from gene.tools import insert_gene_annotations
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
 from sccmec.tools import insert_sccmec_coverage, insert_sccmec_blast
 from sequence.tools import insert_fastq_stats
-from variant.tools import Variants
+from variant.tools import insert_variant_results
 
 
 class Command(BaseCommand):
@@ -142,16 +142,11 @@ class Command(BaseCommand):
         insert_sccmec_blast(files['sccmec_proteins'], sample, is_primers=False,
                             force=opts['force'])
 
-
+        print("\tInserting Variants...")
+        insert_variant_results(files['variants'], sample, force=opts['force'])
         # if opts['runtime']:
         #    runtimes = validate_time(opts['sample_dir'])
         """
-
-
-
-
-            print("\tInserting SCCmec Coverage Stats...")
-            insert_sccmec_coverage(files['sccmec_coverage'], sample)
 
             print("\tInserting Gene Annotations...")
             insert_gene_annotations(files['annotation'], sample,

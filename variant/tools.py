@@ -5,7 +5,6 @@ To use:
 from variant.tools import UTIL1, UTIL2, etc...
 """
 from __future__ import print_function
-from os.path import basename, splitext
 import sys
 import time
 import vcf
@@ -18,6 +17,7 @@ from staphopia.utils import timeit
 from variant.models import (
     Annotation,
     Comment,
+    Feature,
     Filter,
     Indel,
     Reference,
@@ -27,6 +27,17 @@ from variant.models import (
     Confidence,
     Counts
 )
+
+
+@timeit
+def insert_variant_results(input, sample, force=False):
+    """Insert VCF formatted variants."""
+    v = Variants(input, sample)
+    if force:
+        print("\tForce used, emptying Variant related results.")
+        v.delete_objects()
+
+    v.insert_variants()
 
 
 class Variants(object):
@@ -40,6 +51,7 @@ class Variants(object):
         self.open_vcf(input)
         self.get_reference_instance()
         self.get_annotation_instances()
+        self.get_feature_instances()
         self.get_locus_tags()
         self.get_comments()
         self.get_comment_instances()
@@ -64,6 +76,7 @@ class Variants(object):
 
     @timeit
     def open_vcf(self, input):
+        """Read input VCF file."""
         try:
             self.vcf_reader = vcf.Reader(open(input, 'r'), compressed=True)
             self.records = [record for record in self.vcf_reader]
@@ -72,8 +85,9 @@ class Variants(object):
 
     @transaction.atomic
     def get_reference_instance(self):
+        """Get reference instance."""
         try:
-            r = splitext(basename(self.vcf_reader.metadata['reference']))[0]
+            r = self.vcf_reader.contigs.keys()[0]
             self.reference, created = Reference.objects.get_or_create(
                 name=r
             )
@@ -86,6 +100,26 @@ class Variants(object):
         self.locus_tags = {}
         for tag in Annotation.objects.filter(reference=self.reference):
             self.locus_tags[tag.locus_tag] = tag.pk
+
+    def get_feature_instances(self):
+        """Return the primary key of each feature type."""
+        self.features = {}
+        for tag in Feature.objects.filter(reference=self.reference):
+            self.features[tag.feature] = tag
+
+    def get_feature(self, feature):
+        """Get the feature type of a variant."""
+        if feature in self.features:
+            return self.features[feature]
+        else:
+            try:
+                feature_obj = Feature.objects.create(
+                    reference=self.reference,
+                    feature=feature
+                )
+                self.features[feature] = feature_obj
+            except IntegrityError:
+                raise CommandError('Error getting/saving feature information')
 
     @timeit
     def get_annotation_instances(self):
@@ -126,23 +160,28 @@ class Variants(object):
 
     @transaction.atomic
     def get_annotation(self, record):
+        """Check if annotation is already in db, if not insert it."""
         annotation = None
         locus_tag = record.INFO['LocusTag'][0]
         if locus_tag in self.locus_tags:
             pk = self.locus_tags[locus_tag]
             annotation = self.annotations[pk]
         elif locus_tag is not None:
+            protein_id = record.INFO['ProteinID'][0]
+            if not protein_id:
+                protein_id = "not_applicable"
+
             annotation = Annotation.objects.create(
                 reference=self.reference,
                 locus_tag=locus_tag,
-                protein_id=record.INFO['ProteinID'][0],
+                protein_id=protein_id,
                 gene=('.' if record.INFO['Gene'][0] is None
                       else record.INFO['Gene'][0]),
-                db_xref=''.join(record.INFO['DBXref']),
                 product=('.' if record.INFO['Product'][0] is None
                          else record.INFO['Product'][0]),
                 note=('.' if record.INFO['Note'][0] is None
-                      else record.INFO['Note'][0])
+                      else record.INFO['Note'][0]),
+                is_pseudo=record.INFO['IsPseudo']
             )
             self.locus_tags[locus_tag] = annotation.pk
             self.annotations[annotation.pk] = annotation
@@ -153,9 +192,9 @@ class Variants(object):
                     locus_tag='inter_genic',
                     protein_id='inter_genic',
                     gene='inter_genic',
-                    db_xref='inter_genic',
                     product='inter_genic',
-                    note='inter_genic'
+                    note='inter_genic',
+                    is_pseudo=record.INFO['IsPseudo']
                 )
                 self.locus_tags['inter_genic'] = annotation.pk
                 self.annotations[annotation.pk] = annotation
@@ -167,6 +206,7 @@ class Variants(object):
 
     @transaction.atomic
     def get_filter(self, filter):
+        """Get the GATK filter applid to the entry."""
         record_filters = None
         f = None
         if len(filter) == 0:
@@ -186,6 +226,7 @@ class Variants(object):
 
     @transaction.atomic
     def get_comment(self, c):
+        """Get any comments associated with the entry."""
         comment = None
         if c is None:
             c = 'None'
@@ -202,10 +243,12 @@ class Variants(object):
 
     @transaction.atomic
     @timeit
-    def create_snp(self, record, reference, annotation):
+    def create_snp(self, record, reference, annotation, feature):
+        """Create a new snp."""
         return SNP.objects.create(
             reference=reference,
             annotation=annotation,
+            feature=feature,
             reference_position=record.POS,
             reference_base=record.REF,
             alternate_base=record.ALT[0],
@@ -227,9 +270,11 @@ class Variants(object):
             is_synonymous=record.INFO['IsSynonymous'],
             is_transition=record.INFO['IsTransition'],
             is_genic=record.INFO['IsGenic'],
+
         )
 
     def get_snps(self):
+        """Get all the snps in the database, for positions to be inserted."""
         self.all_snps = {}
         for snp in SNP.objects.filter(
             reference=self.reference,
@@ -242,7 +287,8 @@ class Variants(object):
             )
             self.all_snps[key] = snp.pk
 
-    def get_snp(self, record, reference, annotation):
+    def get_snp(self, record, reference, annotation, feature):
+        """Get an individual snp."""
         snp = False
         while not snp:
             try:
@@ -253,7 +299,8 @@ class Variants(object):
                 )]
             except KeyError:
                 try:
-                    snp = self.create_snp(record, reference, annotation).pk
+                    snp = self.create_snp(record, reference, annotation,
+                                          feature).pk
                 except IntegrityError:
                     print("trying SNP ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT[0]
@@ -264,10 +311,12 @@ class Variants(object):
         return snp
 
     @transaction.atomic
-    def create_indel(self, record, reference, annotation):
+    def create_indel(self, record, reference, annotation, feature):
+        """Create a new indel."""
         return Indel.objects.create(
             reference=reference,
             annotation=annotation,
+            feature=feature,
             reference_position=record.POS,
             reference_base=record.REF,
             alternate_base=(record.ALT if len(record.ALT) > 1 else
@@ -275,8 +324,8 @@ class Variants(object):
             is_deletion=record.is_deletion
         )
 
-    def get_indel(self, record, reference, annotation):
-        # Get or create InDel
+    def get_indel(self, record, reference, annotation, feature):
+        """Get or create InDel."""
         indel = False
         while not indel:
             try:
@@ -289,7 +338,8 @@ class Variants(object):
                 )
             except Indel.DoesNotExist:
                 try:
-                    indel = self.create_indel(record, reference, annotation)
+                    indel = self.create_indel(record, reference, annotation,
+                                              feature)
                 except IntegrityError:
                     print("trying Indel ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT
@@ -301,10 +351,12 @@ class Variants(object):
 
     @timeit
     def read_vcf(self):
+        """Read through the VCF records."""
         # Insert VCF Records
         for record in self.records:
             # Get annotation, filter, comment
             annotation = self.get_annotation(record)
+            feature = self.get_feature(record.INFO['FeatureType'][0])
             record_filters = self.get_filter(record.FILTER)
 
             # Store variant confidence
@@ -328,7 +380,7 @@ class Variants(object):
             # Insert SNP/Indel
             if record.is_snp:
                 comment = self.get_comment(record.INFO['Comments'][0])
-                snp = self.get_snp(record, self.reference, annotation)
+                snp = self.get_snp(record, self.reference, annotation, feature)
 
                 # Store SNP
                 try:
@@ -343,7 +395,8 @@ class Variants(object):
                 except IntegrityError as e:
                     raise CommandError('ToSNP Error: {0}'.format(e))
             else:
-                indel = self.get_indel(record, self.reference, annotation)
+                indel = self.get_indel(record, self.reference, annotation,
+                                       feature)
 
                 # Insert InDel
                 try:
@@ -360,6 +413,7 @@ class Variants(object):
     @transaction.atomic
     @timeit
     def delete_objects(self):
+        """Delete all objects for a given sample."""
         Confidence.objects.filter(sample=self.sample).delete()
         ToSNP.objects.filter(sample=self.sample).delete()
         ToIndel.objects.filter(sample=self.sample).delete()
@@ -368,24 +422,28 @@ class Variants(object):
     @transaction.atomic
     @timeit
     def insert_snps(self):
+        """Insert to snps in bulk."""
         ToSNP.objects.bulk_create(self.snps, batch_size=50000)
         return None
 
     @transaction.atomic
     @timeit
     def insert_indels(self):
+        """Insert to indels in bulk."""
         ToIndel.objects.bulk_create(self.indels, batch_size=50000)
         return None
 
     @transaction.atomic
     @timeit
     def insert_confidence(self):
+        """Insert variant confidences in bulk."""
         Confidence.objects.bulk_create(self.confidence, batch_size=50000)
         return None
 
     @transaction.atomic
     @timeit
     def insert_counts(self):
+        """Insert variant counts."""
         Counts.objects.create(
             sample=self.sample,
             snp=len(self.snps),
