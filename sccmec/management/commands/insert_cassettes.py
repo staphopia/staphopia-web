@@ -1,4 +1,4 @@
-""" Insert SCCmec cassettes used for mapping into database. """
+"""Insert SCCmec cassettes used for mapping into database."""
 import os.path
 
 from django.db import transaction
@@ -9,13 +9,12 @@ from staphopia.utils import read_fasta
 
 
 class Command(BaseCommand):
-
-    """ Insert results into database. """
+    """Insert results into database."""
 
     help = 'Insert SCCmec cassettes used for mapping into database.'
 
     def add_arguments(self, parser):
-        """ Make some arguements. """
+        """Make some arguements."""
         parser.add_argument('fasta', metavar='FASTA',
                             help='FASTA file used to create BWA database.')
         parser.add_argument('meca', metavar='MECA_POSTITIONS',
@@ -23,7 +22,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **opts):
-        """ Insert results to database. """
+        """Insert results to database."""
         if not os.path.exists(opts['fasta']):
             raise CommandError('{0} does not exist'.format(opts['fasta']))
         elif not os.path.exists(opts['meca']):
@@ -53,4 +52,4 @@ class Command(BaseCommand):
                 meca_length=meca[header]['length'],
             )
 
-            print '{0}\t{1}'.format(header, created)
+            print('{0}\t{1}'.format(header, created))

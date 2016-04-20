@@ -7,6 +7,7 @@ Staphopia samples.
 import architect
 from django.db import models
 
+from assembly.models import Contigs
 from sample.models import MetaData
 from variant.models import Reference
 
@@ -87,7 +88,7 @@ class Features(models.Model):
     """Annotated info for each predicted gene."""
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
-    contig = models.ForeignKey('Contigs', on_delete=models.CASCADE, default=0)
+    contig = models.ForeignKey(Contigs, on_delete=models.CASCADE, default=0)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
 
     start = models.PositiveIntegerField()
@@ -101,17 +102,3 @@ class Features(models.Model):
 
     class Meta:
         unique_together = ('sample', 'contig', 'cluster', 'start', 'end')
-
-
-# Create partition every 5 million records
-@architect.install('partition', type='range', subtype='integer',
-                   constraint='5000000', column='id')
-class Contigs(models.Model):
-    """Assembled contigs for each sample renamed by PROKKA."""
-
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
-    name = models.TextField(db_index=True)
-    sequence = models.TextField()
-
-    class Meta:
-        unique_together = ('sample', 'name')

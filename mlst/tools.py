@@ -8,48 +8,50 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
-from staphopia.utils import file_exists
+from staphopia.utils import file_exists, read_json, timeit
 
 from mlst.models import Blast, Srst2
 
 
+@timeit
 @transaction.atomic
-def insert_mlst_blast(blast, sample):
-    """Insert BLAST hits against MLST loci."""
-    if file_exists(blast):
-        with open(blast, 'r') as fh:
-            for line in fh:
-                line = line.rstrip()
-                # 0:sseqid 1:bitscore 2:slen 3:length
-                # 4:gaps 5:mismatch 6:pident 7:evalue
-                if line:
-                    cols = line.split('\t')
-                    locus_name, locus_id = cols[0].split('-')
-                    locus_name = locus_name.replace('_', '')
+def insert_mlst_blast(blast, sample, force=False):
+    """Insert JSON formatted BLAST hits against MLST loci."""
+    if force:
+        print("\tForce used, emptying MLST BLAST related results.")
+        Blast.objects.filter(sample=sample).delete()
 
-                    try:
-                        blastn, created = Blast.objects.get_or_create(
-                            sample=sample,
-                            locus_name=locus_name,
-                            locus_id=locus_id,
-                            bitscore=int(float(cols[1])),
-                            slen=cols[2],
-                            length=cols[3],
-                            gaps=cols[4],
-                            mismatch=cols[5],
-                            pident=cols[6],
-                            evalue=cols[7]
-                        )
-                        print("BLASTN Results Saved")
-                    except IntegrityError as e:
-                        raise CommandError('{0} MLSTBlast Error: {1}'.format(
-                            sample.sample_tag, e)
-                        )
+    json_data = read_json(blast)
+    for locus, results in json_data.items():
+        locus_id = results['sseqid'].split('_')[1]
+        try:
+            blastn, created = Blast.objects.get_or_create(
+                sample=sample,
+                locus_name=locus,
+                locus_id=locus_id,
+                bitscore=results['bitscore'],
+                slen=results['slen'],
+                length=results['length'],
+                gaps=results['gaps'],
+                mismatch=results['mismatch'],
+                pident=results['pident'],
+                evalue=results['evalue']
+            )
+            print("\tBLASTN Results Saved")
+        except IntegrityError as e:
+            raise CommandError('{0} MLSTBlast Error: {1}'.format(
+                sample.sample_tag, e)
+            )
 
 
+@timeit
 @transaction.atomic
-def insert_mlst_srst2(srst2, sample):
+def insert_mlst_srst2(srst2, sample, force=False):
     """Insert SRST2 hits against MLST loci."""
+    if force:
+        print("\tForce used, emptying MLST SRST2 related results.")
+        Srst2.objects.filter(sample=sample).delete()
+
     if file_exists(srst2):
         cols = None
         with open(srst2, 'r') as fh:
@@ -84,7 +86,7 @@ def insert_mlst_srst2(srst2, sample):
                 depth=float(cols[11]),
                 maxMAF=float("{0:.7f}".format(float(cols[12])))
             )
-            print("SRST2 Results Saved")
+            print("\tSRST2 Results Saved")
         except IntegrityError as e:
             raise CommandError('{0} MLSTSrst2 Error: {1}'.format(
                 sample.sample_tag, e

@@ -11,10 +11,10 @@ from staphopia.utils import md5sum
 from sample.models import MetaData
 
 from sample.tools import create_db_tag, validate_analysis, validate_time
-from assembly.tools import insert_assembly_stats
+from assembly.tools import insert_assembly_stats, insert_assembly
 from gene.tools import insert_gene_annotations
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
-from sccmec.tools import insert_sccmec_coverage
+from sccmec.tools import insert_sccmec_coverage, insert_sccmec_blast
 from sequence.tools import insert_fastq_stats
 from variant.tools import Variants
 
@@ -57,7 +57,7 @@ class Command(BaseCommand):
         fq_md5sum = md5sum('{0}/{1}.cleanup.fastq.gz'.format(
             opts['sample_dir'], opts['sample_tag']
         ))
-        print fq_md5sum
+
         # Get User
         try:
             user = User.objects.get(username=opts['user'])
@@ -79,10 +79,10 @@ class Command(BaseCommand):
                 )
             else:
                 sample.sample_tag = opts['sample_tag']
-                sample.project_tag=opts['project_tag'],
-                sample.strain=opts['strain'],
-                sample.is_paired=opts['is_paired'],
-                sample.comments=opts['comment']
+                sample.project_tag = opts['project_tag'],
+                sample.strain = opts['strain'],
+                sample.is_paired = opts['is_paired'],
+                sample.comments = opts['comment']
                 sample.save()
         except MetaData.DoesNotExist:
             # Create new sample
@@ -117,74 +117,38 @@ class Command(BaseCommand):
         """
 
         # Insert analysis results
-        print("\tInserting Sequence Stats...")
+        print("Inserting Sequence Stats...")
         insert_fastq_stats(files['stats_filter'], sample, is_original=False,
                            force=opts['force'])
         insert_fastq_stats(files['stats_original'], sample, is_original=True,
                            force=opts['force'])
 
-        print("\tInserting Assembly Stats...")
+        print("Inserting Assembly Stats...")
         insert_assembly_stats(files['contigs'], sample, is_scaffolds=False,
                               force=opts['force'])
         insert_assembly_stats(files['scaffolds'], sample, is_scaffolds=True,
                               force=opts['force'])
+        insert_assembly(files['assembly'], sample, force=opts['force'])
 
-        #if opts['runtime']:
+        print("Inserting MLST Results...")
+        insert_mlst_blast(files['mlst_blast'], sample, force=opts['force'])
+        insert_mlst_srst2(files['mlst_srst2'], sample, force=opts['force'])
+
+        print("Inserting SCCmec Coverage Stats...")
+        insert_sccmec_coverage(files['sccmec_coverage'], sample,
+                               force=opts['force'])
+        insert_sccmec_blast(files['sccmec_primers'], sample, is_primers=True,
+                            force=opts['force'])
+        insert_sccmec_blast(files['sccmec_proteins'], sample, is_primers=False,
+                            force=opts['force'])
+
+
+        # if opts['runtime']:
         #    runtimes = validate_time(opts['sample_dir'])
         """
-        if not files["missing"]:
-            try:
-                user = User.objects.get(username=opts['user'])
-            except User.DoesNotExist:
-                raise CommandError('user: {0} does not exist'.format(
-                    opts['user']
-                ))
 
-            # Create new sample
-            try:
-                sample_tag = create_sample_tag(user)
-                print("Creating new sample: {0}".format(sample_tag))
-                sample = MetaData(
-                    user=user,
-                    sample_tag=sample_tag,
-                    project_tag=opts['project_tag'],
-                    strain=opts['strain'],
-                    is_paired=opts['is_paired'],
-                    comments=opts['comment']
-                )
-                sample.save()
-            except IntegrityError as e:
-                raise CommandError(
-                    'Error, unable to create Sample object. {0}'.format(e)
-                )
 
-            # Verify
-            '''
-            print(json.dumps({
-                'sample_id': sample.pk,
-                'sample_tag': sample.sample_tag,
-                'project_tag': sample.project_tag,
-                'strain': sample.strain,
-                'is_paired': sample.is_paired,
-                'comment': sample.comments
-            }))
-            '''
 
-            # Insert analysis results
-            print("\tInserting Sequence Stats...")
-            insert_sequence_stats(files['stats_filter'], sample,
-                                  is_original=False)
-            insert_sequence_stats(files['stats_original'], sample,
-                                  is_original=True)
-
-            print("\tInserting Assembly Stats...")
-            insert_assembly_stats(files['contigs'], sample, is_scaffolds=False)
-            insert_assembly_stats(files['scaffolds'], sample,
-                                  is_scaffolds=True)
-
-            print("\tInserting MLST Results...")
-            insert_mlst_blast(files['mlst_blast'], sample)
-            insert_mlst_srst2(files['mlst_srst2'], sample)
 
             print("\tInserting SCCmec Coverage Stats...")
             insert_sccmec_coverage(files['sccmec_coverage'], sample)

@@ -9,6 +9,8 @@ import os.path
 
 from django.core.management.base import CommandError
 
+from staphopia.models import BlastQuery
+
 
 def timeit(method):
     """Return total runtime (in seconds) of a given method."""
@@ -48,6 +50,34 @@ def file_exists(input):
         return True
     else:
         raise CommandError('{0} does not exist'.format(input))
+
+
+def get_blast_query(title, length):
+    """Get a query id for a given title and length."""
+    query, created = BlastQuery.objects.get_or_create(
+        title=title, length=length
+    )
+    if created:
+        print("Added {0} to BlastQuery table".format(title))
+
+    return query
+
+
+def read_blast_json(blast_file):
+    """Format JSON output from PROKKA BLAST output to proper format."""
+    json_data = []
+    with open(blast_file) as fh:
+        record = []
+        first_line = True
+        for line in fh:
+            if line.startswith('{') and not first_line:
+                json_data.append(json.loads(''.join(record)))
+                record = []
+            if first_line:
+                first_line = False
+            record.append(line)
+        json_data.append(json.loads(''.join(record)))
+    return json_data
 
 
 def read_json(json_file):

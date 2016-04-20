@@ -8,7 +8,7 @@ import os
 
 from django.core.management.base import CommandError
 
-from sample.models import MetaData
+from sample.models import MetaData, Program
 
 
 def test_files(directory, sample_tag, files, optional=False):
@@ -61,6 +61,7 @@ def validate_analysis(directory, sample_tag):
         # Assembly
         'contigs': '{0}/assembly/{1}.contigs.json',
         'scaffolds': '{0}/assembly/{1}.scaffolds.json',
+        'assembly': '{0}/assembly/{1}.scaffolds.fasta.gz',
 
         # MLST
         'mlst_blast': '{0}/mlst/mlst-blastn.json',
@@ -135,3 +136,17 @@ def create_db_tag(user, db_tag=None, force=False):
         )
 
     return db_tag
+
+
+def get_program_id(program, version, comments):
+    """Add program and version to database."""
+    program_obj, created = Program.objects.get_or_create(
+        program=program,
+        version=version,
+        comments=comments
+    )
+
+    if created:
+        print("Added {0} ({1}) to Program table".format(program, version))
+
+    return program_obj

@@ -226,3 +226,11 @@ class Pipeline(models.Model):
     mlst = models.TextField()
     sequence = models.TextField()
     variant = models.TextField()
+
+
+class Program(models.Model):
+    """Store information about a program."""
+
+    program = models.TextField()
+    version = models.TextField()
+    comments = models.TextField()

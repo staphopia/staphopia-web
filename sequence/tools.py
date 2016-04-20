@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
-from staphopia.utils import read_json
+from staphopia.utils import read_json, timeit
 
 from sequence.models import Stat, Length, Quality
 
@@ -27,12 +27,13 @@ def insert_fastq_stats(stats, sample, is_original=False, force=False):
 @transaction.atomic
 def delete_stats(sample, is_original):
     """Force update, so remove from table."""
-    print("\t\tForce used, emptying FASTQ related tables.")
+    print("\tForce used, emptying FASTQ related results.")
     Stat.objects.filter(sample=sample, is_original=is_original).delete()
     Length.objects.filter(sample=sample, is_original=is_original).delete()
     Quality.objects.filter(sample=sample, is_original=is_original).delete()
 
 
+@timeit
 @transaction.atomic
 def insert_sequence_stats(stats, sample, is_original=False):
     """Insert sequence quality metrics into database."""
@@ -66,6 +67,7 @@ def __get_rank(data):
         return 1
 
 
+@timeit
 @transaction.atomic
 def insert_read_lengths(stats, sample, is_original=False):
     """Insert read lengths into database."""
@@ -86,6 +88,7 @@ def insert_read_lengths(stats, sample, is_original=False):
         )
 
 
+@timeit
 @transaction.atomic
 def insert_per_base_quality(stats, sample, is_original=False):
     """Insert per base quality into database."""

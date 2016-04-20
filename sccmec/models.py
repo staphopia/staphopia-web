@@ -7,6 +7,7 @@ samples.
 from django.db import models
 
 from sample.models import MetaData
+from staphopia.models import GenericBlast
 
 
 class Cassette(models.Model):
@@ -51,3 +52,24 @@ class Coverage(models.Model):
 
     class Meta:
         unique_together = ('sample', 'cassette')
+
+
+class PerBaseCoverage(models.Model):
+    """Per base coverage info for each SCCmec cassette."""
+
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    cassette = models.ForeignKey('Cassette', on_delete=models.CASCADE)
+    position = models.PositiveIntegerField()
+    coverage = models.PositiveIntegerField()
+
+
+class Primers(GenericBlast):
+    """BLAST hits against SCCmec primers."""
+
+    pass
+
+
+class Proteins(GenericBlast):
+    """BLAST hits against SCCmec proteins."""
+
+    pass
