@@ -13,6 +13,7 @@ from kmer.partitions import PARTITIONS
 class StringManager(models.Manager):
     """
     String Manager.
+
     Use raw sql to insert strings into a temporary table, then only
     insert those rows that don't exist in the string table.
     """
@@ -32,44 +33,22 @@ class StringManager(models.Manager):
         if not recs:
             return 0
 
+        new_kmers = 0
         with transaction.atomic():
             cursor = connection.cursor()
-
-            # lock and empty tmp table
-            sql = """
-            BEGIN;
-            LOCK TABLE kmer_stringtmp IN EXCLUSIVE MODE;
-            TRUNCATE TABLE kmer_stringtmp RESTART IDENTITY;
-            """
-            cursor.execute(sql)
-
-            # write to tmp table
+            # write to kmer_string table
             values = ["('{0}')".format(k) for k in recs]
-            for chunk in self.chunks(values, 100000):
+            for chunk in self.chunks(values, 10000):
                 sql = """INSERT INTO kmer_stringtmp (string)
-                         VALUES {0};""".format(','.join(chunk))
+                         VALUES {0}
+                         ON CONFLICT DO NOTHING;""".format(','.join(chunk))
                 cursor.execute(sql)
-
-            sql = """
-            BEGIN;
-            LOCK TABLE kmer_string IN EXCLUSIVE MODE;
-            SELECT setval('kmer_string_id_seq',
-                          (SELECT MAX(id) FROM "kmer_string"));
-            INSERT INTO kmer_string (string)
-                SELECT string
-                FROM kmer_stringtmp
-                WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM kmer_string
-                    WHERE kmer_stringtmp.string = kmer_string.string
-                );
-            """
-            cursor.execute(sql)
-            try:
-                # statusmessage is of form 'INSERT 0 1'
-                return int(cursor.statusmessage.split(' ').pop())
-            except (IndexError, ValueError):
-                raise Exception("Unexpected statusmessage from INSERT")
+                try:
+                    # statusmessage is of form 'INSERT 0 1'
+                    new_kmers += int(cursor.statusmessage.split(' ').pop())
+                except (IndexError, ValueError):
+                    raise Exception("Unexpected statusmessage from INSERT")
+        return new_kmers
 
     def insert_into_partitions(self, recs):
         """
@@ -90,6 +69,7 @@ class StringManager(models.Manager):
             else:
                 partition_recs[parent].append(rec)
 
+        new_kmers = 0
         with transaction.atomic():
             cursor = connection.cursor()
 
@@ -99,8 +79,55 @@ class StringManager(models.Manager):
                 values = ["('{0}')".format(k) for k in children]
                 for chunk in self.chunks(values, 1000000):
                     sql = """INSERT INTO {0} (string)
-                             VALUES {1};""".format(table, ','.join(chunk))
+                             VALUES {1}
+                             ON CONFLICT DO NOTHING;""".format(
+                        table, ','.join(chunk)
+                    )
                     cursor.execute(sql)
+                    try:
+                        # statusmessage is of form 'INSERT 0 1'
+                        new_kmers += int(cursor.statusmessage.split(' ').pop())
+                    except (IndexError, ValueError):
+                        raise Exception("Unexpected statusmessage from INSERT")
+        return new_kmers
+
+    def select_from_partitions(self, recs):
+        """
+        Select directly from partitions.
+
+        Group strings based on final 7 characters and select directly to the
+        partition table. Assumes the string already exists in the database.
+        """
+        if not recs:
+            return 0
+
+        partition_recs = {}
+        for rec in recs:
+            parent = PARTITIONS[rec[-7:]]
+            if parent not in partition_recs:
+                partition_recs[parent] = [rec]
+            else:
+                partition_recs[parent].append(rec)
+
+        kmers = {}
+        with transaction.atomic():
+            cursor = connection.cursor()
+
+            for parent, children in partition_recs.iteritems():
+                # write directly to partition table
+                table = 'kmer_string_{0}'.format(parent.lower())
+                values = ["('{0}')".format(k) for k in children]
+                for chunk in self.chunks(values, 1000000):
+                    sql = """SELECT id, string
+                             FROM {0}
+                             WHERE string = ANY (VALUES {1});""".format(
+                        table,
+                        ','.join(chunk)
+                    )
+                    cursor.execute(sql)
+                    for row in cursor:
+                        kmers[row[1]] = row[0]
+        return kmers
 
 
 class FixedCharField(models.Field):
@@ -141,11 +168,11 @@ class Count(models.Model):
     """Kmer counts from each sample."""
 
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
-    string = models.ForeignKey('String', on_delete=models.CASCADE)
+    string_id = models.PositiveIntegerField()
     count = models.PositiveIntegerField()
 
     class Meta:
-        unique_together = ('sample', 'string')
+        unique_together = ('sample', 'string_id')
 
 
 class Total(models.Model):

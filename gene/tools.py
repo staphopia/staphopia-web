@@ -8,64 +8,261 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
-from staphopia.constants import UNIREF90
-from staphopia.utils import timeit, gziplines, read_fasta
-from gene.models import Clusters, Contigs, Features
+from assembly.models import Contigs
+from gene.models import (
+    Clusters, Features, Note, Product, Inference, BlastResults
+)
+
+from staphopia.constants import UNIREF50
+from staphopia.utils import timeit, gziplines, read_fasta, read_json
+from sample.tools import get_program_id
+
+
+def insert_gene_annotations(genes, proteins, contigs, gff, sample,
+                            compressed=True, force=False):
+    """Insert gene annotations into the database."""
+    if force:
+        delete_features(sample)
+
+    genes = read_fasta(genes, compressed=True)
+    proteins = read_fasta(proteins, compressed=True)
+    contigs = get_contigs(contigs, sample)
+    features = read_gff(gff, sample, contigs, genes, proteins)
+    insert_features(features)
 
 
 @transaction.atomic
-def insert_gene_annotations(files, sample, compressed=True):
-    """Insert gene annotations into the database."""
-    genes = read_fasta(files['genes'], compressed=True)
-    proteins = read_fasta(files['proteins'], compressed=True)
-    contig_pks = __insert_contigs(files['contigs'], sample, compressed)
-    features = __read_gff(files['gff'], sample, contig_pks, genes, proteins)
+def insert_blast_results(files, gff, sample, compressed=True, force=False):
+    """Insert blast results for predicted genes into the database."""
+    if force:
+        print("\tForce used, emptying Gene blast related results.")
+        BlastResults.objects.filter(sample=sample).delete()
+
+    features = get_features(sample)
+    id_map = get_id_mappings(gff)
+    hits = []
+    program = None
+    for file in files:
+        json_data = read_json(file, compressed=compressed)
+        for entry in json_data['BlastOutput2']:
+            hit = entry['report']['results']['search']
+            if len(hit['hits']):
+                if not program:
+                    program = get_program_id(
+                        entry['report']['program'],
+                        entry['report']['version'],
+                        'database:{0}'.format(
+                            entry['report']['search_target']['db']
+                        )
+                    )
+                prokka_id = id_map[hit['query_title']]
+                feature = features[prokka_id]
+
+                # Only storing the top hit
+                hsp = hit['hits'][0]['hsps'][0]
+
+                # Includes mismatches and gaps
+                mismatch = hsp['align_len'] - hsp['identity']
+
+                # Hamming distance
+                hd = mismatch
+                if hit['query_len'] > hsp['align_len']:
+                    # Include those bases that weren't aligned
+                    hd = hit['query_len'] - hsp['align_len'] + mismatch
+
+                hits.append(BlastResults(
+                    sample=sample,
+                    feature=feature,
+                    program=program,
+
+                    bitscore=int(hsp['bit_score']),
+                    evalue=hsp['evalue'],
+                    identity=hsp['identity'],
+                    mismatch=mismatch,
+                    gaps=hsp['gaps'],
+                    hamming_distance=hd,
+                    query_from=hsp['query_from'],
+                    query_to=hsp['query_to'],
+                    query_len=hit['query_len'],
+                    hit_from=hsp['hit_from'],
+                    hit_to=hsp['hit_to'],
+                    align_len=hsp['align_len'],
+
+                    qseq=hsp['qseq'],
+                    hseq=hsp['hseq'],
+                    midline=hsp['midline']
+                ))
+
+    try:
+        BlastResults.objects.bulk_create(hits, batch_size=5000)
+        print('Gene BlastResults saved.')
+    except IntegrityError as e:
+        raise CommandError('{0} Gene BlastResults Error: {1}'.format(
+            sample.sample_tag, e
+        ))
+
+
+"""
+    bitscore = models.PositiveSmallIntegerField()
+    evalue = models.DecimalField(max_digits=7, decimal_places=2)
+    identity = models.PositiveSmallIntegerField()
+    mismatch = models.PositiveSmallIntegerField()
+    gaps = models.PositiveSmallIntegerField()
+    hamming_distance = models.PositiveSmallIntegerField()
+    query_from = models.PositiveSmallIntegerField()
+    query_to = models.PositiveSmallIntegerField()
+    hit_from = models.PositiveIntegerField()
+    hit_to = models.PositiveIntegerField()
+    align_len = models.PositiveSmallIntegerField()
+
+    qseq = models.TextField()
+    hseq = models.TextField()
+    midline = models.TextField()"""
+
+def get_features(sample):
+    """Return a dict of features indexed by prokka id."""
+    rows = {}
+    for tag in Features.objects.filter(sample=sample):
+        rows[tag.prokka_id] = tag
+    return rows
+
+
+def get_id_mappings(gff):
+    """Get prokka CDS id mappings from GFF."""
+    types = ['CDS']
+    done_reading = False
+    query_titles = {}
+    for line in gziplines(gff):
+        if done_reading:
+            continue
+        line = line.rstrip()
+        if line.startswith('##'):
+            # Don't need these lines
+            if line.startswith('##FASTA'):
+                # Done, process no more
+                done_reading = True
+            continue
+        else:
+            # Only parse those features of type in types
+            cols = line.split('\t')
+            if cols[2] in types:
+                attributes = dict( a.split('=') for a in cols[8].split(';'))
+                query_titles[attributes['query_title']] = attributes['ID']
+    return query_titles
+
+
+@transaction.atomic
+def delete_features(sample):
+    """Delete features associated with a sample."""
+    print("\tForce used, emptying Annotation related results.")
+    Features.objects.filter(sample=sample).delete()
+
+@transaction.atomic
+def insert_features(features):
+    """Bulk insert a list of features."""
     Features.objects.bulk_create(features, batch_size=500)
 
 
 @transaction.atomic
-def __insert_contigs(contigs, sample, compressed):
+def get_contigs(contigs, sample):
     """Insert contigs into the database."""
     pks = {}
-    contigs = read_fasta(contigs, compressed)
-    for name, sequence in contigs.items():
-        try:
-            contig, created = Contigs.objects.get_or_create(
-                sample=sample,
-                name=name,
-                sequence=sequence
-            )
-            pks[name] = contig.pk
-        except IntegrityError as e:
-            raise CommandError('Error inserting contigs: {0}'.format(e))
-
+    with open(contigs, 'r') as fh:
+        for line in fh:
+            original, renamed = line.rstrip().split('\t')
+            try:
+                contig = Contigs.objects.get(
+                    sample=sample,
+                    name=original
+                )
+                pks[renamed] = contig
+            except IntegrityError as e:
+                raise CommandError('Error getting contig: {0}'.format(e))
     return pks
 
 
-def __get_cluster_pk(cluster):
+def get_clusters():
+    """Get the total list of clusters."""
+    rows = {}
+    for tag in Clusters.objects.filter():
+        rows[tag.name] = tag
+    return rows
+
+
+def get_notes():
+    """Get the total list of notes."""
+    rows = {}
+    for tag in Note.objects.filter():
+        rows[tag.note] = tag
+    return rows
+
+
+def get_inferences():
+    """Get the total list of inferences."""
+    rows = {}
+    for tag in Inference.objects.filter():
+        rows[tag.inference] = tag
+    return rows
+
+
+def get_products():
+    """Get the total list of products."""
+    rows = {}
+    for tag in Product.objects.filter():
+        rows[tag.product] = tag
+    return rows
+
+
+@transaction.atomic
+def create_cluster(cluster):
+    """Get or create a cluster."""
     try:
-        cluster = Clusters.objects.get(name=cluster)
-    except Clusters.DoesNotExist:
         from subprocess import Popen, PIPE
-        print(cluster)
-        f = Popen(['grep', cluster, UNIREF90], stdout=PIPE)
+        f = Popen(['grep', cluster, UNIREF50], stdout=PIPE)
         stdout, stderr = f.communicate()
-        name, seq = stdout.rstrip().split('\t')
-        cluster = Clusters.objects.create(name=name, aa=seq)
-    return cluster.pk
+        if stdout:
+            name, seq = stdout.rstrip().split('\t')
+            return Clusters.objects.create(name=name, aa=seq)
+        else:
+            # no-matching-cluster
+            return Clusters.objects.create(name=cluster, aa=cluster)
+    except IntegrityError as e:
+        raise CommandError('Error getting contig: {0}'.format(e))
+
+
+@transaction.atomic
+def get_object(key, query, dictionary, model_obj):
+    """Get or create a new object instance."""
+    if key not in dictionary:
+        try:
+            obj, c = model_obj.objects.get_or_create(**query)
+            dictionary[key] = obj
+        except IntegrityError as e:
+            raise CommandError('Error saving inference: {0}'.format(e))
+
+    return dictionary
 
 
 @timeit
-def __read_gff(gff_file, sample, contig_pks, genes, proteins):
+def read_gff(gff_file, sample, contigs, genes, proteins):
+    """Read through the GFF and extract annotations."""
     features = []
-    types = ['CDS', 'tRNA']
+    types = ['CDS', 'tRNA', 'rRNA']
+    notes = get_notes()
+    inferences = get_inferences()
+    products = get_products()
+    clusters = get_clusters()
 
+    done_reading = False
     for line in gziplines(gff_file):
+        if done_reading:
+            continue
+        line = line.rstrip()
         if line.startswith('##'):
             # Don't need these lines
             if line.startswith('##FASTA'):
-                # Don't read the sequence
-                break
+                # Done, process no more
+                done_reading = True
             continue
         else:
             '''
@@ -88,16 +285,34 @@ def __read_gff(gff_file, sample, contig_pks, genes, proteins):
             cols = line.split('\t')
             if cols[2] in types:
                 # Parse attributes
-                cluster = 'NO_MATCHING_CLUSTER'
-                id = None
-                for attribute in cols[8].split(';'):
-                    if attribute.startswith('ID'):
-                        id = attribute.split('=')[1]
-                    elif attribute.startswith('inference'):
-                        if 'UniRef90_' in attribute:
-                            cluster = 'UniRef90_{0}'.format(
-                                attribute.split('UniRef90_')[1]
-                            )
+                cluster = 'no-matching-cluster'
+                product = "none"
+                note = "none"
+
+                attributes = dict( a.split('=') for a in cols[8].split(';'))
+                prokka_id = attributes['ID']
+                if 'inference' in attributes:
+                    if 'UniRef50_' in attributes['inference']:
+                        cluster = 'UniRef50_{0}'.format(
+                            attributes['inference'].split('UniRef50_')[1]
+                        )
+
+                if cols[2] in ['tRNA', 'rRNA']:
+                    cluster = 'predicted-rna'
+
+                if cluster not in clusters:
+                    clusters[cluster] = create_cluster(cluster)
+
+                if 'product' in attributes:
+                    product = attributes['product']
+                products = get_object(product, {'product':product}, products,
+                                      Product)
+
+                if 'note' in attributes:
+                    note = attributes['note']
+                notes = get_object(note, {'note':note}, notes, Note)
+                inferences = get_object(cols[1], {'inference':cols[1]},
+                                        inferences, Inference)
 
                 if cols[7] == '.':
                     # tRNA gives '.' for phase,lets make it 9
@@ -106,17 +321,22 @@ def __read_gff(gff_file, sample, contig_pks, genes, proteins):
                 features.append(
                     Features(
                         sample=sample,
-                        contig_id=contig_pks[cols[0]],
-                        cluster_id=__get_cluster_pk(cluster),
+                        contig=contigs[cols[0]],
+                        cluster=clusters[cluster],
+                        note=notes[note],
+                        product=products[product],
+                        inference=inferences[cols[1]],
 
                         start=int(cols[3]),
                         end=int(cols[4]),
                         is_positive=True if cols[6] == '+' else False,
                         is_tRNA=True if cols[2] == 'tRNA' else False,
+                        is_rRNA=True if cols[2] == 'rRNA' else False,
                         phase=int(cols[7]),
 
-                        dna=genes[id] if id in genes else '',
-                        aa=proteins[id] if id in proteins else '',
+                        prokka_id=prokka_id,
+                        dna=genes[prokka_id] if prokka_id in genes else '',
+                        aa=proteins[prokka_id] if prokka_id in proteins else '',
                     )
                 )
 

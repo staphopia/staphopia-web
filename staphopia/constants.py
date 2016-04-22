@@ -1,2 +1,2 @@
-UNIREF90 = ("/home/rpetit/staphopia/analysis-pipeline/data/annotation/"
-            "bacteria-uniref90.tab")
+UNIREF50 = ("/home/staphopia/analysis-pipeline/data/annotation/"
+            "uniref50-bacteria.tab")

@@ -8,12 +8,12 @@ import architect
 from django.db import models
 
 from assembly.models import Contigs
-from sample.models import MetaData
+from sample.models import MetaData, Program
 from variant.models import Reference
 
 
 class Clusters(models.Model):
-    """UniRef90 Cluster Ids."""
+    """UniRef50 Cluster Ids."""
 
     name = models.TextField(unique=True)
     aa = models.TextField()
@@ -90,15 +90,66 @@ class Features(models.Model):
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     contig = models.ForeignKey(Contigs, on_delete=models.CASCADE, default=0)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    inference = models.ForeignKey('Inference', on_delete=models.CASCADE)
+    note = models.ForeignKey('Note', on_delete=models.CASCADE)
 
     start = models.PositiveIntegerField()
     end = models.PositiveIntegerField()
     is_positive = models.BooleanField()
     is_tRNA = models.BooleanField()
+    is_rRNA = models.BooleanField()
     phase = models.PositiveSmallIntegerField()
 
+    prokka_id = models.TextField()
     dna = models.TextField()
     aa = models.TextField()
 
     class Meta:
         unique_together = ('sample', 'contig', 'cluster', 'start', 'end')
+
+
+class Product(models.Model):
+    """Product information for a given annotation."""
+
+    product = models.TextField(db_index=True)
+
+
+class Inference(models.Model):
+    """How the annotation was infered."""
+
+    inference = models.TextField(db_index=True)
+
+
+class Note(models.Model):
+    """Any notes associated with a given annotation."""
+
+    note = models.TextField(db_index=True)
+
+
+class BlastResults(models.Model):
+    """Predicted gene BLAST hits against UniRef50."""
+
+    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    feature = models.ForeignKey('Features', on_delete=models.CASCADE)
+    program = models.ForeignKey(Program, on_delete=models.CASCADE)
+
+    bitscore = models.PositiveSmallIntegerField()
+    evalue = models.DecimalField(max_digits=7, decimal_places=2)
+    identity = models.PositiveSmallIntegerField()
+    mismatch = models.PositiveSmallIntegerField()
+    gaps = models.PositiveSmallIntegerField()
+    hamming_distance = models.PositiveSmallIntegerField()
+    query_from = models.PositiveSmallIntegerField()
+    query_to = models.PositiveSmallIntegerField()
+    query_len = models.PositiveSmallIntegerField()
+    hit_from = models.PositiveIntegerField()
+    hit_to = models.PositiveIntegerField()
+    align_len = models.PositiveSmallIntegerField()
+
+    qseq = models.TextField()
+    hseq = models.TextField()
+    midline = models.TextField()
+
+    class Meta:
+        unique_together = ('sample', 'feature')

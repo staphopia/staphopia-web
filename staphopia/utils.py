@@ -4,6 +4,7 @@ Useful functions used thoughout the project.
 To use:
 from staphopia.utils import UTIL1, UTIL2, etc...
 """
+import gzip
 import json
 import os.path
 
@@ -63,29 +64,16 @@ def get_blast_query(title, length):
     return query
 
 
-def read_blast_json(blast_file):
-    """Format JSON output from PROKKA BLAST output to proper format."""
-    json_data = []
-    with open(blast_file) as fh:
-        record = []
-        first_line = True
-        for line in fh:
-            if line.startswith('{') and not first_line:
-                json_data.append(json.loads(''.join(record)))
-                record = []
-            if first_line:
-                first_line = False
-            record.append(line)
-        json_data.append(json.loads(''.join(record)))
-    return json_data
-
-
-def read_json(json_file):
+def read_json(json_file, compressed=False):
     """Return data imported from JSON file."""
     if file_exists(json_file):
         try:
-            with open(json_file, 'r') as f:
-                json_data = json.load(f)
+            if compressed:
+                with gzip.open(json_file, "rb") as f:
+                    json_data = json.loads(f.read().decode("ascii"))
+            else:
+                with open(json_file, 'r') as f:
+                    json_data = json.load(f)
         except ValueError:
             raise CommandError('{0}: invalid JSON'.format(json_file))
 

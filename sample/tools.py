@@ -76,7 +76,7 @@ def validate_analysis(directory, sample_tag):
         # Annotation
         'annotation_genes': '{0}/annotation/{1}.ffn.gz',
         'annotation_proteins': '{0}/annotation/{1}.faa.gz',
-        'annotation_contigs': '{0}/annotation/{1}.fna.gz',
+        'annotation_contigs': '{0}/annotation/{1}-contigs.txt',
         'annotation_gff': '{0}/annotation/{1}.gff.gz',
         'annotation_blastp_sprot': (
             '{0}/annotation/blastp-sprot.json.gz'

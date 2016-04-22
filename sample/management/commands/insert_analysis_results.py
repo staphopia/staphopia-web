@@ -12,7 +12,8 @@ from sample.models import MetaData
 
 from sample.tools import create_db_tag, validate_analysis, validate_time
 from assembly.tools import insert_assembly_stats, insert_assembly
-from gene.tools import insert_gene_annotations
+from gene.tools import insert_gene_annotations, insert_blast_results
+from kmer.tools import insert_kmer_counts
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
 from sccmec.tools import insert_sccmec_coverage, insert_sccmec_blast
 from sequence.tools import insert_fastq_stats
@@ -104,18 +105,6 @@ class Command(BaseCommand):
                     'Error, unable to create Sample object. {0}'.format(e)
                 )
 
-        # Verify
-        """
-        print(json.dumps({
-            'sample_id': sample.pk,
-            'sample_tag': sample.sample_tag,
-            'project_tag': sample.project_tag,
-            'strain': sample.strain,
-            'is_paired': sample.is_paired,
-            'comment': sample.comments
-        }))
-        """
-
         # Insert analysis results
         print("Inserting Sequence Stats...")
         insert_fastq_stats(files['stats_filter'], sample, is_original=False,
@@ -142,25 +131,37 @@ class Command(BaseCommand):
         insert_sccmec_blast(files['sccmec_proteins'], sample, is_primers=False,
                             force=opts['force'])
 
-        print("\tInserting Variants...")
+        print("Inserting Variants...")
         insert_variant_results(files['variants'], sample, force=opts['force'])
+
+        print("Inserting Gene Annotations...")
+        insert_gene_annotations(
+            files['annotation_genes'], files['annotation_proteins'],
+            files['annotation_contigs'], files['annotation_gff'],
+            sample, compressed=True, force=opts['force']
+        )
+
+        blastp = [
+            files['annotation_blastp_proteins'],
+            files['annotation_blastp_staph'],
+            files['annotation_blastp_sprot']
+        ]
+        insert_blast_results(
+            blastp, files['annotation_gff'], sample, compressed=True,
+            force=opts['force']
+        )
+
+        print("Inserting k-mer counts...")
+        insert_kmer_counts(files['kmers'], sample, force=opts['force'])
+        print(json.dumps({
+            'sample_id': sample.pk,
+            'db_tag':sample.db_tag,
+            'sample_tag': sample.sample_tag,
+            'project_tag': sample.project_tag[0],
+            'strain': sample.strain[0],
+            'is_paired': sample.is_paired[0],
+            'comment': sample.comments
+        }))
+
         # if opts['runtime']:
         #    runtimes = validate_time(opts['sample_dir'])
-        """
-
-            print("\tInserting Gene Annotations...")
-            insert_gene_annotations(files['annotation'], sample,
-                                    compressed=True)
-
-            print("\tInserting Variants...")
-            variants = Variants(files['variants'], sample)
-            variants.insert_variants()
-        else:
-            raise CommandError(
-                ('{0} required files were missing.\n\n'
-                 'Missing files:\n{1}').format(
-                    len(files['missing']),
-                    '\n'.join(files['missing'])
-                )
-            )
-        """
