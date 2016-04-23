@@ -50,7 +50,7 @@ class StringManager(models.Manager):
                     raise Exception("Unexpected statusmessage from INSERT")
         return new_kmers
 
-    def insert_into_partitions(self, recs):
+    def insert_into_partitions(self, recs, partition=None):
         """
         Insert directly to partitions.
 
@@ -77,7 +77,7 @@ class StringManager(models.Manager):
                 # write directly to partition table
                 table = 'kmer_string_{0}'.format(parent.lower())
                 values = ["('{0}')".format(k) for k in children]
-                for chunk in self.chunks(values, 1000000):
+                for chunk in self.chunks(values, 100000):
                     sql = """INSERT INTO {0} (string)
                              VALUES {1}
                              ON CONFLICT DO NOTHING;""".format(
@@ -89,6 +89,37 @@ class StringManager(models.Manager):
                         new_kmers += int(cursor.statusmessage.split(' ').pop())
                     except (IndexError, ValueError):
                         raise Exception("Unexpected statusmessage from INSERT")
+        return new_kmers
+
+
+    def insert_into_partition(self, recs, partition):
+        """
+        Insert directly to a specific partition.
+
+        Group strings based on final 7 characters and insert directly to the
+        given partition table. Assumes the string does not already exist in the
+        database.
+        """
+        if not recs:
+            return 0
+
+        new_kmers = 0
+        with transaction.atomic():
+            cursor = connection.cursor()
+            table = 'kmer_string_{0}'.format(partition.lower())
+            values = ["('{0}')".format(k) for k in recs]
+            for chunk in self.chunks(values, 100000):
+                sql = """INSERT INTO {0} (string)
+                         VALUES {1}
+                         ON CONFLICT DO NOTHING;""".format(
+                    table, ','.join(chunk)
+                )
+                cursor.execute(sql)
+                try:
+                    # statusmessage is of form 'INSERT 0 1'
+                    new_kmers += int(cursor.statusmessage.split(' ').pop())
+                except (IndexError, ValueError):
+                    raise Exception("Unexpected statusmessage from INSERT")
         return new_kmers
 
     def select_from_partitions(self, recs):
@@ -134,12 +165,14 @@ class FixedCharField(models.Field):
     """Force creation of a CHAR field not VARCHAR."""
 
     def __init__(self, max_length, *args, **kwargs):
+        """Initialize."""
         self.max_length = max_length
         super(FixedCharField, self).__init__(
             max_length=max_length, *args, **kwargs
         )
 
     def db_type(self, connection):
+        """Explicit char."""
         return 'char(%s)' % self.max_length
 
 
