@@ -237,7 +237,7 @@ def create_cluster(cluster, preloaded_clusters=None):
                 # no-matching-cluster
                 name = cluster
                 seq = cluster
-            return Clusters.objects.create(name=name, aa=seq)
+        return Clusters.objects.create(name=name, aa=seq)
     except IntegrityError as e:
         raise CommandError('Error getting contig: {0}'.format(e))
 
