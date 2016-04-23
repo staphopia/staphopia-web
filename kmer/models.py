@@ -148,7 +148,7 @@ class StringManager(models.Manager):
                 # write directly to partition table
                 table = 'kmer_string_{0}'.format(parent.lower())
                 values = ["('{0}')".format(k) for k in children]
-                for chunk in self.chunks(values, 1000000):
+                for chunk in self.chunks(values, 100000):
                     sql = """SELECT id, string
                              FROM {0}
                              WHERE string = ANY (VALUES {1});""".format(
