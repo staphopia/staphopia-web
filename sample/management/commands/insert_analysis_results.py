@@ -153,13 +153,14 @@ class Command(BaseCommand):
 
         print("Inserting k-mer counts...")
         insert_kmer_counts(files['kmers'], sample, force=opts['force'])
+
         print(json.dumps({
             'sample_id': sample.pk,
             'db_tag':sample.db_tag,
             'sample_tag': sample.sample_tag,
             'project_tag': sample.project_tag[0],
             'strain': sample.strain[0],
-            'is_paired': sample.is_paired[0],
+            'is_paired': sample.is_paired,
             'comment': sample.comments
         }))
 

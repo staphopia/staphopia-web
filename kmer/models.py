@@ -77,7 +77,7 @@ class StringManager(models.Manager):
                 # write directly to partition table
                 table = 'kmer_string_{0}'.format(parent.lower())
                 values = ["('{0}')".format(k) for k in children]
-                for chunk in self.chunks(values, 100000):
+                for chunk in self.chunks(values, 10000):
                     sql = """INSERT INTO {0} (string)
                              VALUES {1}
                              ON CONFLICT DO NOTHING;""".format(
@@ -108,7 +108,7 @@ class StringManager(models.Manager):
             cursor = connection.cursor()
             table = 'kmer_string_{0}'.format(partition.lower())
             values = ["('{0}')".format(k) for k in recs]
-            for chunk in self.chunks(values, 100000):
+            for chunk in self.chunks(values, 10000):
                 sql = """INSERT INTO {0} (string)
                          VALUES {1}
                          ON CONFLICT DO NOTHING;""".format(
@@ -148,7 +148,7 @@ class StringManager(models.Manager):
                 # write directly to partition table
                 table = 'kmer_string_{0}'.format(parent.lower())
                 values = ["('{0}')".format(k) for k in children]
-                for chunk in self.chunks(values, 100000):
+                for chunk in self.chunks(values, 10000):
                     sql = """SELECT id, string
                              FROM {0}
                              WHERE string = ANY (VALUES {1});""".format(
