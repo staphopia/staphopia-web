@@ -95,7 +95,7 @@ def insert_blast_results(files, gff, sample, compressed=True, force=False):
 
     try:
         BlastResults.objects.bulk_create(hits, batch_size=5000)
-        print('Gene BlastResults saved.')
+        print('\tGene BlastResults saved.')
     except IntegrityError as e:
         raise CommandError('{0} Gene BlastResults Error: {1}'.format(
             sample.sample_tag, e
@@ -214,20 +214,42 @@ def get_products():
 
 
 @transaction.atomic
-def create_cluster(cluster):
+def create_cluster(cluster, preloaded_clusters=None):
     """Get or create a cluster."""
     try:
-        from subprocess import Popen, PIPE
-        f = Popen(['grep', cluster, UNIREF50], stdout=PIPE)
-        stdout, stderr = f.communicate()
-        if stdout:
-            name, seq = stdout.rstrip().split('\t')
-            return Clusters.objects.create(name=name, aa=seq)
+        name = None
+        seq = None
+        if preloaded_clusters:
+            if cluster in preloaded_clusters:
+                name = cluster
+                seq = preloaded_clusters[cluster]
+            else:
+                # no-matching-cluster
+                name = cluster
+                seq = cluster
         else:
-            # no-matching-cluster
-            return Clusters.objects.create(name=cluster, aa=cluster)
+            from subprocess import Popen, PIPE
+            f = Popen(['grep', cluster, UNIREF50], stdout=PIPE)
+            stdout, stderr = f.communicate()
+            if stdout:
+                name, seq = stdout.rstrip().split('\t')
+            else:
+                # no-matching-cluster
+                name = cluster
+                seq = cluster
+            return Clusters.objects.create(name=name, aa=seq)
     except IntegrityError as e:
         raise CommandError('Error getting contig: {0}'.format(e))
+
+
+def preload_clusters():
+    """Preload clusters to prevent, grepping a lot."""
+    clusters = {}
+    with open(UNIREF50, 'r') as fh:
+        for line in fh:
+            name, seq = line.rstrip().split('\t')
+            clusters[name] = seq
+    return clusters
 
 
 @transaction.atomic
@@ -244,7 +266,7 @@ def get_object(key, query, dictionary, model_obj):
 
 
 @timeit
-def read_gff(gff_file, sample, contigs, genes, proteins):
+def read_gff(gff_file, sample, contigs, genes, proteins, preload=False):
     """Read through the GFF and extract annotations."""
     features = []
     types = ['CDS', 'tRNA', 'rRNA']
@@ -254,6 +276,7 @@ def read_gff(gff_file, sample, contigs, genes, proteins):
     clusters = get_clusters()
 
     done_reading = False
+    preloaded_clusters = preload_clusters() if preload else None
     for line in gziplines(gff_file):
         if done_reading:
             continue
@@ -301,7 +324,9 @@ def read_gff(gff_file, sample, contigs, genes, proteins):
                     cluster = 'predicted-rna'
 
                 if cluster not in clusters:
-                    clusters[cluster] = create_cluster(cluster)
+                    clusters[cluster] = create_cluster(
+                        cluster, preloaded_clusters=preloaded_clusters
+                    )
 
                 if 'product' in attributes:
                     product = attributes['product']
