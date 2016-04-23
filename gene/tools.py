@@ -19,7 +19,7 @@ from sample.tools import get_program_id
 
 
 def insert_gene_annotations(genes, proteins, contigs, gff, sample,
-                            compressed=True, force=False):
+                            compressed=True, force=False, preload=False):
     """Insert gene annotations into the database."""
     if force:
         delete_features(sample)
@@ -27,7 +27,7 @@ def insert_gene_annotations(genes, proteins, contigs, gff, sample,
     genes = read_fasta(genes, compressed=True)
     proteins = read_fasta(proteins, compressed=True)
     contigs = get_contigs(contigs, sample)
-    features = read_gff(gff, sample, contigs, genes, proteins)
+    features = read_gff(gff, sample, contigs, genes, proteins, preload=preload)
     insert_features(features)
 
 

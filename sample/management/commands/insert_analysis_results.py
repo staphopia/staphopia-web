@@ -48,6 +48,8 @@ class Command(BaseCommand):
                             help='Insert runtimes as well.')
         parser.add_argument('--force', action='store_true',
                             help='Force updates for existing entries.')
+        parser.add_argument('--preload', action='store_true',
+                            help='Preload UniRef50 clusters into memory.')
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -138,7 +140,8 @@ class Command(BaseCommand):
         insert_gene_annotations(
             files['annotation_genes'], files['annotation_proteins'],
             files['annotation_contigs'], files['annotation_gff'],
-            sample, compressed=True, force=opts['force']
+            sample, compressed=True, force=opts['force'],
+            preload=opts['preload']
         )
 
         blastp = [
