@@ -4,6 +4,8 @@ Kmer Application Models.
 These are models to store information on the Kmer analysis of Staphopia
 samples.
 """
+import time
+
 from django.db import models, connection, transaction
 
 from sample.models import MetaData
@@ -38,7 +40,7 @@ class StringManager(models.Manager):
             cursor = connection.cursor()
             # write to kmer_string table
             values = ["('{0}')".format(k) for k in recs]
-            for chunk in self.chunks(values, 10000):
+            for chunk in self.chunks(values, 100000):
                 sql = """INSERT INTO kmer_stringtmp (string)
                          VALUES {0}
                          ON CONFLICT DO NOTHING;""".format(','.join(chunk))
@@ -77,7 +79,7 @@ class StringManager(models.Manager):
                 # write directly to partition table
                 table = 'kmer_string_{0}'.format(parent.lower())
                 values = ["('{0}')".format(k) for k in children]
-                for chunk in self.chunks(values, 10000):
+                for chunk in self.chunks(values, 100000):
                     sql = """INSERT INTO {0} (string)
                              VALUES {1}
                              ON CONFLICT DO NOTHING;""".format(
@@ -108,7 +110,7 @@ class StringManager(models.Manager):
             cursor = connection.cursor()
             table = 'kmer_string_{0}'.format(partition.lower())
             values = ["('{0}')".format(k) for k in recs]
-            for chunk in self.chunks(values, 10000):
+            for chunk in self.chunks(values, 100000):
                 sql = """INSERT INTO {0} (string)
                          VALUES {1}
                          ON CONFLICT DO NOTHING;""".format(
@@ -141,6 +143,7 @@ class StringManager(models.Manager):
                 partition_recs[parent].append(rec)
 
         kmers = {}
+        total = 1
         with transaction.atomic():
             cursor = connection.cursor()
 
@@ -148,16 +151,28 @@ class StringManager(models.Manager):
                 # write directly to partition table
                 table = 'kmer_string_{0}'.format(parent.lower())
                 values = ["('{0}')".format(k) for k in children]
+                run_time = time.time()
+
                 for chunk in self.chunks(values, 10000):
                     sql = """SELECT id, string
                              FROM {0}
-                             WHERE string = ANY (VALUES {1});""".format(
+                             WHERE string IN ({1});""".format(
                         table,
                         ','.join(chunk)
                     )
                     cursor.execute(sql)
+                    row_time = time.time()
                     for row in cursor:
                         kmers[row[1]] = row[0]
+                print(('Table kmer_string_{0} ({1} of 512), Total Kmers: {2}, '
+                       'Total Time: {3}s, Row Time: {4}s').format(
+                    parent.lower(),
+                    total,
+                    len(children),
+                    float(time.time() - run_time),
+                    float(time.time() - row_time)
+                ))
+                total += 1
         return kmers
 
 

@@ -50,6 +50,8 @@ class Command(BaseCommand):
                             help='Force updates for existing entries.')
         parser.add_argument('--preload', action='store_true',
                             help='Preload UniRef50 clusters into memory.')
+        parser.add_argument('--skip_kmers', action='store_true',
+                            help="Don't insert kmers stats.")
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -154,8 +156,11 @@ class Command(BaseCommand):
             force=opts['force']
         )
 
-        print("Inserting k-mer counts...")
-        insert_kmer_counts(files['kmers'], sample, force=opts['force'])
+        if not opts['skip_kmers']:
+            print("Inserting k-mer counts...")
+            insert_kmer_counts(files['kmers'], sample, force=opts['force'])
+        else:
+            print("Skipping k-mer counts...")
 
         print(json.dumps({
             'sample_id': sample.pk,
