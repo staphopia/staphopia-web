@@ -83,12 +83,13 @@ class Command(BaseCommand):
                     'Sample exists, please use --force to use it.'
                 )
             else:
-                sample.sample_tag = opts['sample_tag']
-                sample.project_tag = opts['project_tag'],
-                sample.strain = opts['strain'],
-                sample.is_paired = opts['is_paired'],
-                sample.comments = opts['comment']
-                sample.save()
+                MetaData.objects.filter(md5sum=fq_md5sum).update(
+                    sample_tag=opts['sample_tag'],
+                    project_tag=opts['project_tag'],
+                    strain=opts['strain'],
+                    is_paired=opts['is_paired'],
+                    comments=opts['comment']
+                )
         except MetaData.DoesNotExist:
             # Create new sample
             try:
@@ -166,8 +167,8 @@ class Command(BaseCommand):
             'sample_id': sample.pk,
             'db_tag':sample.db_tag,
             'sample_tag': sample.sample_tag,
-            'project_tag': sample.project_tag[0],
-            'strain': sample.strain[0],
+            'project_tag': sample.project_tag,
+            'strain': sample.strain,
             'is_paired': sample.is_paired,
             'comment': sample.comments
         }))

@@ -30,17 +30,17 @@ class Coverage(models.Model):
     sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
     cassette = models.ForeignKey('Cassette', on_delete=models.CASCADE)
 
-    total = models.DecimalField(max_digits=5, decimal_places=2)
+    total = models.DecimalField(max_digits=7, decimal_places=2)
 
     minimum = models.PositiveIntegerField()
-    mean = models.DecimalField(max_digits=5, decimal_places=2)
+    mean = models.DecimalField(max_digits=7, decimal_places=2)
     median = models.PositiveIntegerField()
     maximum = models.PositiveIntegerField()
 
-    meca_total = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    meca_total = models.DecimalField(max_digits=7, decimal_places=2, default=0)
 
     meca_minimum = models.PositiveIntegerField(default=0)
-    meca_mean = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    meca_mean = models.DecimalField(max_digits=7, decimal_places=2, default=0)
     meca_median = models.PositiveIntegerField(default=0)
     meca_maximum = models.PositiveIntegerField(default=0)
 

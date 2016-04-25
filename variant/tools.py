@@ -360,19 +360,41 @@ class Variants(object):
             record_filters = self.get_filter(record.FILTER)
 
             # Store variant confidence
+            sample_data = record.samples[0].data
+            QD = record.INFO['QD'] if 'QD' in record.INFO else 0.0
+            try:
+                AD = sample_data.AD
+            except AttributeError:
+                AD = ""
+
+            try:
+                GQ = sample_data.GQ
+            except AttributeError:
+                GQ = 0
+
+            try:
+                GT = sample_data.GT
+            except AttributeError:
+                GT = ""
+
+            try:
+                PL = sample_data.PL
+            except AttributeError:
+                PL = ""
+
             self.confidence.append(
                 Confidence(
                     sample=self.sample,
                     reference_position=record.POS,
                     AC=str(record.INFO['AC']),
-                    AD=str(record.samples[0]['AD']),
+                    AD=str(AD),
                     AF=record.INFO['AF'][0],
                     DP=record.INFO['DP'],
-                    GQ=record.samples[0]['GQ'],
-                    GT=record.samples[0]['GT'],
+                    GQ=GQ,
+                    GT=str(GT),
                     MQ=record.INFO['MQ'],
-                    PL=str(record.samples[0]['PL']),
-                    QD=record.INFO['QD'],
+                    PL=str(PL),
+                    QD=QD,
                     quality=record.QUAL
                 )
             )
