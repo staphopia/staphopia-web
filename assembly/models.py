@@ -7,7 +7,7 @@ samples.
 import architect
 from django.db import models
 
-from sample.models import MetaData
+from sample.models import Sample
 
 
 # Create partition every 5 million records
@@ -16,7 +16,7 @@ from sample.models import MetaData
 class Contigs(models.Model):
     """Assembled contigs for each sample renamed by PROKKA."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     name = models.TextField(db_index=True)
     sequence = models.TextField()
 
@@ -31,7 +31,7 @@ class Stats(models.Model):
     Both contigs and scaffolds are stored.
     """
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     is_scaffolds = models.BooleanField(default=False, db_index=True)
 
     total_contig = models.PositiveSmallIntegerField()

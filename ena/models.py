@@ -1,25 +1,24 @@
+"""ENA related models."""
 from django.db import models
 
-from sample.models import MetaData
+from sample.models import Sample, Publication
 
 
 class ToSample(models.Model):
-    '''
+    """Linking table between ENA and Staphopia."""
 
-    '''
     experiment_accession = models.ForeignKey('Experiment',
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE)
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('experiment_accession', 'sample')
 
 
 class Study(models.Model):
-    '''
+    """ENA Studies."""
 
-    '''
     study_accession = models.TextField(primary_key=True)
     secondary_study_accession = models.TextField()
     study_title = models.TextField()
@@ -27,9 +26,8 @@ class Study(models.Model):
 
 
 class Experiment(models.Model):
-    '''
+    """ENA experiments."""
 
-    '''
     experiment_accession = models.TextField(primary_key=True)
     experiment_title = models.TextField()
     experiment_alias = models.TextField()
@@ -50,9 +48,8 @@ class Experiment(models.Model):
 
 
 class Run(models.Model):
-    '''
+    """ENA runs."""
 
-    '''
     run_accession = models.TextField(primary_key=True)
     experiment_accession = models.ForeignKey('Experiment',
                                              db_column='experiment_accession',
@@ -71,30 +68,24 @@ class Run(models.Model):
 
 
 class CenterNames(models.Model):
-    '''
+    """Convert ENA abbreviations to readable names."""
 
-    '''
     ena_name = models.TextField()
     name = models.TextField()
 
 
-class Publication(models.Model):
-    '''
+class ToPublication(models.Model):
+    """Links ENA entries to a publication."""
 
-    '''
     experiment_accession = models.ForeignKey('Experiment',
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE)
-    pmid = models.TextField()
-
-    class Meta:
-        unique_together = ('experiment_accession', 'pmid')
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
 
 
 class GoogleScholar(models.Model):
-    '''
+    """Store google scholar information."""
 
-    '''
     accession = models.TextField(db_index=True)
     title = models.TextField()
     url = models.TextField()

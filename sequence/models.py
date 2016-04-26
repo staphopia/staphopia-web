@@ -6,7 +6,7 @@ samples.
 """
 from django.db import models
 
-from sample.models import MetaData
+from sample.models import Sample
 
 
 class Stat(models.Model):
@@ -16,7 +16,7 @@ class Stat(models.Model):
     Can store original and filtered stats.
     """
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     is_original = models.BooleanField(default=False, db_index=True)
     rank = models.PositiveSmallIntegerField(db_index=True)
 
@@ -57,6 +57,9 @@ class Stat(models.Model):
     sequence_rank.admin_order_field = 'rank'
 
 
+# Create partition every 20 million records
+@architect.install('partition', type='range', subtype='integer',
+                   constraint='20000000', column='id')
 class Length(models.Model):
     """
     Read length counts of input FASTQ file.
@@ -64,7 +67,7 @@ class Length(models.Model):
     Can store original and filtered stats.
     """
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     is_original = models.BooleanField(default=False, db_index=True)
     length = models.TextField()
     count = models.BigIntegerField()
@@ -73,6 +76,9 @@ class Length(models.Model):
         unique_together = ('sample', 'is_original', 'length')
 
 
+# Create partition every 20 million records
+@architect.install('partition', type='range', subtype='integer',
+                   constraint='20000000', column='id')
 class Quality(models.Model):
     """
     Read length counts of input FASTQ file.
@@ -80,7 +86,7 @@ class Quality(models.Model):
     Can store original and filtered stats.
     """
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     is_original = models.BooleanField(default=False, db_index=True)
     position = models.TextField()
     quality = models.DecimalField(max_digits=7, decimal_places=4)

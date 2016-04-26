@@ -8,7 +8,7 @@ import architect
 from django.db import models
 
 from assembly.models import Contigs
-from sample.models import MetaData, Program
+from sample.models import Sample, Program
 from variant.models import Reference
 
 
@@ -87,7 +87,7 @@ class ReferenceSequence(models.Model):
 class Features(models.Model):
     """Annotated info for each predicted gene."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     contig = models.ForeignKey(Contigs, on_delete=models.CASCADE, default=0)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
@@ -127,10 +127,13 @@ class Note(models.Model):
     note = models.TextField(db_index=True)
 
 
+# Create partition every 10 million records
+@architect.install('partition', type='range', subtype='integer',
+                   constraint='10000000', column='id')
 class BlastResults(models.Model):
     """Predicted gene BLAST hits against UniRef50."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     feature = models.ForeignKey('Features', on_delete=models.CASCADE)
     program = models.ForeignKey(Program, on_delete=models.CASCADE)
 

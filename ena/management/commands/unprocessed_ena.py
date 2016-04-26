@@ -35,6 +35,13 @@ class Command(BaseCommand):
                     help='Filter results based on maximum read length.'),
         make_option('--experiment', dest='experiment',
                     help='Filter results based on experiment accession.'),
+        make_option('--study', dest='study',
+                    help='Filter results based on study accession.'),
+        make_option('--column', dest='column',
+                    help='Filter results based on specific column.'),
+        make_option('--accessions', dest='accessions',
+                    help=('Filter results based on accessions specific to a'
+                          ' column.')),
     )
 
     def handle(self, *args, **opts):
@@ -50,6 +57,7 @@ class Command(BaseCommand):
         if not opts['experiment']:
             opts['experiment'] = None
 
+
         # ENA to Sample
         ena_to_sample = ToSample.objects.values_list(
             'experiment_accession', flat=True
@@ -61,14 +69,29 @@ class Command(BaseCommand):
             ena_entries = Experiment.objects.exclude(
                 experiment_accession__in=ena_to_sample,
             ).filter(experiment_accession=opts['experiment'])
+        elif opts['study']:
+            ena_entries = Experiment.objects.exclude(
+                experiment_accession__in=ena_to_sample,
+            ).filter(study_accession=opts['study'])
         elif opts['technology']:
             ena_entries = Experiment.objects.exclude(
                 experiment_accession__in=ena_to_sample,
             ).filter(instrument_platform=opts['technology'])
+        elif opts['column'] and opts['accessions']:
+            with open(opts['accessions'], 'r') as fh:
+                accessions = []
+                for line in fh:
+                    accessions.append(line.rstrip())
+                ena_entries = Experiment.objects.exclude(
+                    experiment_accession__in=ena_to_sample,
+                ).filter(
+                    secondary_sample_accession__in=accessions
+                )
         else:
             ena_entries = Experiment.objects.exclude(
                 experiment_accession__in=ena_to_sample,
             )
+
 
         # Get Run info
         to_process = {}

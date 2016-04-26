@@ -8,7 +8,7 @@ import time
 
 from django.db import models, connection, transaction
 
-from sample.models import MetaData
+from sample.models import Sample
 from kmer.partitions import PARTITIONS
 
 
@@ -215,7 +215,7 @@ class String(StringBase):
 class Count(models.Model):
     """Kmer counts from each sample."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     string_id = models.PositiveIntegerField()
     count = models.PositiveIntegerField()
 
@@ -226,7 +226,7 @@ class Count(models.Model):
 class Total(models.Model):
     """Total kmer counts from each sample."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     total = models.PositiveIntegerField()
     singletons = models.PositiveIntegerField()
     new_kmers = models.PositiveIntegerField()

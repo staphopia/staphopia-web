@@ -5,7 +5,7 @@ These are models to store information on the MLST calls for Staphopia samples.
 """
 from django.db import models
 
-from sample.models import MetaData
+from sample.models import Sample
 
 
 class SequenceTypes(models.Model):
@@ -25,7 +25,7 @@ class SequenceTypes(models.Model):
 class Blast(models.Model):
     """Blast results from contigs against MLST loci."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     locus_name = models.CharField(max_length=4)
     locus_id = models.PositiveSmallIntegerField()
     bitscore = models.PositiveSmallIntegerField()
@@ -49,7 +49,7 @@ class Blast(models.Model):
 class Srst2(models.Model):
     """SRST2 results from mapping of FASTQ files."""
 
-    sample = models.OneToOneField(MetaData, on_delete=models.CASCADE)
+    sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
     st_original = models.TextField()
     st_stripped = models.PositiveIntegerField(default=0, db_index=True)
     is_exact = models.BooleanField(default=False, db_index=True)

@@ -9,7 +9,7 @@ import os
 
 from django.db import models
 
-from sample.models import MetaData
+from sample.models import Sample
 
 
 # Create partition every 20 million records
@@ -18,7 +18,7 @@ from sample.models import MetaData
 class ToIndel(models.Model):
     """A linking table between samples and InDels."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     indel = models.ForeignKey('Indel', on_delete=models.CASCADE)
     filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
 
@@ -68,7 +68,7 @@ class Indel(models.Model):
 class ToSNP(models.Model):
     """A linking table between samples and SNPs."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
     comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
     filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
@@ -143,7 +143,7 @@ class SNP(models.Model):
 class Confidence(models.Model):
     """INFO and Qual, fields specific to each variant."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     reference_position = models.PositiveIntegerField()
     AC = models.TextField(default="")
     AD = models.TextField(default="")
@@ -160,7 +160,7 @@ class Confidence(models.Model):
 class Counts(models.Model):
     """Counts for quick reference."""
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     snp = models.PositiveIntegerField(default=0)
     indel = models.PositiveIntegerField(default=0)
     confidence = models.PositiveIntegerField(default=0)

@@ -2,15 +2,51 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-class MetaData(models.Model):
-
-    """ """
+class Sample(models.Model):
+    """Basic sample information."""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     db_tag = models.TextField(unique=True, default='')
-    sample_tag = models.TextField(db_index=True, blank=True, default='')
-    project_tag = models.TextField(db_index=True, blank=True, default='')
+    is_paired = models.BooleanField(default=False)
+    is_public = models.BooleanField(default=True, db_index=True)
+    is_published = models.BooleanField(default=False, db_index=True)
     md5sum = models.CharField(default='', max_length=32, unique=True)
+
+
+class Tag(models.Model):
+    """User based tags to associate with a sample."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tag = models.TextField(db_index=True)
+    comment = models.TextField(blank=True)
+
+
+class ToTag(models.Model):
+    """Link samples to tags."""
+
+    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    tag = models.ForeignKey('Tag', on_delete=models.CASCADE)
+
+
+class Publication(models.Model):
+    """Pubmed information."""
+
+    pmid = models.TextField(unique=True)
+    authors = models.TextField(db_index=True)
+    abstract = models.TextField(db_index=True)
+
+
+class ToPublication(models.Model):
+    """Link samples and publications."""
+
+    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    publication = models.ForeignKey('Publication', on_delete=models.CASCADE)
+
+
+class MetaData(models.Model):
+    """Meta data associated with a sample."""
+
+    sample = models.OneToOneField('Sample', on_delete=models.CASCADE)
 
     # Project Information
     contact_name = models.TextField(default='')
@@ -64,11 +100,6 @@ class MetaData(models.Model):
                                            blank=True, default=-200.00)
     source = models.TextField(default='', blank=True)
 
-    # Sequence Information
-    is_public = models.BooleanField(default=True, db_index=True)
-    is_paired = models.BooleanField(default=False)
-    is_published = models.BooleanField(default=False, db_index=True)
-
 
 def content_file_name(instance, filename):
     new_name = '{0}_{1}_original.{2}'.format(
@@ -81,7 +112,7 @@ def content_file_name(instance, filename):
 
 
 class Upload(models.Model):
-    sample = models.OneToOneField('MetaData', primary_key=True,
+    sample = models.OneToOneField('Sample', primary_key=True,
                                   on_delete=models.CASCADE)
     path = models.FileField(default='', upload_to=content_file_name)
     md5sum = models.CharField(default='', max_length=32, unique=True)
