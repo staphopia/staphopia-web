@@ -113,8 +113,13 @@ class Command(BaseCommand):
         if opts['project_tag']:
             tag = create_tag(user, opts['project_tag'], opts['comment'])
             try:
-                ToTag.objects.get_or_create(sample=sample, tag=tag)
-                print("Project tag '{0}' saved".format(opts['project_tag']))
+                totag, created = ToTag.objects.get_or_create(
+                    sample=sample, tag=tag
+                )
+                if created:
+                    print("Project tag '{0}' saved".format(
+                        opts['project_tag']
+                    ))
             except IntegrityError as e:
                 raise CommandError(
                     'Error, unable to link Sample to Tag. {0}'.format(e)
