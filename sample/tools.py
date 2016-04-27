@@ -6,9 +6,10 @@ from sample.tools import UTIL1, UTIL2, etc...
 """
 import os
 
+from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
-from sample.models import MetaData, Program
+from sample.models import Sample, Program, Tag
 
 
 def test_files(directory, sample_tag, files, optional=False):
@@ -97,10 +98,10 @@ def validate_analysis(directory, sample_tag):
 
 
 def get_sample(db_tag):
-    """Return MetaData object is it exists, else raise error."""
+    """Return Sample object is it exists, else raise error."""
     try:
-        return MetaData.objects.get(db_tag=db_tag)
-    except MetaData.DoesNotExist:
+        return Sample.objects.get(db_tag=db_tag)
+    except Sample.DoesNotExist:
         raise CommandError('db_tag: {0} does not exist'.format(db_tag))
 
 
@@ -113,7 +114,7 @@ def create_db_tag(user, db_tag=None, force=False):
     """
     if db_tag:
         try:
-            MetaData.objects.get(user=user, db_tag=db_tag)
+            Sample.objects.get(user=user, db_tag=db_tag)
             if not force:
                 raise CommandError((
                     'A sample is already associated with {0}. Will not use'
@@ -124,18 +125,31 @@ def create_db_tag(user, db_tag=None, force=False):
                 print('Focibly using the existing db_tag {0}'.format(
                     db_tag
                 ))
-        except MetaData.DoesNotExist:
+        except Sample.DoesNotExist:
             raise CommandError('specified db_tag "{0}"" does not exist'.format(
                 db_tag
             ))
     else:
-        num_samples = MetaData.objects.filter(user=user).count()
+        num_samples = Sample.objects.filter(user=user).count()
         db_tag = '{0}_{1}'.format(
             user.username,
             str(num_samples + 1).zfill(6)
         )
 
     return db_tag
+
+
+def create_tag(user, tag, comment):
+    """Create a database tag."""
+    try:
+        if not comment:
+            comment = tag
+        tag_obj, created = Tag.objects.get_or_create(
+            user=user, tag=tag, comment=comment
+        )
+        return tag_obj
+    except IntegrityError as e:
+        raise CommandError('tag creation failed: {0}'.format(e))
 
 
 def get_program_id(program, version, comments):

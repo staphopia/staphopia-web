@@ -8,9 +8,11 @@ from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 
 from staphopia.utils import md5sum
-from sample.models import MetaData
+from sample.models import Sample, ToTag
 
-from sample.tools import create_db_tag, validate_analysis, validate_time
+from sample.tools import (
+    create_db_tag, create_tag, validate_analysis, validate_time
+)
 from assembly.tools import insert_assembly_stats, insert_assembly
 from gene.tools import insert_gene_annotations, insert_blast_results
 from kmer.tools import insert_kmer_counts
@@ -36,14 +38,16 @@ class Command(BaseCommand):
         parser.add_argument('--project_tag', type=str, default="",
                             help='(Associate sample with a given tag. ('
                                  'Example: ga-outbreak, vanA-samples, etc...')
+        parser.add_argument('--comment', type=str, default="",
+                            help=('Any comments about the project.'))
         parser.add_argument('--db_tag', type=str, default="",
                             help=('Sample tag associated with sample.'))
         parser.add_argument('--strain', type=str, default="",
                             help=('Strain name of the input sample.'))
-        parser.add_argument('--comment', type=str, default="",
-                            help=('Any comments about the sample.'))
         parser.add_argument('--is_paired', action='store_true',
                             help='Sample contains paired reads.')
+        parser.add_argument('--is_public', action='store_true',
+                            help='Sample should be made public.')
         parser.add_argument('--runtime', action='store_true',
                             help='Insert runtimes as well.')
         parser.add_argument('--force', action='store_true',
@@ -74,7 +78,7 @@ class Command(BaseCommand):
         # Test if results already inserted
         sample = None
         try:
-            sample = MetaData.objects.get(md5sum=fq_md5sum)
+            sample = Sample.objects.get(md5sum=fq_md5sum)
             print("Found existing sample: {0} ({1})".format(
                 sample.db_tag, sample.md5sum
             ))
@@ -83,31 +87,37 @@ class Command(BaseCommand):
                     'Sample exists, please use --force to use it.'
                 )
             else:
-                MetaData.objects.filter(md5sum=fq_md5sum).update(
+                Sample.objects.filter(md5sum=fq_md5sum).update(
                     sample_tag=opts['sample_tag'],
-                    project_tag=opts['project_tag'],
-                    strain=opts['strain'],
                     is_paired=opts['is_paired'],
-                    comments=opts['comment']
+                    is_public=opts['is_public']
                 )
-        except MetaData.DoesNotExist:
+        except Sample.DoesNotExist:
             # Create new sample
             try:
                 db_tag = create_db_tag(user, db_tag=opts['db_tag'])
-                sample = MetaData.objects.create(
+                sample = Sample.objects.create(
                     user=user,
                     db_tag=db_tag,
                     sample_tag=opts['sample_tag'],
-                    project_tag=opts['project_tag'],
                     md5sum=fq_md5sum,
-                    strain=opts['strain'],
                     is_paired=opts['is_paired'],
-                    comments=opts['comment']
+                    is_public=opts['is_public']
                 )
                 print("Created new sample: {0}".format(db_tag))
             except IntegrityError as e:
                 raise CommandError(
                     'Error, unable to create Sample object. {0}'.format(e)
+                )
+
+        if opts['project_tag']:
+            tag = create_tag(user, opts['project_tag'], opts['comment'])
+            try:
+                ToTag.objects.get_or_create(sample=sample, tag=tag)
+                print("Project tag '{0}' saved".format(opts['project_tag']))
+            except IntegrityError as e:
+                raise CommandError(
+                    'Error, unable to link Sample to Tag. {0}'.format(e)
                 )
 
         # Insert analysis results

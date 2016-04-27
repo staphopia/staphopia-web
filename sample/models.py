@@ -1,3 +1,4 @@
+"""Models associated with Sample."""
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -7,6 +8,7 @@ class Sample(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     db_tag = models.TextField(unique=True, default='')
+    sample_tag = models.TextField(db_index=True, default='')
     is_paired = models.BooleanField(default=False)
     is_public = models.BooleanField(default=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
@@ -102,6 +104,7 @@ class MetaData(models.Model):
 
 
 def content_file_name(instance, filename):
+    """Determine the content type of an upload."""
     new_name = '{0}_{1}_original.{2}'.format(
         instance.sample.user.username,
         str(instance.sample.sample_id).zfill(6),
@@ -112,6 +115,8 @@ def content_file_name(instance, filename):
 
 
 class Upload(models.Model):
+    """Path to uploaded sample."""
+
     sample = models.OneToOneField('Sample', primary_key=True,
                                   on_delete=models.CASCADE)
     path = models.FileField(default='', upload_to=content_file_name)

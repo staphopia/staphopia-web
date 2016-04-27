@@ -68,7 +68,7 @@ class Command(BaseCommand):
             r = self.vcf_reader.contigs.keys()[0]
             self.reference, created = Reference.objects.get_or_create(
                 name=r,
-                length=self.vcf_reader.contigs[r]['length']
+                length=self.vcf_reader.contigs[r].length
             )
         except IntegrityError:
             raise CommandError('Error getting/saving reference information')
