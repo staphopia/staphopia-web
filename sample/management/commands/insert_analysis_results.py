@@ -182,10 +182,9 @@ class Command(BaseCommand):
             'sample_id': sample.pk,
             'db_tag':sample.db_tag,
             'sample_tag': sample.sample_tag,
-            'project_tag': sample.project_tag,
-            'strain': sample.strain,
+            'project_tag': opts['project_tag'],
             'is_paired': sample.is_paired,
-            'comment': sample.comments
+            'comment': opts['comment']
         }))
 
         # if opts['runtime']:

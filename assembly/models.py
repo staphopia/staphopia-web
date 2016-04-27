@@ -4,15 +4,12 @@ Assembly Application Models.
 These are models to store information on the assembly quality of Staphopia
 samples.
 """
-import architect
 from django.db import models
 
 from sample.models import Sample
 
 
 # Create partition every 5 million records
-@architect.install('partition', type='range', subtype='integer',
-                   constraint='5000000', column='id')
 class Contigs(models.Model):
     """Assembled contigs for each sample renamed by PROKKA."""
 
