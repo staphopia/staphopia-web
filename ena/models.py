@@ -80,7 +80,8 @@ class ToPublication(models.Model):
     experiment_accession = models.ForeignKey('Experiment',
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE)
-    publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE,
+                                    related_name="publication",)
 
 
 class GoogleScholar(models.Model):

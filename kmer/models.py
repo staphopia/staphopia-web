@@ -4,6 +4,7 @@ Kmer Application Models.
 These are models to store information on the Kmer analysis of Staphopia
 samples.
 """
+import architect
 import time
 
 from django.db import models, connection, transaction
@@ -212,6 +213,9 @@ class String(StringBase):
     objects = StringManager()
 
 
+# Create partition every 20 million records
+@architect.install('partition', type='range', subtype='integer',
+                   constraint='20000000', column='id')
 class Count(models.Model):
     """Kmer counts from each sample."""
 

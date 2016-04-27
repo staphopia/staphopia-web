@@ -4,6 +4,7 @@ Sequence Application Models.
 These are models to store information on the sequence quality of Staphopia
 samples.
 """
+import architect
 from django.db import models
 
 from sample.models import Sample

@@ -5,7 +5,7 @@ from django.db import transaction
 
 from sample.datatable import DataTable
 from sample.forms import SampleSubmissionForm
-from sample.models import MetaData, SampleSummary
+from sample.models import Sample, SampleSummary
 
 
 @transaction.atomic
@@ -13,7 +13,7 @@ def submission(request):
     if request.user.is_authenticated:
         form = None
         if request.method == 'POST':
-            num_samples = MetaData.objects.filter(
+            num_samples = Sample.objects.filter(
                 user_id=request.user.id
             ).count()
             sample_tag = '{0}_{1}'.format(request.user.username,
@@ -21,7 +21,7 @@ def submission(request):
             form = SampleSubmissionForm(
                 request.user.id, request.POST,
                 request.FILES,
-                instance=MetaData(user=request.user, sample_tag=sample_tag)
+                instance=Sample(user=request.user, sample_tag=sample_tag)
             )
             if form.is_valid():
                 new_sample = form.save()
