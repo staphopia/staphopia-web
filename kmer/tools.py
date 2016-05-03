@@ -8,7 +8,7 @@ import time
 
 from django.db import transaction
 
-from elasticsearch import Elasticsearch, IndicesClient
+from elasticsearch import Elasticsearch
 
 from kmer.models import Total
 from staphopia.utils import timeit
@@ -65,7 +65,10 @@ def insert_kmer_counts(jf, sample):
                 "_index": INDEX_NAME,
                 "_type": "sample",
                 "_parent": kmer,
-                "_id": '{0}_{1}'.format(sample.pk, kmer)
+                "_id": '{0}_{1}'.format(
+                    str(sample.pk).zfill(6),
+                    str(total).zfill(9)
+                )
             }
         })
         sample_data.append({
