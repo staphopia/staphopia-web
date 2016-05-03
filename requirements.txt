@@ -21,3 +21,6 @@ git+https://github.com/staphopia/scholar.py.git#egg=scholar
 psutil==4.1.0
 beautifulsoup4==4.4.1
 lxml==3.6.0
+elasticsearch==2.3.0
+urllib3==1.15.1
+django-haystack==2.4.1

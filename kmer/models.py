@@ -233,5 +233,4 @@ class Total(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     total = models.PositiveIntegerField()
     singletons = models.PositiveIntegerField()
-    new_kmers = models.PositiveIntegerField()
     runtime = models.PositiveIntegerField(default=0)

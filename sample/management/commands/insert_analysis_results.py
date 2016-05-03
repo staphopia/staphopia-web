@@ -126,6 +126,7 @@ class Command(BaseCommand):
                 )
 
         # Insert analysis results
+        """
         print("Inserting Sequence Stats...")
         insert_fastq_stats(files['stats_filter'], sample, is_original=False,
                            force=opts['force'])
@@ -171,10 +172,10 @@ class Command(BaseCommand):
             blastp, files['annotation_gff'], sample, compressed=True,
             force=opts['force']
         )
-
+        """
         if not opts['skip_kmers']:
             print("Inserting k-mer counts...")
-            insert_kmer_counts(files['kmers'], sample, force=opts['force'])
+            insert_kmer_counts(files['kmers'], sample)
         else:
             print("Skipping k-mer counts...")
 
