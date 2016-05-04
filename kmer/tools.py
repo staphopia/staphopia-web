@@ -8,11 +8,12 @@ import time
 
 from django.db import transaction
 
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, client
 
 from kmer.models import Total
 from staphopia.utils import timeit
 
+CHUNK_SIZE = 2500
 INDEX_NAME = "kmers"
 ES_HOST = "loma.genetics.emory.edu"
 
@@ -34,10 +35,15 @@ def chunks(l, n):
 
 
 @timeit
-def insert_data(es, bulk_data):
+def insert_data(es, type, bulk_data):
     """Send data to elasticsearch."""
-    for chunk in chunks(bulk_data, 10000):
-        es.bulk(index=INDEX_NAME, body=chunk, refresh=True)
+    total_chunks = int(len(bulk_data) / float(CHUNK_SIZE))
+    total = 0
+    for chunk in chunks(bulk_data, CHUNK_SIZE):
+        es.bulk(index=INDEX_NAME, doc_type=type, body=chunk)
+        if total % 500 == 0:
+            print('\tProcessed {0} of {1} chunks'.format(total, total_chunks))
+        total += 1
     return True
 
 
@@ -47,44 +53,55 @@ def insert_kmer_counts(jf, sample):
     es = Elasticsearch(hosts=[ES_HOST])
     start_time = time.time()
     jf_dump = jellyfish_dump(jf)
-    kmer_data = []
-    sample_data = []
+    bulk_data = []
+    sample_id = '{0}'.format(str(sample.pk).zfill(8))
+    sample
     singletons = 0
     total = 0
+    sample_script = (
+        'if (!ctx._source.samples.contains(sample)) {'
+        'ctx._source.samples += sample;'
+        'ctx._source.count += 1;'
+        '}'
+    )
+
     for line in jf_dump:
         if not line:
             continue
         kmer, count = line.rstrip().split()
         count = int(count)
         total += 1
-        kmer_data.append({
-            "index": {"_index": INDEX_NAME, "_type": "kmer", "_id": kmer}
-        })
-        sample_data.append({
-            "index": {
-                "_index": INDEX_NAME,
-                "_type": "sample",
-                "_parent": kmer,
-                "_id": '{0}_{1}'.format(
-                    str(sample.pk).zfill(6),
-                    str(total).zfill(9)
-                )
+        sample_name = '{0}-{1}'.format(sample_id, count)
+        bulk_data.append(
+            { "update" : { "_id" : kmer, "_retry_on_conflict" : 3} }
+        )
+
+        bulk_data.append({
+            "script": {
+                "inline": sample_script,
+                "lang": "js",
+                "params": {
+                    "sample": sample_name
+                }
+            },
+            "upsert": {
+                "count": 1,
+                "samples" : [sample_name]
             }
-        })
-        sample_data.append({
-            "sample_id": sample.pk,
-            "count": count
         })
 
         if count == 1:
             singletons += 1
 
-    # Bulk insert k-mers and counts
-    print("Beginning bulk insert, may take a while...")
-    insert_data(es, kmer_data)
-    insert_data(es, sample_data)
+        if total % 1000000 == 0:
+            print('\tProcessed {0} of {1} kmers'.format(total, len(jf_dump)))
 
     # Insert the totals
+    print("\tBeginning bulk insert, may take a while...")
+    insert_data(es, "kmer", bulk_data)
+    idx = client.IndicesClient(es)
+    idx.refresh("kmers")
+
     runtime = int(time.time() - start_time)
     Total.objects.get_or_create(
         sample=sample,
