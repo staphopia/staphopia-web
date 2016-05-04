@@ -43,6 +43,7 @@ class Coverage(models.Model):
     meca_mean = models.DecimalField(max_digits=7, decimal_places=2, default=0)
     meca_median = models.PositiveIntegerField(default=0)
     meca_maximum = models.PositiveIntegerField(default=0)
+    per_base_coverage = models.TextField()
 
     def sample_tag(self):
         """Display sample tag in admin view."""

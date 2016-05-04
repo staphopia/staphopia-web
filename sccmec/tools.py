@@ -4,6 +4,7 @@ Useful functions associated with sccmec.
 To use:
 from sccmec.tools import UTIL1, UTIL2, etc...
 """
+import json
 import numpy
 
 from django.core.management.base import CommandError
@@ -11,9 +12,7 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 
 from assembly.tools import get_contig
-from sccmec.models import (
-    Cassette, Coverage, PerBaseCoverage, Proteins, Primers
-)
+from sccmec.models import Cassette, Coverage, Proteins, Primers
 from staphopia.utils import gziplines, get_blast_query, read_json, timeit
 from sample.tools import get_program_id
 
@@ -25,11 +24,8 @@ def insert_sccmec_coverage(coverage, sample, force=False):
     if force:
         print("\tForce used, emptying SCCmec Coverage related results.")
         Coverage.objects.filter(sample=sample).delete()
-        print("\tForce used, emptying SCCmec PerBaseCoverage related results.")
-        PerBaseCoverage.objects.filter(sample=sample).delete()
 
     sccmec = __read_coverage(coverage)
-    per_base_coverage = []
     for mec_type, stats in sccmec.items():
         np_array = numpy.array(stats['coverage'])
 
@@ -44,15 +40,6 @@ def insert_sccmec_coverage(coverage, sample, force=False):
         for pos in meca:
             if int(pos):
                 meca_total += 1
-
-        for i in range(len(stats['coverage'])):
-            if stats['coverage'][i]:
-                per_base_coverage.append(PerBaseCoverage(
-                    sample=sample,
-                    cassette=cassette,
-                    position=i + 1,
-                    coverage=stats['coverage'][i]
-                ))
 
         try:
             meca_total = float(meca_total) / cassette.meca_length
@@ -77,7 +64,9 @@ def insert_sccmec_coverage(coverage, sample, force=False):
                 meca_mean=float(
                     '{0:.2f}'.format(numpy.mean(meca_array))
                 ) if meca else 0.0,
-                meca_maximum=max(meca) if meca else 0
+                meca_maximum=max(meca) if meca else 0,
+                per_base_coverage=json.dumps(stats['per_base_coverage'],
+                                             sort_keys=True)
             )
         except IntegrityError as e:
             raise CommandError('{0} SCCmec Coverage Error: {1}'.format(
@@ -85,14 +74,6 @@ def insert_sccmec_coverage(coverage, sample, force=False):
             )
 
         print('\tSCCmec cassette {0} coverage stats saved.'.format(mec_type))
-
-    try:
-        PerBaseCoverage.objects.bulk_create(per_base_coverage, batch_size=5000)
-        print('\tSCCmec PerBaseCoverage saved.')
-    except IntegrityError as e:
-        raise CommandError('{0} SCCmec PerBaseCoverage Error: {1}'.format(
-            sample.sample_tag, e)
-        )
 
 
 @timeit
@@ -184,6 +165,7 @@ def __read_coverage(coverage):
         if cassette not in sccmec:
             sccmec[cassette] = {
                 'coverage': [],
+                'per_base_coverage': {},
                 'total': 0
             }
 
@@ -191,5 +173,6 @@ def __read_coverage(coverage):
             sccmec[cassette]['total'] += 1
 
         sccmec[cassette]['coverage'].append(int(coverage))
+        sccmec[cassette]['per_base_coverage'][position] = coverage
 
     return sccmec

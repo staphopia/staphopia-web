@@ -126,7 +126,6 @@ class Command(BaseCommand):
                 )
 
         # Insert analysis results
-        """
         print("Inserting Sequence Stats...")
         insert_fastq_stats(files['stats_filter'], sample, is_original=False,
                            force=opts['force'])
@@ -172,7 +171,7 @@ class Command(BaseCommand):
             blastp, files['annotation_gff'], sample, compressed=True,
             force=opts['force']
         )
-        """
+
         if not opts['skip_kmers']:
             print("Inserting k-mer counts...")
             insert_kmer_counts(files['kmers'], sample)
@@ -181,7 +180,7 @@ class Command(BaseCommand):
 
         print(json.dumps({
             'sample_id': sample.pk,
-            'db_tag':sample.db_tag,
+            'db_tag': sample.db_tag,
             'sample_tag': sample.sample_tag,
             'project_tag': opts['project_tag'],
             'is_paired': sample.is_paired,

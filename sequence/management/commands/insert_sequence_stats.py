@@ -1,28 +1,58 @@
-"""Insert JSON formatted analysis results into database."""
-from django.db import transaction
-from django.core.management.base import BaseCommand
+"""Insert the results of sample analysis into the database."""
 
-from sample.tools import get_sample
-from sequence.tools import insert_sequence_stats
+import json
+from django.core.management.base import BaseCommand, CommandError
+
+from staphopia.utils import md5sum
+from sample.models import Sample
+from sample.tools import validate_analysis
+from sequence.tools import insert_fastq_stats
 
 
 class Command(BaseCommand):
-    """Insert results into database."""
+    """Insert the results of sample analysis into the database."""
 
-    help = 'Insert the analysis results into the database.'
+    help = 'Insert the results of sample analysis into the database.'
 
     def add_arguments(self, parser):
         """Command line arguements."""
+        parser.add_argument('sample_dir', metavar='SAMPLE_DIRECTORY',
+                            help=('User name for the owner of the sample.'))
         parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
-                            help='Sample tag of the data.')
-        parser.add_argument('input', metavar='JSON_INPUT',
-                            help='JSON formated file to be inserted')
-        parser.add_argument('--is_original', action='store_true',
-                            help='Input is for raw sequence. (Default: False')
+                            help=('Sample tag associated with sample.'))
+        parser.add_argument('--force', action='store_true',
+                            help='Force updates for existing entries.')
 
-    @transaction.atomic
     def handle(self, *args, **opts):
-        """Insert results to database."""
-        sample = get_sample(opts['sample_tag'])
-        insert_sequence_stats(opts['input'], sample,
-                              is_original=opts['is_original'])
+        """Insert the results of sample analysis into the database."""
+        # Validate all files are present
+        print("Validating required files are present...")
+        files = validate_analysis(opts['sample_dir'], opts['sample_tag'])
+        fq_md5sum = md5sum('{0}/{1}.cleanup.fastq.gz'.format(
+            opts['sample_dir'], opts['sample_tag']
+        ))
+
+        # Test if results already inserted
+        sample = None
+        try:
+            sample = Sample.objects.get(md5sum=fq_md5sum)
+            print("Found existing sample: {0} ({1})".format(
+                sample.db_tag, sample.md5sum
+            ))
+        except Sample.DoesNotExist:
+            # Create new sample
+            raise CommandError('Sample should already exist.')
+
+        # Insert analysis results
+        print("Inserting Sequence Stats...")
+        insert_fastq_stats(files['stats_filter'], sample, is_original=False,
+                           force=opts['force'])
+        insert_fastq_stats(files['stats_original'], sample, is_original=True,
+                           force=opts['force'])
+
+        print(json.dumps({
+            'sample_id': sample.pk,
+            'db_tag': sample.db_tag,
+            'sample_tag': sample.sample_tag,
+            'is_paired': sample.is_paired,
+        }))

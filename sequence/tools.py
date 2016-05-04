@@ -4,13 +4,15 @@ Useful functions associated with sequence.
 To use:
 from sequence.tools import UTIL1, UTIL2, etc...
 """
+import json
+
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
 from staphopia.utils import read_json, timeit
 
-from sequence.models import Stat, Length, Quality
+from sequence.models import Stat
 
 
 @transaction.atomic
@@ -19,9 +21,8 @@ def insert_fastq_stats(stats, sample, is_original=False, force=False):
     json_data = read_json(stats)
     if force:
         delete_stats(sample, is_original)
-    insert_sequence_stats(json_data["qc_stats"], sample, is_original)
-    insert_read_lengths(json_data["read_lengths"], sample, is_original)
-    insert_per_base_quality(json_data["per_base_quality"], sample, is_original)
+    insert_sequence_stats(json_data["qc_stats"], json_data["read_lengths"],
+                          json_data["per_base_quality"], sample, is_original)
 
 
 @transaction.atomic
@@ -29,19 +30,20 @@ def delete_stats(sample, is_original):
     """Force update, so remove from table."""
     print("\tForce used, emptying FASTQ related results.")
     Stat.objects.filter(sample=sample, is_original=is_original).delete()
-    Length.objects.filter(sample=sample, is_original=is_original).delete()
-    Quality.objects.filter(sample=sample, is_original=is_original).delete()
 
 
 @timeit
 @transaction.atomic
-def insert_sequence_stats(stats, sample, is_original=False):
+def insert_sequence_stats(stats, read_lengths, qual_per_base, sample,
+                          is_original=False):
     """Insert sequence quality metrics into database."""
     try:
         Stat.objects.create(
             sample=sample,
             is_original=is_original,
             rank=__get_rank(stats),
+            read_lengths=json.dumps(read_lengths, sort_keys=True),
+            qual_per_base=json.dumps(qual_per_base, sort_keys=True),
             **stats
         )
     except IntegrityError as e:
@@ -65,46 +67,3 @@ def __get_rank(data):
             return 1
     else:
         return 1
-
-
-@timeit
-@transaction.atomic
-def insert_read_lengths(stats, sample, is_original=False):
-    """Insert read lengths into database."""
-    try:
-        counts = []
-        for length, count in sorted(stats.items()):
-            counts.append(Length(
-                sample=sample,
-                is_original=is_original,
-                length=length,
-                count=count
-            ))
-
-        Length.objects.bulk_create(counts)
-    except IntegrityError as e:
-        raise CommandError(
-            'An error occured when inserting read lengths. Error {0}'.format(e)
-        )
-
-
-@timeit
-@transaction.atomic
-def insert_per_base_quality(stats, sample, is_original=False):
-    """Insert per base quality into database."""
-    try:
-        positions = []
-        for position, quality in sorted(stats.items()):
-            positions.append(Quality(
-                sample=sample,
-                is_original=is_original,
-                position=position,
-                quality=quality
-            ))
-
-        Quality.objects.bulk_create(positions)
-    except IntegrityError as e:
-        raise CommandError(
-            ('An error occured when inserting per base quality.'
-             ' Error {0}').format(e)
-        )

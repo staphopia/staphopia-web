@@ -34,12 +34,14 @@ class Stat(models.Model):
     read_max = models.PositiveIntegerField(default=0)
     read_25th = models.PositiveIntegerField(default=0)
     read_75th = models.PositiveIntegerField(default=0)
+    read_lengths = models.TextField()
 
     qual_mean = models.DecimalField(max_digits=7, decimal_places=4)
     qual_std = models.DecimalField(max_digits=7, decimal_places=4)
     qual_median = models.PositiveIntegerField()
     qual_25th = models.PositiveIntegerField()
     qual_75th = models.PositiveIntegerField()
+    qual_per_base = models.TextField()
 
     class Meta:
         unique_together = ('sample', 'is_original')
