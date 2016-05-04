@@ -40,7 +40,7 @@ def insert_data(es, type, bulk_data):
     total_chunks = int(len(bulk_data) / float(CHUNK_SIZE))
     total = 0
     for chunk in chunks(bulk_data, CHUNK_SIZE):
-        es.bulk(index=INDEX_NAME, doc_type=type, body=chunk)
+        es.bulk(index=INDEX_NAME, doc_type=type, body=chunk, refresh=True)
         if total % 500 == 0:
             print('\tProcessed {0} of {1} chunks'.format(total, total_chunks))
         total += 1
@@ -58,11 +58,10 @@ def insert_kmer_counts(jf, sample):
     sample
     singletons = 0
     total = 0
+
     sample_script = (
-        'if (!ctx._source.samples.contains(sample)) {'
-        'ctx._source.samples += sample;'
-        'ctx._source.count += 1;'
-        '}'
+        'if (!ctx._source.samples.contains(sample))'
+        '{ctx._source.samples.add(sample); ctx._source.count += 1;}'
     )
 
     for line in jf_dump:
@@ -73,13 +72,13 @@ def insert_kmer_counts(jf, sample):
         total += 1
         sample_name = '{0}-{1}'.format(sample_id, count)
         bulk_data.append(
-            { "update" : { "_id" : kmer, "_retry_on_conflict" : 3} }
+            { "update" : { "_id" : kmer, "_type": "kmer", "_index":"kmers","_retry_on_conflict" : 3} }
         )
 
         bulk_data.append({
             "script": {
                 "inline": sample_script,
-                "lang": "js",
+                "lang": "javascript",
                 "params": {
                     "sample": sample_name
                 }
