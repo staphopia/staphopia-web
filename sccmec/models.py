@@ -3,7 +3,6 @@ SCCmec Application Models.
 
 These are models to store information on the SCCmec related results.
 """
-import architect
 from django.db import models
 
 from sample.models import Sample
@@ -53,18 +52,6 @@ class Coverage(models.Model):
 
     class Meta:
         unique_together = ('sample', 'cassette')
-
-
-# Create partition every 10 million records
-@architect.install('partition', type='range', subtype='integer',
-                   constraint='10000000', column='id')
-class PerBaseCoverage(models.Model):
-    """Per base coverage info for each SCCmec cassette."""
-
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    cassette = models.ForeignKey('Cassette', on_delete=models.CASCADE)
-    position = models.PositiveIntegerField()
-    coverage = models.PositiveIntegerField()
 
 
 class Primers(GenericBlast):

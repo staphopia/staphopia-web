@@ -4,28 +4,22 @@ Useful functions associated with kmers.
 To use:
 from kmer.tools import UTIL1, UTIL2, etc...
 """
+import subprocess
+import tempfile
 import time
+import json
 
 from django.db import transaction
-
-from elasticsearch import Elasticsearch, client
 
 from kmer.models import Total
 from staphopia.utils import timeit
 
-CHUNK_SIZE = 2500
+CHUNK_SIZE = 2000000
 INDEX_NAME = "kmers"
-ES_HOST = "loma.genetics.emory.edu"
-
-
-@timeit
-def jellyfish_dump(jf):
-    """Get kmer counts from a given jellyfish database."""
-    import subprocess
-    cmd = ['jellyfish', 'dump', '-c', jf]
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    return stdout.split('\n')
+TYPE_NAME = "kmer"
+ES_HOST = "http://staphopia.genetics.emory.edu:9200/_bulk"
+SCRIPT = ("if (!ctx._source.samples.contains(s)){"
+          "ctx._source.samples.add(s); ctx._source.count += 1;}")
 
 
 def chunks(l, n):
@@ -35,34 +29,37 @@ def chunks(l, n):
 
 
 @timeit
-def insert_data(es, type, bulk_data):
+def jellyfish_dump(jf):
+    """Get kmer counts from a given jellyfish database."""
+    cmd = ['jellyfish', 'dump', '-c', jf]
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    return stdout.split('\n')
+
+
+@timeit
+def insert_data_chunk(data_chunk):
     """Send data to elasticsearch."""
-    total_chunks = int(len(bulk_data) / float(CHUNK_SIZE))
-    total = 0
-    for chunk in chunks(bulk_data, CHUNK_SIZE):
-        es.bulk(index=INDEX_NAME, doc_type=type, body=chunk, refresh=True)
-        if total % 500 == 0:
-            print('\tProcessed {0} of {1} chunks'.format(total, total_chunks))
-        total += 1
+    with tempfile.TemporaryFile() as tmp:
+        for i in data_chunk:
+            tmp.write('{0}\n'.format(json.dumps(i)))
+
+        file = '@{0}'.format(tmp.name)
+        cmd = ['curl', '-s', '-XPOST', ES_HOST, '--data-binary', file]
+        subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     return True
 
 
 @transaction.atomic
 def insert_kmer_counts(jf, sample):
     """Insert kmer counts into the database."""
-    es = Elasticsearch(hosts=[ES_HOST])
     start_time = time.time()
     jf_dump = jellyfish_dump(jf)
     bulk_data = []
     sample_id = '{0}'.format(str(sample.pk).zfill(8))
-    sample
     singletons = 0
     total = 0
-
-    sample_script = (
-        'if (!ctx._source.samples.contains(sample))'
-        '{ctx._source.samples.add(sample); ctx._source.count += 1;}'
-    )
 
     for line in jf_dump:
         if not line:
@@ -70,23 +67,22 @@ def insert_kmer_counts(jf, sample):
         kmer, count = line.rstrip().split()
         count = int(count)
         total += 1
-        sample_name = '{0}-{1}'.format(sample_id, count)
-        bulk_data.append(
-            { "update" : { "_id" : kmer, "_type": "kmer", "_index":"kmers","_retry_on_conflict" : 3} }
-        )
-
+        sample_name = '{0}-A-{1}'.format(sample_id, count)
+        bulk_data.append({
+            "update": {
+                "_retry_on_conflict": 3,
+                "_index": INDEX_NAME,
+                "_type": TYPE_NAME,
+                "_id": kmer
+            }
+        })
         bulk_data.append({
             "script": {
-                "inline": sample_script,
+                "inline": SCRIPT,
                 "lang": "javascript",
-                "params": {
-                    "sample": sample_name
-                }
+                "params": {"s": sample_name}
             },
-            "upsert": {
-                "count": 1,
-                "samples" : [sample_name]
-            }
+            "upsert": {"count": 1, "samples": [sample_name]}
         })
 
         if count == 1:
@@ -97,9 +93,8 @@ def insert_kmer_counts(jf, sample):
 
     # Insert the totals
     print("\tBeginning bulk insert, may take a while...")
-    insert_data(es, "kmer", bulk_data)
-    idx = client.IndicesClient(es)
-    idx.refresh("kmers")
+    for chunk in chunks(bulk_data, CHUNK_SIZE):
+        insert_data_chunk(chunk)
 
     runtime = int(time.time() - start_time)
     Total.objects.get_or_create(
