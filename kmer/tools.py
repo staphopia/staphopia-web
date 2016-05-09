@@ -5,9 +5,11 @@ To use:
 from kmer.tools import UTIL1, UTIL2, etc...
 """
 import subprocess
+import requests
 import tempfile
 import time
 import json
+import os
 
 from django.db import transaction
 
@@ -17,7 +19,7 @@ from staphopia.utils import timeit
 CHUNK_SIZE = 2000000
 INDEX_NAME = "kmers"
 TYPE_NAME = "kmer"
-ES_HOST = "http://staphopia.genetics.emory.edu:9200/_bulk"
+ES_HOST = "http://staphopia.genetics.emory.edu:9200/kmers/kmer/_bulk"
 SCRIPT = ("if (!ctx._source.samples.contains(s)){"
           "ctx._source.samples.add(s); ctx._source.count += 1;}")
 
@@ -40,14 +42,19 @@ def jellyfish_dump(jf):
 @timeit
 def insert_data_chunk(data_chunk):
     """Send data to elasticsearch."""
-    with tempfile.TemporaryFile() as tmp:
+    tmp = tempfile.NamedTemporaryFile(delete=False)
+    path = tmp.name
+    try:
         for i in data_chunk:
             tmp.write('{0}\n'.format(json.dumps(i)))
-
-        file = '@{0}'.format(tmp.name)
-        cmd = ['curl', '-s', '-XPOST', ES_HOST, '--data-binary', file]
-        subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    finally:
+        tmp.close()
+        res = requests.post(ES_HOST, data=file(path, 'rb').read())
+        text = res.json()
+        print('{0} kmers loader, (errors: {1}, took: {2}ms)'.format(
+            len(text['items']), text['errors'], text['took']
+        ))
+        os.remove(path)
     return True
 
 
@@ -67,12 +74,10 @@ def insert_kmer_counts(jf, sample):
         kmer, count = line.rstrip().split()
         count = int(count)
         total += 1
-        sample_name = '{0}-A-{1}'.format(sample_id, count)
+        sample_name = '{0}-{1}'.format(sample_id, count)
         bulk_data.append({
             "update": {
-                "_retry_on_conflict": 3,
-                "_index": INDEX_NAME,
-                "_type": TYPE_NAME,
+                "_retry_on_conflict": 5,
                 "_id": kmer
             }
         })
@@ -84,7 +89,6 @@ def insert_kmer_counts(jf, sample):
             },
             "upsert": {"count": 1, "samples": [sample_name]}
         })
-
         if count == 1:
             singletons += 1
 
