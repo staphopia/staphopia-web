@@ -59,6 +59,54 @@ def insert_data_chunk(data_chunk):
 
 
 @transaction.atomic
+def insert_kmer_stats(sample, total, singletons, runtime):
+    """Insert kmer stats to the database."""
+    Total.objects.get_or_create(
+        sample=sample,
+        total=total,
+        singletons=singletons,
+        runtime=runtime
+    )
+
+    print("Total kmers: {0}".format(total))
+    print("Total singletons: {0}".format(singletons))
+    print("Total Runtime: {0}".format(runtime))
+
+
+def format_kmer_counts(jf, sample, outdir):
+    """Insert kmer counts into the database."""
+    start_time = time.time()
+    jf_dump = jellyfish_dump(jf)
+    total_kmers = len(jf_dump) - 1
+    total = 0
+    data = {"total": total_kmers, "singletons": 0, "kmers": []}
+
+    for line in jf_dump:
+        if not line:
+            continue
+        kmer, count = line.rstrip().split()
+        count = int(count)
+        total += 1
+        data['kmers'].append({"string":kmer, "count":count})
+        if count == 1:
+            data['singletons'] += 1
+
+        if total % 1000000 == 0:
+            print('\tProcessed {0} of {1} kmers'.format(total, total_kmers))
+
+    # Insert the totals
+    print("\tFormatting kmers for bulk insert...")
+    sid = '{0}'.format(str(sample.pk).zfill(8))
+    create = {"index": {"_index":"kmers_nested", "_type":"sample", "_id":sid}}
+    with open('{0}/{1}.json'.format(outdir, sid), 'w') as fh:
+        fh.write("{0}\n".format(json.dumps(create, separators=(',',':'))))
+        fh.write("{0}\n".format(json.dumps(data, separators=(',',':'))))
+
+    runtime = int(time.time() - start_time)
+    insert_kmer_stats(sample, data['total'], data['singletons'], runtime)
+
+
+
 def insert_kmer_counts(jf, sample):
     """Insert kmer counts into the database."""
     start_time = time.time()
@@ -101,13 +149,4 @@ def insert_kmer_counts(jf, sample):
         insert_data_chunk(chunk)
 
     runtime = int(time.time() - start_time)
-    Total.objects.get_or_create(
-        sample=sample,
-        total=len(jf_dump),
-        singletons=singletons,
-        runtime=runtime
-    )
-
-    print("Total kmers: {0}".format(total))
-    print("Total singletons: {0}".format(singletons))
-    print("Total Runtime: {0}".format(runtime))
+    insert_kmer_stats(sample, len(jf_dump), singletons, runtime)
