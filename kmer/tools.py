@@ -10,24 +10,57 @@ import tempfile
 import time
 import json
 import os
+import glob
 
 from django.db import transaction
+from django.core.management.base import CommandError
 
 from kmer.models import Total
 from staphopia.utils import timeit
 
-CHUNK_SIZE = 2000000
+CHUNK_SIZE = 1000000
 INDEX_NAME = "kmers"
 TYPE_NAME = "kmer"
+HOST = "staphopia.genetics.emory.edu:9200"
 ES_HOST = "http://staphopia.genetics.emory.edu:9200/kmers/kmer/_bulk"
 SCRIPT = ("if (!ctx._source.samples.contains(s)){"
           "ctx._source.samples.add(s); ctx._source.count += 1;}")
 
+BULK_SCRIPT = ("for(var i=0; i < sample.length; i++){"
+               "if (!ctx._source.samples.contains(sample[i])){"
+               "ctx._source.samples.add(sample[i]); ctx._source.count += 1;}}")
+
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i + n]
+
+
+def format_sample_pk(pk):
+    """Format a sample primary key for elasticsearch."""
+    return '{0}'.format(str(pk).zfill(8))
+
+
+def get_samples(project_dir):
+    """Return sample directories of a given project directory."""
+    samples = {}
+    for root, dirs, files in os.walk(project_dir):
+        for d in dirs:
+            path = '{0}/{1}'.format(root, d)
+            try:
+                samples[d] = {
+                    'fq': glob.glob('{0}/*.cleanup.fastq.gz'.format(path))[0],
+                    'jf': glob.glob('{0}/analyses/kmer/*.jf'.format(path))[0]
+                }
+            except IndexError:
+                raise CommandError((
+                    'Verify all samples in your project directory have been '
+                    'run. Culprit is {0}'.format(path)
+                ))
+        break
+
+    return samples
 
 
 @timeit
@@ -40,7 +73,7 @@ def jellyfish_dump(jf):
 
 
 @timeit
-def insert_data_chunk(data_chunk):
+def insert_data_chunk(data_chunk, host=ES_HOST):
     """Send data to elasticsearch."""
     tmp = tempfile.NamedTemporaryFile(delete=False)
     path = tmp.name
@@ -49,9 +82,9 @@ def insert_data_chunk(data_chunk):
             tmp.write('{0}\n'.format(json.dumps(i)))
     finally:
         tmp.close()
-        res = requests.post(ES_HOST, data=file(path, 'rb').read())
+        res = requests.post(host, data=file(path, 'rb').read())
         text = res.json()
-        print('{0} kmers loader, (errors: {1}, took: {2}ms)'.format(
+        print('\t\t{0} kmers loaded, (errors: {1}, took: {2}ms)'.format(
             len(text['items']), text['errors'], text['took']
         ))
         os.remove(path)
@@ -59,52 +92,51 @@ def insert_data_chunk(data_chunk):
 
 
 @transaction.atomic
-def insert_kmer_stats(sample, total, singletons, runtime):
+def insert_kmer_stats(sample, total, singletons):
     """Insert kmer stats to the database."""
     Total.objects.get_or_create(
         sample=sample,
         total=total,
-        singletons=singletons,
-        runtime=runtime
+        singletons=singletons
     )
 
-    print("Total kmers: {0}".format(total))
-    print("Total singletons: {0}".format(singletons))
-    print("Total Runtime: {0}".format(runtime))
+    print("{0}: Inserted {1} kmers ({2} are singletons)".format(
+        sample.db_tag, total, singletons
+    ))
 
 
-def format_kmer_counts(jf, sample, outdir):
+@timeit
+def insert_in_bulk(jf, partition):
     """Insert kmer counts into the database."""
-    start_time = time.time()
-    jf_dump = jellyfish_dump(jf)
-    total_kmers = len(jf_dump) - 1
-    total = 0
-    data = {"total": total_kmers, "singletons": 0, "kmers": []}
+    kmers = {}
+    print("\t\tReading kmers...")
+    with open(jf, 'r') as fh:
+        for line in fh:
+            kmer, sample = line.rstrip().split('\t')
+            if kmer not in kmers:
+                kmers[kmer] = [sample]
+            else:
+                kmers[kmer].append(sample)
 
-    for line in jf_dump:
-        if not line:
-            continue
-        kmer, count = line.rstrip().split()
-        count = int(count)
-        total += 1
-        data['kmers'].append({"string":kmer, "count":count})
-        if count == 1:
-            data['singletons'] += 1
-
-        if total % 1000000 == 0:
-            print('\tProcessed {0} of {1} kmers'.format(total, total_kmers))
+    # Create necessary JSON for BULK insert
+    bulk_data = []
+    print("\t\tProcessing kmers for bulk insert...")
+    for k, v in kmers.iteritems():
+        bulk_data.append({"update": {"_retry_on_conflict": 5, "_id": k}})
+        bulk_data.append({
+            "script": {
+                "inline": BULK_SCRIPT,
+                "lang": "javascript",
+                "params": {"sample": v}
+            },
+            "upsert": {"count": len(v), "samples": v}
+        })
 
     # Insert the totals
-    print("\tFormatting kmers for bulk insert...")
-    sid = '{0}'.format(str(sample.pk).zfill(8))
-    create = {"index": {"_index":"kmers_nested", "_type":"sample", "_id":sid}}
-    with open('{0}/{1}.json'.format(outdir, sid), 'w') as fh:
-        fh.write("{0}\n".format(json.dumps(create, separators=(',',':'))))
-        fh.write("{0}\n".format(json.dumps(data, separators=(',',':'))))
-
-    runtime = int(time.time() - start_time)
-    insert_kmer_stats(sample, data['total'], data['singletons'], runtime)
-
+    print("\t\tBeginning bulk insert, may take a while...")
+    host = "http://{0}/kmer_{1}/kmer/_bulk".format(HOST, partition.lower())
+    for chunk in chunks(bulk_data, CHUNK_SIZE):
+        insert_data_chunk(chunk, host=host)
 
 
 def insert_kmer_counts(jf, sample):
@@ -112,7 +144,7 @@ def insert_kmer_counts(jf, sample):
     start_time = time.time()
     jf_dump = jellyfish_dump(jf)
     bulk_data = []
-    sample_id = '{0}'.format(str(sample.pk).zfill(8))
+    sample_id = format_sample_pk(sample.pk)
     singletons = 0
     total = 0
 

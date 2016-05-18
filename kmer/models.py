@@ -230,7 +230,6 @@ class Count(models.Model):
 class Total(models.Model):
     """Total kmer counts from each sample."""
 
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
     total = models.PositiveIntegerField()
     singletons = models.PositiveIntegerField()
-    runtime = models.PositiveIntegerField(default=0)
