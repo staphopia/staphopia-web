@@ -1,9 +1,9 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 from django.views.generic import RedirectView
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 
-from rest_framework import routers
+# Thrid Party Apps
 from registration.backends.default.views import (
     ActivationView,
     RegistrationView
@@ -15,26 +15,20 @@ from django_email_changer.views import (
     CreateUserEmailModificationRequest,
 )
 
+# Staphopia
 from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
+
+# Views
 import staphopia.views
 import sample.views
 
-
-from api.viewsets.samples import SampleViewSet
-from api.viewsets.sequence_type import MLSTViewSet
-from api.viewsets.top import TopViewSet
+# API ViewSet Routers
+from api.routers import router
 
 admin.autodiscover()
 
-# Routers provide an easy way of automatically determining the URL conf.
-router = routers.DefaultRouter()
-router.register(r'samples', SampleViewSet)
-router.register(r'top', TopViewSet, 'Top')
-router.register(r'mlst', MLSTViewSet, 'MSLT')
-
 urlpatterns = [
-
     # Django REST Framework
     url(r'^api/', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls',

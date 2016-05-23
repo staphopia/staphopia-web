@@ -34,8 +34,11 @@ class Publication(models.Model):
     """Pubmed information."""
 
     pmid = models.TextField(unique=True)
-    authors = models.TextField(db_index=True)
+    authors = models.TextField()
+    title = models.TextField()
     abstract = models.TextField(db_index=True)
+    reference_ids = models.TextField()
+    keywords = models.TextField()
 
 
 class ToPublication(models.Model):

@@ -74,8 +74,9 @@ REST_FRAMEWORK = {
     #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
     # ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGINATE_BY': 25
+    'PAGE_SIZE': 100
 }
+MAX_IDS_PER_QUERY = 50000
 
 '''----------------------------------------------------------------------------
 Middleware
@@ -87,7 +88,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'staphopia.middleware.LoginRequiredMiddleware',
+    #'staphopia.middleware.LoginRequiredMiddleware',
 )
 
 '''----------------------------------------------------------------------------

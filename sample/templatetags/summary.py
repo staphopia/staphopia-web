@@ -4,7 +4,6 @@ from ena.models import CenterNames, Experiment
 from sample.models import MetaData
 from assembly.models import Stats
 from mlst.models import Srst2
-from sequence.models import Quality
 
 register = template.Library()
 
@@ -39,8 +38,8 @@ def get_center_name(center_name):
 @register.assignment_tag
 def get_sequence_quality(sample_tag):
     sample = MetaData.objects.get(sample_tag=sample_tag)
-    quality = Quality.objects.filter(sample=sample).order_by('-is_original')
-    return quality
+    # quality = Quality.objects.filter(sample=sample).order_by('-is_original')
+    return 0
 
 
 @register.assignment_tag
