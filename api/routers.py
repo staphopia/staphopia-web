@@ -16,10 +16,13 @@ from api.viewsets.genes import (
     GeneBlastViewSet
 )
 
+from api.viewsets.kmers import KmerViewSet
+
 from api.viewsets.samples import (
     PublicationViewSet,
     SampleViewSet,
-    TagViewSet
+    TagViewSet,
+    ResistanceViewSet
 )
 
 from api.viewsets.sccmecs import (
@@ -50,6 +53,7 @@ router = routers.DefaultRouter()
 router.register(r'sample', SampleViewSet)
 router.register(r'tag', TagViewSet)
 router.register(r'publication', PublicationViewSet)
+router.register(r'resistance', ResistanceViewSet)
 
 # Assembly related table
 router.register(r'assembly/stat', AssemblyViewSet)
@@ -67,6 +71,9 @@ router.register(r'gene/product', GeneProductViewSet)
 router.register(r'gene/inference', GeneInferenceViewSet)
 router.register(r'gene/note', GeneNoteViewSet)
 router.register(r'gene/blast', GeneBlastViewSet)
+
+# Kmer related tables
+router.register(r'kmer', KmerViewSet)
 
 # Seqeunce Type (MLST) Related Tables
 router.register(r'mlst/blast', MlstBlastViewSet)

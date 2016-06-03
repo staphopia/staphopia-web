@@ -3,7 +3,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 
-from api.utils import format_results, get_ids_in_bulk
+from api.pagination import CustomReadOnlyModelViewSet
+from api.utils import format_results, get_ids_in_bulk, get_snps_by_samples
 from api.validators import validate_list_of_ids
 from variant.models import (
     SNP,
@@ -29,7 +30,7 @@ from api.serializers.variants import (
 )
 
 
-class SNPViewSet(viewsets.ReadOnlyModelViewSet):
+class SNPViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving SNP."""
 
     queryset = SNP.objects.all()
@@ -44,17 +45,17 @@ class SNPViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(format_results(hits))
 
     @list_route(methods=['post'])
-    def bulk_info(self, request):
+    def bulk(self, request):
         """Given a list of SNP IDs, return table info for each SNP."""
         if request.method == 'POST':
-            validator = validate_list_of_ids(request.data)
+            validator = validate_list_of_ids(request.data, max_query=500)
             if validator['has_errors']:
                 return Response({
                             "message": validator['message'],
                             "data": request.data
                         })
             else:
-                return Response(get_ids_in_bulk(
+                return self.formatted_response(get_ids_in_bulk(
                     'variant_snp',
                     request.data['ids']
                 ))
@@ -70,9 +71,8 @@ class SNPViewSet(viewsets.ReadOnlyModelViewSet):
                             "data": request.data
                         })
             else:
-                return Response(get_ids_in_bulk(
-                    'variant_tosnp',
-                    request.data['ids']
+                return self.formatted_response(get_snps_by_samples(
+                    request.data['ids'],
                 ))
 
 
@@ -91,10 +91,10 @@ class InDelViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(format_results(hits))
 
     @list_route(methods=['post'])
-    def bulk_info(self, request):
+    def bulk(self, request):
         """Given a list of InDel IDs, return table info for each InDel."""
         if request.method == 'POST':
-            validator = validate_list_of_ids(request.data)
+            validator = validate_list_of_ids(request.data, max_query=500)
             if validator['has_errors']:
                 return Response({
                             "message": validator['message'],
@@ -119,7 +119,8 @@ class InDelViewSet(viewsets.ReadOnlyModelViewSet):
             else:
                 return Response(get_ids_in_bulk(
                     'variant_toindel',
-                    request.data['ids']
+                    request.data['ids'],
+                    id_col='sample_id'
                 ))
 
 

@@ -15,6 +15,41 @@ class Sample(models.Model):
     md5sum = models.CharField(default='', max_length=32, unique=True)
 
 
+class ToResistance(models.Model):
+    """Antibiotic resistance tests conducted on a Sample."""
+
+    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    resistance = models.ForeignKey('Resistance', on_delete=models.CASCADE)
+    value = models.TextField()
+    phenotype = models.TextField()
+    specification = models.ForeignKey('ResistanceSpecification',
+                                      on_delete=models.CASCADE)
+
+
+class Resistance(models.Model):
+    """Antibiotic resitance tests."""
+
+    antibiotic = models.TextField()
+    test = models.TextField()
+    unit = models.TextField()
+
+    class Meta:
+        unique_together = ('antibiotic', 'test', 'unit')
+
+
+class ResistanceSpecification(models.Model):
+    """Basis for determining the phenotype of a test."""
+
+    susceptible = models.TextField()
+    intermediate = models.TextField()
+    resistant = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        unique_together = ('susceptible', 'intermediate', 'resistant',
+                           'comment')
+
+
 class Tag(models.Model):
     """User based tags to associate with a sample."""
 
@@ -30,6 +65,13 @@ class ToTag(models.Model):
     tag = models.ForeignKey('Tag', on_delete=models.CASCADE)
 
 
+class ToPublication(models.Model):
+    """Link samples and publications."""
+
+    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    publication = models.ForeignKey('Publication', on_delete=models.CASCADE)
+
+
 class Publication(models.Model):
     """Pubmed information."""
 
@@ -41,69 +83,19 @@ class Publication(models.Model):
     keywords = models.TextField()
 
 
-class ToPublication(models.Model):
-    """Link samples and publications."""
+class ToMetaData(models.Model):
+    """Link samples to metadata."""
 
     sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
-    publication = models.ForeignKey('Publication', on_delete=models.CASCADE)
+    metadata = models.ForeignKey('MetaData', on_delete=models.CASCADE)
+    value = models.TextField()
 
 
 class MetaData(models.Model):
     """Meta data associated with a sample."""
 
-    sample = models.OneToOneField('Sample', on_delete=models.CASCADE)
-
-    # Project Information
-    contact_name = models.TextField(default='')
-    contact_email = models.EmailField(default='')
-    contact_link = models.URLField(default='', blank=True)
-    sequencing_center = models.TextField(default='')
-    sequencing_center_link = models.URLField(default='', blank=True)
-    sequencing_date = models.DateField(default='1900-01-01', blank=True)
-    sequencing_libaray_method = models.TextField(default='', blank=True)
-    sequencing_platform = models.TextField(default='', blank=True)
-
-    # Publication Inforamtion
-    publication_link = models.URLField(default='', blank=True)
-    pubmed_id = models.TextField(default='', blank=True)
-    doi = models.TextField(default='', blank=True)
-    funding_agency = models.TextField(default='', blank=True)
-    funding_agency_link = models.URLField(default='', blank=True)
-
-    # Organism Information
-    strain = models.TextField(default='', blank=True)
-    isolation_date = models.DateField(default='1900-01-01', blank=True)
-    isolation_country = models.TextField(default='', blank=True)
-    isolation_city = models.TextField(default='', blank=True)
-    isolation_region = models.TextField(default='', blank=True)
-    host_name = models.TextField(default='', blank=True)
-    host_health = models.TextField(default='', blank=True)
-    host_age = models.PositiveSmallIntegerField(default=0, blank=True)
-    host_gender = models.TextField(default='', blank=True)
-    comments = models.TextField(default='', blank=True)
-
-    # Phenotype Information
-    vancomycin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                         blank=True, default=-200.00)
-    penicillin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                         blank=True, default=-200.00)
-    oxacillin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                        blank=True, default=-200.00)
-    clindamycin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                          blank=True, default=-200.00)
-    daptomycin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                         blank=True, default=-200.00)
-    levofloxacin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                           blank=True, default=-200.00)
-    linezolid_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                        blank=True, default=-200.00)
-    rifampin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                       blank=True, default=-200.00)
-    tetracycline_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                           blank=True, default=-200.00)
-    trimethoprim_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                           blank=True, default=-200.00)
-    source = models.TextField(default='', blank=True)
+    field = models.TextField(unique=True)
+    description = models.TextField()
 
 
 def content_file_name(instance, filename):

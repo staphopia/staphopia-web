@@ -1,6 +1,13 @@
 """ . """
 from rest_framework import serializers
-from sample.models import Sample, Publication, Tag, ToTag
+from sample.models import (
+    Sample,
+    Publication,
+    Tag,
+    ToTag,
+    Resistance,
+    ToResistance
+)
 
 
 class SampleSerializer(serializers.ModelSerializer):
@@ -21,3 +28,13 @@ class ToTagSerializer(serializers.ModelSerializer):
 class PublicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Publication
+
+
+class ResistanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resistance
+
+
+class ToResistanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ToResistance

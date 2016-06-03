@@ -1,6 +1,7 @@
 """A collection of custom validators for user input."""
 from django.conf import settings
 
+
 def validate_list_of_ids(data, field='ids',
                          max_query=settings.MAX_IDS_PER_QUERY):
     """Test excpected list of ids is in valid format."""
@@ -19,4 +20,24 @@ def validate_list_of_ids(data, field='ids',
         error = True
         msg = "Maxmium of {0} IDs allowed per query.".format(max_query)
 
-    return {"has_errors":error, "message": msg}
+    return {"has_errors": error, "message": msg}
+
+
+def validate_positive_integer(data):
+    msg = None
+    error = False
+
+    try:
+        if int(data) < 0:
+            error = True
+            msg = "Query must be a positive integer."
+    except ValueError:
+        if float(data):
+            error = True
+            msg = ("Query must be a positive integer. Recieved a float, make "
+                   "sure query is not in scientific notation.")
+        else:
+            error = True
+            msg = "Query must be a positive integer."
+
+    return {"has_errors": error, "message": msg, "data": data}

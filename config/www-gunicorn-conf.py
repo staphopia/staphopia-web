@@ -1,4 +1,4 @@
-bind = "127.0.0.1:8000"
+bind = "unix:/home/rpetit/staphopia.com/logs/gunicorn-staphopia.sock"
 
 workers = 8
 worker_class = 'sync'
