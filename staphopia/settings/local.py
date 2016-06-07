@@ -18,7 +18,7 @@ DATABASES = {
         'NAME': 'staphopia',
         'USER': 'staphopia',
         'PASSWORD': DEV_PASS,
-        'HOST': 'localhost',
+        'HOST': 'staphopia.genetics.emory.edu',
         'PORT': '29466',
     }
 }
