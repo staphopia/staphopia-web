@@ -36,7 +36,7 @@ SITE_ENV = 'dev'
 LOGIN_URL = '/accounts/login/'
 LOGIN_EXEMPT_URLS = (
     r'^accounts/login/',
-    r'^api/variant/snp/get_snp_info/',
+    r'^',
 )
 
 GOOGLE_ANALYTICS_PROPERTY_ID = 'UA-70312420-1'

@@ -4,14 +4,14 @@
 
 {% block container %}
     <div class="row">
-        {% include "accounts/settings-sidebar.html" %}
-    
+        {% include "settings/sidebar.html" %}
+
         <div class="col-sm-9 col-md-10">
             <div class="row">
                 <div>
                     <h3>Change Your Staphopia Email</h3>
                     <p class="indent">
-                        To change your Staphopia email, please fill out the form 
+                        To change your Staphopia email, please fill out the form
                         below.
                     </p>
                     <hr />
@@ -40,29 +40,29 @@
                         {% csrf_token %}
                         <div class="form-group">
                             <label class="col-sm-4 col-md-4 control-label" for="id_old_email">Current Email </label>
-                            
+
                             <div class="col-sm-6 col-md-5">
-                                <input disabled value={{ user.email }} id="id_old_email" 
+                                <input disabled value={{ user.email }} id="id_old_email"
                                        name="old_email" type="email" class="form-control input-md">
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-4 col-md-4 control-label" for="id_new_email">New Email </label>
-                            
+
                             <div class="col-sm-6 col-md-5">
                                 <input id="id_new_email" name="new_email" type="email" class="form-control input-md">
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-4 col-md-4 control-label" for="id_confirmed_email">Confirm Email </label>
-                            
+
                             <div class="col-sm-6 col-md-5">
                                 <input id="id_confirmed_email" name="confirmed_email" type="email" class="form-control input-md">
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-4 col-md-4 control-label" for="id_password">Password </label>
-                            
+
                             <div class="col-sm-6 col-md-5">
                                 <input id="id_password" name="password" type="password" class="form-control input-md">
                             </div>

@@ -11,10 +11,10 @@ def index(request):
             form = AutoFillForm(request.user.id, request.POST)
             if form.is_valid():
                 form.save(request.user.id, request.POST)
-                return HttpResponseRedirect('/accounts/autofill/')
+                return HttpResponseRedirect('/settings/autofill/')
         else:
             form = AutoFillForm(request.user.id)
-        return render_to_response('accounts/autofill.html',
+        return render_to_response('settings/autofill.html',
                                   {'form': form}, RequestContext(request))
     else:
         return HttpResponseRedirect('/')
