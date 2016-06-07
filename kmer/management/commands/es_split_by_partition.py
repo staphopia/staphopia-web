@@ -22,6 +22,8 @@ class Command(BaseCommand):
                             help=('User name for the owner of the sample.'))
         parser.add_argument('outdir', metavar='OUTPUT_DIRECTORY',
                             help=('Sample tag associated with sample.'))
+        parser.add_argument('--append', action='store_true',
+                            help='Append to existing files.')
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -29,6 +31,7 @@ class Command(BaseCommand):
         # Validate all samples are in the database, before we do anything
         self.kmers = {}
         self.total_kmers = 0
+        self.append = opts['append']
         samples = get_samples(opts['project_dir'])
         total_samples = len(samples.keys())
         print('Found {0} samples, validating database existence...'.format(
@@ -64,7 +67,11 @@ class Command(BaseCommand):
         """Open filehandles."""
         self.fh = {}
         for child, parent in PARTITIONS.items():
-            self.fh[parent] = open('{0}/{1}.txt'.format(outdir, parent), 'w')
+            output = '{0}/{1}.txt'.format(outdir, parent)
+            if self.append:
+                self.fh[parent] = open(output, 'a')
+            else:
+                self.fh[parent] = open(output, 'w')
 
     def close_file_handles(self):
         """Close all open file handles."""
