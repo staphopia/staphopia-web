@@ -105,40 +105,6 @@ def get_sample(db_tag):
         raise CommandError('db_tag: {0} does not exist'.format(db_tag))
 
 
-def create_db_tag(user, db_tag=None, force=False):
-    """
-    Get or create a unique database tag for a user.
-
-    An error is raised if the database tag already exists for the use, unless
-    force is set to True.
-    """
-    if db_tag:
-        try:
-            Sample.objects.get(user=user, db_tag=db_tag)
-            if not force:
-                raise CommandError((
-                    'A sample is already associated with {0}. Will not use'
-                    ' {0} unless --force is given, exiting.').format(
-                    db_tag
-                ))
-            else:
-                print('Focibly using the existing db_tag {0}'.format(
-                    db_tag
-                ))
-        except Sample.DoesNotExist:
-            raise CommandError('specified db_tag "{0}"" does not exist'.format(
-                db_tag
-            ))
-    else:
-        num_samples = Sample.objects.filter(user=user).count()
-        db_tag = '{0}_{1}'.format(
-            user.username,
-            str(num_samples + 1).zfill(6)
-        )
-
-    return db_tag
-
-
 def create_tag(user, tag, comment):
     """Create a database tag."""
     try:

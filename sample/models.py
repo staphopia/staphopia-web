@@ -7,7 +7,6 @@ class Sample(models.Model):
     """Basic sample information."""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    db_tag = models.TextField(unique=True, default='')
     sample_tag = models.TextField(db_index=True, default='')
     is_paired = models.BooleanField(default=False)
     is_public = models.BooleanField(default=True, db_index=True)

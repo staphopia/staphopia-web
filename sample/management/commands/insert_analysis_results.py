@@ -10,12 +10,9 @@ from django.contrib.auth.models import User
 from staphopia.utils import md5sum
 from sample.models import Sample, ToTag
 
-from sample.tools import (
-    create_db_tag, create_tag, validate_analysis, validate_time
-)
+from sample.tools import create_tag, validate_analysis
 from assembly.tools import insert_assembly_stats, insert_assembly
 from gene.tools import insert_gene_annotations, insert_blast_results
-from kmer.tools import insert_kmer_counts
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
 from sccmec.tools import insert_sccmec_coverage, insert_sccmec_blast
 from sequence.tools import insert_fastq_stats
@@ -40,8 +37,6 @@ class Command(BaseCommand):
                                  'Example: ga-outbreak, vanA-samples, etc...')
         parser.add_argument('--comment', type=str, default="",
                             help=('Any comments about the project.'))
-        parser.add_argument('--db_tag', type=str, default="",
-                            help=('Sample tag associated with sample.'))
         parser.add_argument('--strain', type=str, default="",
                             help=('Strain name of the input sample.'))
         parser.add_argument('--is_paired', action='store_true',
@@ -54,8 +49,6 @@ class Command(BaseCommand):
                             help='Force updates for existing entries.')
         parser.add_argument('--preload', action='store_true',
                             help='Preload UniRef50 clusters into memory.')
-        parser.add_argument('--skip_kmers', action='store_true',
-                            help="Don't insert kmers stats.")
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -80,7 +73,7 @@ class Command(BaseCommand):
         try:
             sample = Sample.objects.get(md5sum=fq_md5sum)
             print("Found existing sample: {0} ({1})".format(
-                sample.db_tag, sample.md5sum
+                sample.sample_tag, sample.md5sum
             ))
             if not opts['force']:
                 raise CommandError(
@@ -95,16 +88,15 @@ class Command(BaseCommand):
         except Sample.DoesNotExist:
             # Create new sample
             try:
-                db_tag = create_db_tag(user, db_tag=opts['db_tag'])
                 sample = Sample.objects.create(
                     user=user,
-                    db_tag=db_tag,
                     sample_tag=opts['sample_tag'],
                     md5sum=fq_md5sum,
                     is_paired=opts['is_paired'],
                     is_public=opts['is_public']
                 )
-                print("Created new sample: {0}".format(db_tag))
+                print("Created new sample: {0} {1}".format(sample.id,
+                                                       sample.sample_tag))
             except IntegrityError as e:
                 raise CommandError(
                     'Error, unable to create Sample object. {0}'.format(e)
@@ -172,20 +164,10 @@ class Command(BaseCommand):
             force=opts['force']
         )
 
-        if not opts['skip_kmers']:
-            print("Inserting k-mer counts...")
-            insert_kmer_counts(files['kmers'], sample)
-        else:
-            print("Skipping k-mer counts...")
-
         print(json.dumps({
             'sample_id': sample.pk,
-            'db_tag': sample.db_tag,
             'sample_tag': sample.sample_tag,
             'project_tag': opts['project_tag'],
             'is_paired': sample.is_paired,
             'comment': opts['comment']
         }))
-
-        # if opts['runtime']:
-        #    runtimes = validate_time(opts['sample_dir'])
