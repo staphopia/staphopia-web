@@ -51,21 +51,21 @@ class Stats(models.Model):
     contigs_greater_100k = models.PositiveSmallIntegerField()
     contigs_greater_1m = models.PositiveSmallIntegerField()
 
-    percent_contigs_greater_1k = models.DecimalField(max_digits=4,
+    percent_contigs_greater_1k = models.DecimalField(max_digits=5,
                                                      decimal_places=2)
-    percent_contigs_greater_10k = models.DecimalField(max_digits=4,
+    percent_contigs_greater_10k = models.DecimalField(max_digits=5,
                                                       decimal_places=2)
-    percent_contigs_greater_100k = models.DecimalField(max_digits=4,
+    percent_contigs_greater_100k = models.DecimalField(max_digits=5,
                                                        decimal_places=2)
-    percent_contigs_greater_1m = models.DecimalField(max_digits=4,
+    percent_contigs_greater_1m = models.DecimalField(max_digits=5,
                                                      decimal_places=2)
 
-    contig_percent_a = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_percent_t = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_percent_g = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_percent_c = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_percent_n = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_non_acgtn = models.DecimalField(max_digits=4, decimal_places=2)
+    contig_percent_a = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_percent_t = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_percent_g = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_percent_c = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_percent_n = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_non_acgtn = models.DecimalField(max_digits=5, decimal_places=2)
     num_contig_non_acgtn = models.PositiveSmallIntegerField()
 
     class Meta:
