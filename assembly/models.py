@@ -14,11 +14,12 @@ class Contigs(models.Model):
     """Assembled contigs for each sample renamed by PROKKA."""
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    is_plasmids = models.BooleanField(default=False, db_index=True)
     name = models.TextField(db_index=True)
     sequence = models.TextField()
 
     class Meta:
-        unique_together = ('sample', 'name')
+        unique_together = ('sample', 'is_plasmids', 'name')
 
 
 class Stats(models.Model):
@@ -30,6 +31,7 @@ class Stats(models.Model):
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     is_scaffolds = models.BooleanField(default=False, db_index=True)
+    is_plasmids = models.BooleanField(default=False, db_index=True)
 
     total_contig = models.PositiveSmallIntegerField()
     total_contig_length = models.PositiveIntegerField()
@@ -67,7 +69,7 @@ class Stats(models.Model):
     num_contig_non_acgtn = models.PositiveSmallIntegerField()
 
     class Meta:
-        unique_together = ('sample', 'is_scaffolds')
+        unique_together = ('sample', 'is_plasmids', 'is_scaffolds')
 
     def sample_tag(self):
         """Display sample tag in admin view."""

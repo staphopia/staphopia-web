@@ -64,6 +64,11 @@ def validate_analysis(directory, sample_tag):
         'scaffolds': '{0}/assembly/{1}.scaffolds.json',
         'assembly': '{0}/assembly/{1}.scaffolds.fasta.gz',
 
+        # Plasmid Assembly
+        'plasmid-contigs': '{0}/plasmids/{1}.plasmid-contigs.json',
+        'plasmid-scaffolds': '{0}/plasmids/{1}.plasmid-scaffolds.json',
+        'plasmid-assembly': '{0}/plasmids/{1}.plasmid-scaffolds.fasta.gz',
+
         # MLST
         'mlst_blast': '{0}/mlst/mlst-blastn.json',
         'mlst_srst2': ('{0}/mlst/srst2__mlst__Staphylococcus_aureus__'

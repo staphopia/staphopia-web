@@ -131,6 +131,16 @@ class Command(BaseCommand):
                               force=opts['force'])
         insert_assembly(files['assembly'], sample, force=opts['force'])
 
+        print("Inserting Plasmid Assembly Stats...")
+        insert_assembly_stats(files['plasmid-contigs'], sample,
+                              is_scaffolds=False, force=opts['force'],
+                              is_plasmids=True)
+        insert_assembly_stats(files['plasmid-scaffolds'], sample,
+                              is_scaffolds=True, force=opts['force'],
+                              is_plasmids=True)
+        insert_assembly(files['plasmid-assembly'], sample, is_plasmids=True,
+                        force=opts['force'])
+
         print("Inserting MLST Results...")
         insert_mlst_blast(files['mlst_blast'], sample, force=opts['force'])
         insert_mlst_srst2(files['mlst_srst2'], sample, force=opts['force'])

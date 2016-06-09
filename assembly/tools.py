@@ -15,18 +15,23 @@ from assembly.models import Contigs, Stats
 
 @timeit
 @transaction.atomic
-def insert_assembly_stats(assembly, sample, is_scaffolds=False, force=False):
+def insert_assembly_stats(assembly, sample, is_scaffolds=False, force=False,
+                          is_plasmids=False):
     """Insert assembly statistics for a given sample."""
     json_data = read_json(assembly)
     try:
         if force:
             print("\tForce used, emptying Assembly stats related results.")
             Stats.objects.filter(
-                sample=sample, is_scaffolds=is_scaffolds
+                sample=sample,
+                is_scaffolds=is_scaffolds,
+                is_plasmids=is_plasmids
             ).delete()
+
         assembly = Stats(
             sample=sample,
             is_scaffolds=is_scaffolds,
+            is_plasmids=is_plasmids,
             **json_data
         )
         assembly.save()
@@ -39,17 +44,18 @@ def insert_assembly_stats(assembly, sample, is_scaffolds=False, force=False):
 
 @timeit
 @transaction.atomic
-def insert_assembly(assembly, sample, force=False):
+def insert_assembly(assembly, sample, is_plasmids=False, force=False):
     """Insert the assembled scaffolds to the database."""
     if force:
         print("\tForce used, emptying Assembly sequence related results.")
-        Contigs.objects.filter(sample=sample).delete()
+        Contigs.objects.filter(sample=sample, is_plasmids=is_plasmids).delete()
 
     assembly = read_fasta(assembly, compressed=True)
     contigs = []
     for name, seq in assembly.items():
         contigs.append(Contigs(
             sample=sample,
+            is_plasmids=is_plasmids,
             name=name,
             sequence=seq
         ))
@@ -66,6 +72,6 @@ def insert_assembly(assembly, sample, force=False):
 def get_contig(sample, name):
     """return a contig instance."""
     try:
-        return Contigs.objects.get(sample=sample, name=name)
+        return Contigs.objects.get(sample=sample, is_plasmids=False, name=name)
     except Contigs.DoesNotExist:
         return Contigs.objects.get(name="none")
