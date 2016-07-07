@@ -48,7 +48,7 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
     def bulk(self, request):
         """Given a list of SNP IDs, return table info for each SNP."""
         if request.method == 'POST':
-            validator = validate_list_of_ids(request.data, max_query=500)
+            validator = validate_list_of_ids(request.data, max_query=10000)
             if validator['has_errors']:
                 return Response({
                             "message": validator['message'],

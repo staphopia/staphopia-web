@@ -1,8 +1,12 @@
 from rest_framework import viewsets
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import list_route
 from rest_framework.response import Response
 
+from api.pagination import CustomReadOnlyModelViewSet
 from api.serializers.sequence_types import BlastSerializer, Srst2Serializer
+from api.utils import get_srst2_by_samples
+from api.validators import validate_list_of_ids
+
 from mlst.models import Srst2, Blast
 
 
@@ -14,9 +18,24 @@ class MlstBlastViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = BlastSerializer
 
 
-class MlstSrst2ViewSet(viewsets.ReadOnlyModelViewSet):
+class MlstSrst2ViewSet(CustomReadOnlyModelViewSet):
     """
     A simple ViewSet for listing or retrieving Samples.
     """
     queryset = Srst2.objects.all()
     serializer_class = Srst2Serializer
+
+    @list_route(methods=['post'])
+    def bulk_by_sample(self, request):
+        """Given a list of sample IDs, return SRST2 results."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            else:
+                return self.formatted_response(get_srst2_by_samples(
+                    request.data['ids'],
+                ))

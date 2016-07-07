@@ -79,7 +79,7 @@ def get_resitance_by_samples(sample_ids, resistance_id=None):
 
 def get_samples_by_tag(tag_id):
     """Return sampels associated with a tag."""
-    sql = """SELECT t.sample_id, s.user_id, s.db_tag, s.sample_tag,
+    sql = """SELECT t.sample_id, s.user_id, s.sample_tag,
                     s.is_paired, s.is_public, s.is_published
              FROM sample_totag AS t
              LEFT JOIN sample_sample AS s
@@ -114,6 +114,20 @@ def get_snps_by_samples(sample_ids):
              FROM variant_tosnp
              WHERE sample_id IN ({0})
              ORDER BY snp_id;""".format(
+        ','.join([str(i) for i in sample_ids])
+    )
+
+    return query_database(sql)
+
+
+def get_srst2_by_samples(sample_ids):
+    """Return sequence type associated with a sample."""
+    sql = """SELECT sample_id, st_original, st_stripped, is_exact,
+                    arcc, aroe, glpf, gmk, pta, tpi, yqil, mismatches,
+                    uncertainty, depth, "maxMAF"
+             FROM mlst_srst2
+             WHERE sample_id IN ({0})
+             ORDER BY sample_id;""".format(
         ','.join([str(i) for i in sample_ids])
     )
 
