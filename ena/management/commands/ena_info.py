@@ -43,7 +43,12 @@ class Command(BaseCommand):
                     runs = self.get_runs(exp)
                     if runs.count() > 0:
                         for run in runs:
-                            run_info[exp][run.run_accession] = run.is_paired
+                            run_info[exp][run.run_accession] = {
+                                'is_paired': run.is_paired,
+                                'fastq_ftp': run.fastq_ftp.split(';'),
+                                'fastq_aspera': run.fastq_aspera.split(';'),
+                                'fastq_md5': run.fastq_md5.split(';')
+                            }
 
             print json.dumps(run_info)
 

@@ -8,6 +8,7 @@ import json
 from optparse import make_option
 
 from django.core.management.base import BaseCommand
+from django.db.utils import IntegrityError
 
 from ena.models import Experiment, Run, ToSample
 
@@ -54,12 +55,34 @@ class Command(BaseCommand):
                 experiment = Experiment.objects.get(
                     experiment_accession=options['experiment']
                 )
-                ena_to_sample, created = ToSample.objects.update_or_create(
-                    experiment_accession=experiment,
-                    server=options['server'],
-                    status=options['status'],
-                    path=options['path'],
-                )
+                if options['server'] and options['path']:
+                    try:
+                        ena_to_sample, created = ToSample.objects.update_or_create(
+                            experiment_accession=experiment,
+                            server=options['server'],
+                            status=options['status'],
+                            path=options['path'],
+                        )
+                    except IntegrityError:
+                        ToSample.objects.filter(
+                            experiment_accession=experiment
+                        ).update(
+                            server=options['server'],
+                            status=options['status'],
+                            path=options['path'],
+                        )
+                else:
+                    try:
+                        ena_to_sample, created = ToSample.objects.update_or_create(
+                            experiment_accession=experiment,
+                            status=options['status'],
+                        )
+                    except IntegrityError:
+                        ToSample.objects.filter(
+                            experiment_accession=experiment
+                        ).update(
+                            status=options['status'],
+                        )
             except Experiment.DoesNotExist:
                 print('{0} does not exist.'.format(options['experiment']))
 
