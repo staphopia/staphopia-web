@@ -21,41 +21,41 @@ class Command(BaseCommand):
 
     help = 'Insert ENA data information into the database.'
 
-    option_list = BaseCommand.option_list + (
-        make_option('--limit', dest='limit',
-                    help='Limit the number of experiments to output.'),
-        make_option('--technology', dest='technology',
+    def add_arguments(self, parser):
+        """Command line arguements."""
+        parser.add_argument('--limit', dest='limit',
+                    help='Limit the number of experiments to output.')
+        parser.add_argument('--technology', dest='technology',
                     help=('Filter results by a certain technology. (ILLUMINA, '
-                          'LS454, PACBIO_SMRT, ION_TORRENT, ABI_SOLID)')),
-        make_option('--coverage', dest='coverage',
-                    help='Filter results based on coverage.'),
-        make_option('--min_read_length', dest='min_read_length',
-                    help='Filter results based on minimum read length.'),
-        make_option('--max_read_length', dest='max_read_length',
-                    help='Filter results based on maximum read length.'),
-        make_option('--experiment', dest='experiment',
-                    help='Filter results based on experiment accession.'),
-        make_option('--study', dest='study',
-                    help='Filter results based on study accession.'),
-        make_option('--column', dest='column',
-                    help='Filter results based on specific column.'),
-        make_option('--accessions', dest='accessions',
+                          'LS454, PACBIO_SMRT, ION_TORRENT, ABI_SOLID)'))
+        parser.add_argument('--coverage', dest='coverage',
+                    help='Filter results based on coverage.')
+        parser.add_argument('--min_read_length', dest='min_read_length',
+                    help='Filter results based on minimum read length.')
+        parser.add_argument('--max_read_length', dest='max_read_length',
+                    help='Filter results based on maximum read length.')
+        parser.add_argument('--experiment', dest='experiment',
+                    help='Filter results based on experiment accession.')
+        parser.add_argument('--study', dest='study',
+                    help='Filter results based on study accession.')
+        parser.add_argument('--column', dest='column',
+                    help='Filter results based on specific column.')
+        parser.add_argument('--accessions', dest='accessions',
                     help=('Filter results based on accessions specific to a'
-                          ' column.')),
-    )
+                          ' column.'))
 
-    def handle(self, *args, **opts):
+    def handle(self, *args, **options):
         # Required Parameters
-        if not opts['limit']:
-            opts['limit'] = 10 ** 11
-        if not opts['coverage']:
-            opts['coverage'] = 0
-        if not opts['min_read_length']:
-            opts['min_read_length'] = 0
-        if not opts['max_read_length']:
-            opts['max_read_length'] = 10 ** 11
-        if not opts['experiment']:
-            opts['experiment'] = None
+        if not options['limit']:
+            options['limit'] = 10 ** 11
+        if not options['coverage']:
+            options['coverage'] = 0
+        if not options['min_read_length']:
+            options['min_read_length'] = 0
+        if not options['max_read_length']:
+            options['max_read_length'] = 10 ** 11
+        if not options['experiment']:
+            options['experiment'] = None
 
 
         # ENA to Sample
@@ -65,20 +65,20 @@ class Command(BaseCommand):
 
         # Get Experiments not in ToSample
         ena_entries = None
-        if opts['experiment']:
+        if options['experiment']:
             ena_entries = Experiment.objects.exclude(
                 experiment_accession__in=ena_to_sample,
-            ).filter(experiment_accession=opts['experiment'])
-        elif opts['study']:
+            ).filter(experiment_accession=options['experiment'])
+        elif options['study']:
             ena_entries = Experiment.objects.exclude(
                 experiment_accession__in=ena_to_sample,
-            ).filter(study_accession=opts['study'])
-        elif opts['technology']:
+            ).filter(study_accession=options['study'])
+        elif options['technology']:
             ena_entries = Experiment.objects.exclude(
                 experiment_accession__in=ena_to_sample,
-            ).filter(instrument_platform=opts['technology'])
-        elif opts['column'] and opts['accessions']:
-            with open(opts['accessions'], 'r') as fh:
+            ).filter(instrument_platform=options['technology'])
+        elif options['column'] and options['accessions']:
+            with open(options['accessions'], 'r') as fh:
                 accessions = []
                 for line in fh:
                     accessions.append(line.rstrip())
@@ -96,19 +96,19 @@ class Command(BaseCommand):
         # Get Run info
         to_process = {}
         for entry in ena_entries:
-            if len(to_process) >= int(opts['limit']):
+            if len(to_process) >= int(options['limit']):
                 break
             else:
                 ena_runs = Run.objects.filter(
                     experiment_accession=entry.experiment_accession,
                     mean_read_length__range=(
-                        opts['min_read_length'],
-                        opts['max_read_length']
+                        options['min_read_length'],
+                        options['max_read_length']
                     )
                 )
                 if ena_runs.count() > 0:
                     coverage = sum([float(r.coverage) for r in ena_runs])
-                    if coverage > float(opts['coverage']):
+                    if coverage > float(options['coverage']):
                         to_process[entry.experiment_accession] = {}
                         for run in ena_runs:
                             to_process[entry.experiment_accession][run.run_accession] = {

@@ -101,8 +101,4 @@ class Migration(migrations.Migration):
             name='study_accession',
             field=models.ForeignKey(db_column=b'study_accession', on_delete=django.db.models.deletion.CASCADE, to='ena.Study'),
         ),
-        migrations.AlterUniqueTogether(
-            name='tosample',
-            unique_together=set([('experiment_accession', 'sample')]),
-        ),
     ]

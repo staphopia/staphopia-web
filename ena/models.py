@@ -5,15 +5,14 @@ from sample.models import Sample, Publication
 
 
 class ToSample(models.Model):
-    """Linking table between ENA and Staphopia."""
+    """Keep track of processed genomes."""
 
-    experiment_accession = models.ForeignKey('Experiment',
+    experiment_accession = models.OneToOneField('Experiment',
                                              db_column='experiment_accession',
                                              on_delete=models.CASCADE)
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('experiment_accession', 'sample')
+    server = models.TextField()
+    path = models.TextField()
+    status = models.TextField()
 
 
 class Study(models.Model):

@@ -11,7 +11,7 @@ from ena.models import (
 @admin.register(ToSample)
 class ToSampleAdmin(admin.ModelAdmin):
     list_display = (
-        'experiment_accession', 'sample'
+        'experiment_accession', 'server', 'status'
     )
 
 
