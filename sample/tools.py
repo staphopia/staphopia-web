@@ -12,7 +12,8 @@ from django.core.management.base import CommandError
 from sample.models import Sample, Program, Tag
 
 
-def test_files(directory, sample_tag, files, optional=False):
+def test_files(directory, sample_tag, files, optional=False,
+               print_incomplete=False):
     """Read a dict of files, and test if they exist."""
     missing = []
     full_path = {}
@@ -27,12 +28,19 @@ def test_files(directory, sample_tag, files, optional=False):
         else:
             missing.append(file)
 
-    if len(missing) and not optional:
-        raise CommandError(
-            'One or required files are missing.\nMissing Files...\n{0}'.format(
-                '\n'.join(missing)
+    if len(missing):
+        if not optional:
+            raise CommandError(
+                'Required files are missing.\nMissing Files...\n{0}'.format(
+                    '\n'.join(missing)
+                )
             )
-        )
+        else:
+            if print_incomplete:
+                print('{0}, missing files...'.format(sample_tag))
+                for line in missing:
+                    print('\t{0}'.format(line))
+            return None
     else:
         return full_path
 
@@ -52,7 +60,8 @@ def validate_time(directory):
     )
 
 
-def validate_analysis(directory, sample_tag):
+def validate_analysis(directory, sample_tag, optional=False,
+                      print_incomplete=False):
     """Test if required files exist."""
     return test_files('{0}/analyses'.format(directory), sample_tag, {
         # FASTQ
@@ -99,7 +108,7 @@ def validate_analysis(directory, sample_tag):
 
         # Kmers
         'kmers': '{0}/kmer/{1}.jf',
-    })
+    }, optional=optional, print_incomplete=print_incomplete)
 
 
 def get_sample(db_tag):
