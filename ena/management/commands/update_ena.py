@@ -171,9 +171,14 @@ class Command(BaseCommand):
                             'library_strategy': c['library_strategy'],
                             'library_selection': c['library_selection'],
                             'center_name': c['center_name'],
+                            'coverage': '0'
                         }
 
                     if c['run_accession'] not in self.ena_runs:
+                        self.ena_exps[c['experiment_accession']]['coverage'] = '{0:.2f}'.format(
+                            float(self.ena_exps[c['experiment_accession']]['coverage']) + coverage
+                        )
+
                         self.ena_runs[c['run_accession']] = {
                             'experiment_accession': Experiment(
                                 experiment_accession=c['experiment_accession']

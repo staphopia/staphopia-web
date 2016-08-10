@@ -44,6 +44,8 @@ class Experiment(models.Model):
     library_strategy = models.TextField()
     library_selection = models.TextField()
     center_name = models.TextField()
+    coverage = models.DecimalField(db_index=True, max_digits=10,
+                                   decimal_places=2, default=0)
 
 
 class Run(models.Model):
