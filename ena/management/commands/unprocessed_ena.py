@@ -6,7 +6,7 @@ except ImportError:
 
 from django.core.management.base import BaseCommand
 
-from ena.models import Experiment, Run, ToSample
+from ena.models import Experiment, Run, ToSample, ToPublication
 
 
 class Command(BaseCommand):
@@ -17,7 +17,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         """Command line arguements."""
         parser.add_argument(
-            '--limit', dest='limit',
+            '--limit', dest='limit', type=int, default=10 ** 11,
             help='Limit the number of experiments to output.'
         )
         parser.add_argument(
@@ -25,21 +25,21 @@ class Command(BaseCommand):
             help=('Filter results by a certain technology. (ILLUMINA, '
                   'LS454, PACBIO_SMRT, ION_TORRENT, ABI_SOLID)')
         )
-        parser.add_argument('--coverage', dest='coverage',
+        parser.add_argument('--coverage', dest='coverage', type=int, default=0,
                             help='Filter results based on coverage.')
         parser.add_argument(
-            '--min_read_length', dest='min_read_length',
+            '--min_read_length', dest='min_read_length', type=int, default=0,
             help='Filter results based on minimum read length.'
         )
         parser.add_argument(
-            '--max_read_length', dest='max_read_length',
-            help='Filter results based on maximum read length.'
+            '--max_read_length', dest='max_read_length', default=10 ** 11,
+            type=int, help='Filter results based on maximum read length.'
         )
         parser.add_argument(
             '--experiment', dest='experiment',
             help='Filter results based on experiment accession.'
         )
-        parser.add_argument('--study', dest='study',
+        parser.add_argument('--study', dest='study', type=str, default=None,
                             help='Filter results based on study accession.')
         parser.add_argument('--column', dest='column',
                             help='Filter results based on specific column.')
@@ -48,20 +48,13 @@ class Command(BaseCommand):
             help=('Filter results based on accessions specific to a'
                   ' column.')
         )
+        parser.add_argument(
+            '--published', dest='published', action='store_true',
+            help='Filter results based on published samples'
+        )
 
     def handle(self, *args, **options):
-        # Required Parameters
-        if not options['limit']:
-            options['limit'] = 10 ** 11
-        if not options['coverage']:
-            options['coverage'] = 0
-        if not options['min_read_length']:
-            options['min_read_length'] = 0
-        if not options['max_read_length']:
-            options['max_read_length'] = 10 ** 11
-        if not options['experiment']:
-            options['experiment'] = None
-
+        """Get unproccessed samples."""
         # ENA to Sample
         ena_to_sample = ToSample.objects.values_list(
             'experiment_accession', flat=True
@@ -93,33 +86,45 @@ class Command(BaseCommand):
             )
 
         if options['technology']:
-            ena_entries = ena_entries.filter(instrument_platform=options['technology'])
+            ena_entries = ena_entries.filter(
+                instrument_platform=options['technology']
+            )
 
         if options['coverage']:
-            ena_entries = ena_entries.filter(coverage__gte=options['coverage']).order_by('coverage')
+            ena_entries = ena_entries.filter(
+                coverage__gte=options['coverage']
+            ).order_by('coverage')
+
+        if options['published']:
+            pubs = ToPublication.objects.values_list(
+                'experiment_accession', flat=True
+            ).order_by('experiment_accession')
+            ena_entries = ena_entries.filter(
+                experiment_accession__in=list(pubs)
+            )
 
         # Get Run info
         to_process = {}
-        for entry in ena_entries:
+        for e in ena_entries:
             if len(to_process) >= int(options['limit']):
                 break
             else:
                 ena_runs = Run.objects.filter(
-                    experiment_accession=entry.experiment_accession,
+                    experiment_accession=e.experiment_accession,
                     mean_read_length__range=(
                         options['min_read_length'],
                         options['max_read_length']
                     )
                 )
                 if ena_runs.count() > 0:
-                    to_process[entry.experiment_accession] = {}
-                    for run in ena_runs:
-                        to_process[entry.experiment_accession][run.run_accession] = {
-                            'is_paired': run.is_paired,
-                            'technology': entry.instrument_platform,
-                            'coverage': entry.coverage,
-                            'fastq_ftp': run.fastq_ftp.split(';'),
-                            'fastq_aspera': run.fastq_aspera.split(';'),
-                            'fastq_md5': run.fastq_md5.split(';')
+                    to_process[e.experiment_accession] = {}
+                    for r in ena_runs:
+                        to_process[e.experiment_accession][r.run_accession] = {
+                            'is_paired': r.is_paired,
+                            'technology': e.instrument_platform,
+                            'coverage': e.coverage,
+                            'fastq_ftp': r.fastq_ftp.split(';'),
+                            'fastq_aspera': r.fastq_aspera.split(';'),
+                            'fastq_md5': r.fastq_md5.split(';')
                         }
-        print json.dumps(to_process)
+        print(json.dumps(to_process))
