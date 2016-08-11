@@ -4,8 +4,8 @@ from staphopia.settings.private import DEV_PASS
 '''----------------------------------------------------------------------------
 SECURITY WARNING: don't run with debug turned on in production!
 ----------------------------------------------------------------------------'''
-DEBUG = True
-TEMPLATE_DEBUG = True
+DEBUG = False
+TEMPLATE_DEBUG = False
 ALLOWED_HOSTS = ['*']
 
 
@@ -19,28 +19,24 @@ DATABASES = {
         'NAME': 'staphopia',
         'USER': 'staphopia',
         'PASSWORD': DEV_PASS,
-        'HOST': 'staphopia.cpphjf4vstco.us-east-1.rds.amazonaws.com',
-        'PORT': '30022',
+        'HOST': 'staphopia.emory.edu',
+        'PORT': '29466',
     }
 }
 
-
 '''----------------------------------------------------------------------------
-Static files via Amazon S3 (CSS, JavaScript, Images)
+Static files (CSS, JavaScript, Images)
 https://docs.djangoproject.com/en/1.6/howto/static-files/
 ----------------------------------------------------------------------------'''
-#INSTALLED_APPS += ('storages',)
-#AWS_STORAGE_BUCKET_NAME = "staphopia-django"
-#STATICFILES_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
-#S3_URL = 'http://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
-#STATIC_URL = S3_URL
 STATIC_URL = '/static/'
+
 SITE_ID = 1
 SITE_ENV = 'www'
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_EXEMPT_URLS = (
-    r'^.*$',
+    r'^accounts/login/',
+    r'^',
 )
 
 GOOGLE_ANALYTICS_PROPERTY_ID = 'UA-37140301-1'
