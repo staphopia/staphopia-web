@@ -109,7 +109,7 @@ class Command(BaseCommand):
             )
 
     @timeit
-    def get_positions(self, input):
+    def get_positions(self):
         self.positions = [record.POS for record in self.records]
 
     @timeit

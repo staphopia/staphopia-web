@@ -5,12 +5,11 @@ These are models to store information on the MLST calls for Staphopia samples.
 """
 from django.db import models
 
-from sample.models import MetaData
+from sample.models import Sample
 
 
 class SequenceTypes(models.Model):
-
-    """ Sequence type mappings from MLST database. """
+    """Sequence type mappings from MLST database."""
 
     st = models.PositiveIntegerField(unique=True)
     arcc = models.PositiveIntegerField()
@@ -24,10 +23,9 @@ class SequenceTypes(models.Model):
 
 
 class Blast(models.Model):
+    """Blast results from contigs against MLST loci."""
 
-    """ Blast results from contigs against MLST loci. """
-
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     locus_name = models.CharField(max_length=4)
     locus_id = models.PositiveSmallIntegerField()
     bitscore = models.PositiveSmallIntegerField()
@@ -42,17 +40,16 @@ class Blast(models.Model):
         unique_together = ('sample', 'locus_name', 'locus_id')
 
     def sample_tag(self):
-        """ Display sample tag in admin view. """
+        """Display sample tag in admin view."""
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'mlst'
 
 
 class Srst2(models.Model):
+    """SRST2 results from mapping of FASTQ files."""
 
-    """ SRST2 results from mapping of FASTQ files. """
-
-    sample = models.OneToOneField(MetaData, on_delete=models.CASCADE)
+    sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
     st_original = models.TextField()
     st_stripped = models.PositiveIntegerField(default=0, db_index=True)
     is_exact = models.BooleanField(default=False, db_index=True)
@@ -69,7 +66,7 @@ class Srst2(models.Model):
     maxMAF = models.DecimalField(max_digits=11, decimal_places=7)
 
     def sample_tag(self):
-        """ Display sample tag in admin view. """
+        """Display sample tag in admin view."""
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'mlst'

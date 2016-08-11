@@ -1,7 +1,7 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import url
 
 from autofill import views
- 
-urlpatterns = patterns('',
-    url(r'^$', views.index, name='index')
-)
+
+urlpatterns = [
+    url(r'^$', views.index, name='home')
+]

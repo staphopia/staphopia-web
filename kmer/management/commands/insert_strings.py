@@ -37,20 +37,19 @@ class Command(BaseCommand):
                 line = line.strip()
                 count, kmer = line.split(' ')
 
-                self.kmers.append(kmer)
-                self.total += 1
-
-                if int(count) == 1:
+                # Lets skip singletons for now!
+                if int(count) > 1:
+                    self.kmers.append(kmer)
+                    self.total += 1
+                    # Process every 100k kmers
+                    if self.total % 100000 == 0:
+                        self.process_kmers()
+                elif int(count) == 1:
                     self.singleton += 1
-
-                # Process every 100k kmers
-                if self.total % 100000 == 0:
-                    self.process_kmers()
 
         # Process the remaining kmers
         self.process_kmers()
 
-    @timeit
     def process_kmers(self):
         String.objects.insert_into_partitions(self.kmers)
         self.progress_time = float(time.time() - self.progress_time)

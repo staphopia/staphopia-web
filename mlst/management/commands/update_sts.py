@@ -1,4 +1,4 @@
-""" Update S. aureus sequence types. """
+"""Update S. aureus sequence types."""
 import urllib2
 
 from django.core.mail import EmailMessage
@@ -9,14 +9,13 @@ from mlst.models import SequenceTypes
 
 
 class Command(BaseCommand):
-
-    """ Update S. aureus sequence types. """
+    """Update S. aureus sequence types."""
 
     help = 'Update S. aureus sequence types.'
 
     @transaction.atomic
     def handle(self, *args, **opts):
-        """ Update S. aureus sequence types. """
+        """Update S. aureus sequence types."""
         data = urllib2.urlopen("http://pubmlst.org/data/profiles/saureus.txt")
 
         if data is not None:
@@ -25,8 +24,7 @@ class Command(BaseCommand):
                 line = line.rstrip()
                 cols = line.split('\t')
                 if cols[0] == 'ST':
-                    column_names = [c.replace('_', '') for c in cols]
-                    column_names[0] = 'st'
+                    column_names = [c.lower() for c in cols]
                 else:
                     st, created = SequenceTypes.objects.update_or_create(**{
                         column_names[0]: cols[0],
@@ -38,7 +36,7 @@ class Command(BaseCommand):
                         column_names[6]: cols[6],
                         column_names[7]: cols[7],
                     })
-            print 'Total STs: {0}'.format(SequenceTypes.objects.count())
+            print('Total STs: {0}'.format(SequenceTypes.objects.count()))
 
             # Email Admin with Update
             labrat = "Staphopia's Friendly Robot <usa300@staphopia.com>"

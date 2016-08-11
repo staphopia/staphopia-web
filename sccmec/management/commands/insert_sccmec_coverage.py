@@ -1,100 +1,60 @@
-""" Insert SCCmec cassette coverage into database. """
-import numpy
-import os.path
+"""Insert the results of sample analysis into the database."""
 
-from django.db import transaction
-from django.db.utils import IntegrityError
+import json
 from django.core.management.base import BaseCommand, CommandError
 
-from sample.models import MetaData
-from sccmec.models import Cassette, Coverage
-from staphopia.utils import gziplines
+from staphopia.utils import md5sum
+from sample.models import Sample
+from sample.tools import validate_analysis
+from sccmec.tools import insert_sccmec_coverage, insert_sccmec_blast
 
 
 class Command(BaseCommand):
+    """Insert the results of sample analysis into the database."""
 
-    """ Insert results into database. """
-
-    help = 'Insert SCCmec cassette coverage into database.'
+    help = 'Insert the results of sample analysis into the database.'
 
     def add_arguments(self, parser):
-        """ Make some arguements. """
+        """Command line arguements."""
+        parser.add_argument('sample_dir', metavar='SAMPLE_DIRECTORY',
+                            help=('User name for the owner of the sample.'))
         parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
-                            help='Sample tag of the data.')
-        parser.add_argument('coverage', metavar='COVERAGE',
-                            help='Gzipped GenomeBedCoverage output file.')
+                            help=('Sample tag associated with sample.'))
+        parser.add_argument('--force', action='store_true',
+                            help='Force updates for existing entries.')
 
-    @transaction.atomic
     def handle(self, *args, **opts):
-        """ Insert results to database. """
-        if not os.path.exists(opts['coverage']):
-            raise CommandError('{0} does not exist'.format(opts['coverage']))
+        """Insert the results of sample analysis into the database."""
+        # Validate all files are present
+        print("Validating required files are present...")
+        files = validate_analysis(opts['sample_dir'], opts['sample_tag'])
+        fq_md5sum = md5sum('{0}/{1}.cleanup.fastq.gz'.format(
+            opts['sample_dir'], opts['sample_tag']
+        ))
 
-        # Sample (sample.MetaData)
+        # Test if results already inserted
+        sample = None
         try:
-            sample = MetaData.objects.get(sample_tag=opts['sample_tag'])
-        except MetaData.DoesNotExist:
-            raise CommandError('sample_tag: {0} does not exist'.format(
-                opts['sample_tag']
+            sample = Sample.objects.get(md5sum=fq_md5sum)
+            print("Found existing sample: {0} ({1})".format(
+                sample.db_tag, sample.md5sum
             ))
+        except Sample.DoesNotExist:
+            # Create new sample
+            raise CommandError('Sample should already exist.')
 
-        sccmec = {}
-        for line in gziplines(opts['coverage']):
-            line = line.rstrip()
-            header, base, coverage = line.split('\t')
+        # Insert analysis results
+        print("Inserting SCCmec Coverage Stats...")
+        insert_sccmec_coverage(files['sccmec_coverage'], sample,
+                               force=opts['force'])
+        insert_sccmec_blast(files['sccmec_primers'], sample, is_primers=True,
+                            force=opts['force'])
+        insert_sccmec_blast(files['sccmec_proteins'], sample, is_primers=False,
+                            force=opts['force'])
 
-            if header not in sccmec:
-                sccmec[header] = {
-                    'coverage': [],
-                    'total': 0
-                }
-
-            if int(coverage):
-                sccmec[header]['total'] += 1
-
-            sccmec[header]['coverage'].append(int(coverage))
-
-        for mec_type, stats in sccmec.items():
-            np_array = numpy.array(stats['coverage'])
-
-            cassette = Cassette.objects.get(header=mec_type)
-            total = float(stats['total']) / cassette.length
-
-            # mecA related
-            start = cassette.meca_start - 1
-            stop = cassette.meca_stop - 1
-            meca_total = 0
-            meca = sccmec[header]['coverage'][start:stop]
-            for pos in meca:
-                if int(pos):
-                    meca_total += 1
-
-            try:
-                meca_total = float(meca_total) / cassette.meca_length
-                meca_array = numpy.array(meca)
-            except:
-                meca_total = 0.00
-                meca_array = None
-
-            try:
-                coverage, created = Coverage.objects.get_or_create(
-                    sample=sample,
-                    cassette=cassette,
-                    total=float('{0:.2f}'.format(total)),
-                    minimum=min(stats['coverage']),
-                    median=numpy.median(np_array),
-                    mean=float('{0:.2f}'.format(numpy.mean(np_array))),
-                    maximum=max(stats['coverage']),
-                    # mecA
-                    meca_total=float('{0:.2f}'.format(meca_total)),
-                    meca_minimum=min(meca) if meca else 0,
-                    meca_median=numpy.median(meca_array) if meca else 0,
-                    meca_mean=float(
-                        '{0:.2f}'.format(numpy.mean(meca_array))
-                    ) if meca else 0.0,
-                    meca_maximum=max(meca) if meca else 0
-                )
-            except IntegrityError:
-                created = False
-
-            print '{0}\t{1}\t{2}'.format(sample.sample_tag, mec_type, created)
+        print(json.dumps({
+            'sample_id': sample.pk,
+            'db_tag': sample.db_tag,
+            'sample_tag': sample.sample_tag,
+            'is_paired': sample.is_paired,
+        }))

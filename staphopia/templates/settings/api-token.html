@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load settings %}
+
+{% block container %}
+    <div class="row">
+        {% include "settings/sidebar.html" %}
+
+        <div class="col-sm-9 col-md-10">
+            <div class="row">
+                <div>
+                    <h3>Staphopia API Token</h3>
+                    <hr />
+                </div>
+            </div>
+            <div class="row">
+                <div>
+                    {% get_token request.user as token %}
+                    <p class="indent">
+                        TOKEN = {{ token }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

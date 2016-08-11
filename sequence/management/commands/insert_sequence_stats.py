@@ -1,91 +1,58 @@
-""" Insert JSON formatted analysis results into database. """
-import json
-import os.path
+"""Insert the results of sample analysis into the database."""
 
-from django.db import transaction
-from django.db.utils import IntegrityError
+import json
 from django.core.management.base import BaseCommand, CommandError
 
-from sample.models import MetaData
-from sequence.models import Quality
+from staphopia.utils import md5sum
+from sample.models import Sample
+from sample.tools import validate_analysis
+from sequence.tools import insert_fastq_stats
 
 
 class Command(BaseCommand):
-    """ Insert results into database. """
-    help = 'Insert the analysis results into the database.'
+    """Insert the results of sample analysis into the database."""
+
+    help = 'Insert the results of sample analysis into the database.'
 
     def add_arguments(self, parser):
+        """Command line arguements."""
+        parser.add_argument('sample_dir', metavar='SAMPLE_DIRECTORY',
+                            help=('User name for the owner of the sample.'))
         parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
-                            help='Sample tag of the data.')
-        parser.add_argument('table', metavar='TABLE',
-                            help=('Table (original or cleanup) to '
-                                  'insert data into.'))
-        parser.add_argument('input', metavar='JSON_INPUT',
-                            help='JSON formated file to be inserted')
+                            help=('Sample tag associated with sample.'))
+        parser.add_argument('--force', action='store_true',
+                            help='Force updates for existing entries.')
 
-    @transaction.atomic
     def handle(self, *args, **opts):
-        """ Insert results to database. """
+        """Insert the results of sample analysis into the database."""
+        # Validate all files are present
+        print("Validating required files are present...")
+        files = validate_analysis(opts['sample_dir'], opts['sample_tag'])
+        fq_md5sum = md5sum('{0}/{1}.cleanup.fastq.gz'.format(
+            opts['sample_dir'], opts['sample_tag']
+        ))
 
-        # Sample (sample.MetaData)
+        # Test if results already inserted
+        sample = None
         try:
-            sample = MetaData.objects.get(sample_tag=opts['sample_tag'])
-        except MetaData.DoesNotExist:
-            raise CommandError('sample_tag: {0} does not exist'.format(
-                opts['sample_tag']
+            sample = Sample.objects.get(md5sum=fq_md5sum)
+            print("Found existing sample: {0} ({1})".format(
+                sample.db_tag, sample.md5sum
             ))
+        except Sample.DoesNotExist:
+            # Create new sample
+            raise CommandError('Sample should already exist.')
 
-        # Database Table
-        accepted_tables = ['original', 'cleanup']
-        if opts['table'] not in accepted_tables:
-            raise CommandError(
-                'Unknown table: {0}. Use one of the following: {1}'.format(
-                    opts['table'],
-                    ', '.join(accepted_tables)
-                )
-            )
+        # Insert analysis results
+        print("Inserting Sequence Stats...")
+        insert_fastq_stats(files['stats_filter'], sample, is_original=False,
+                           force=opts['force'])
+        insert_fastq_stats(files['stats_original'], sample, is_original=True,
+                           force=opts['force'])
 
-        # Input File
-        if not os.path.exists(opts['input']):
-            raise CommandError('{0} does not exist'.format(opts['input']))
-
-        # JSON input
-        try:
-            with open(opts['input'], 'r') as f:
-                json_data = json.loads(f.readline().rstrip())
-        except ValueError as e:
-            raise CommandError('{0}: invalid JSON'.format(opts['input']))
-
-        # Everything checks out, load it up
-
-        try:
-            is_original = False if opts['table'] == 'cleanup' else True
-            table_object = Quality(
-                sample=sample,
-                is_original=is_original,
-                rank=self.get_rank(json_data),
-                **json_data
-            )
-            table_object.save()
-            print 'Saved results'
-        except IntegrityError as e:
-            raise CommandError(
-                ('{0}. Either the data is already in there or the pipeline '
-                 'version should be updated.').format(e)
-            )
-
-    def get_rank(self, data):
-        """
-        Determine the rank of the reads.
-
-        3: Gold, 2: Silver, 1: Bronze
-        """
-        if data['mean_read_length'] >= 95:
-            if data['coverage'] >= 45 and data['qual_mean'] >= 30:
-                return 3
-            elif data['coverage'] >= 20 and data['qual_mean'] >= 20:
-                return 2
-            else:
-                return 1
-        else:
-            return 1
+        print(json.dumps({
+            'sample_id': sample.pk,
+            'db_tag': sample.db_tag,
+            'sample_tag': sample.sample_tag,
+            'is_paired': sample.is_paired,
+        }))

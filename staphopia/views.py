@@ -10,7 +10,7 @@ def index(request):
 
 
 def account_settings(request):
-    return render_to_response('accounts/settings.html', {},
+    return render_to_response('settings/settings.html', {},
                               RequestContext(request))
 
 

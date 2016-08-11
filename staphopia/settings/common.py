@@ -1,4 +1,4 @@
-'''
+"""
 Django settings for staphopia project.
 
 For more information on this file, see
@@ -6,7 +6,7 @@ https://docs.djangoproject.com/en/1.6/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
-'''
+"""
 import os
 
 from staphopia.settings.private import *
@@ -22,9 +22,12 @@ Applications
 ----------------------------------------------------------------------------'''
 INSTALLED_APPS = (
     'rest_framework',
+    'rest_framework.authtoken',
 
     'django.contrib.sites',
     'django.contrib.admin',
+    'registration',
+    'django_email_changer',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.humanize',
@@ -32,9 +35,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
 
-    'registration',
     'crispy_forms',
-    'django_email_changer',
     'django_extensions',
     'django_datatables_view',
 
@@ -50,7 +51,7 @@ INSTALLED_APPS = (
     'variant',
     'kmer',
     'resistance',
-    'sccmec'
+    'sccmec',
 )
 
 # django-registration
@@ -73,9 +74,25 @@ REST_FRAMEWORK = {
     # 'DEFAULT_PERMISSION_CLASSES': [
     #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
     # ],
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication'
+    ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/day',
+        'user': '10000/day'
+    },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGINATE_BY': 25
+    'PAGE_SIZE': 100
 }
+MAX_IDS_PER_QUERY = 5000
 
 '''----------------------------------------------------------------------------
 Middleware
@@ -93,9 +110,7 @@ MIDDLEWARE_CLASSES = (
 '''----------------------------------------------------------------------------
 Static
 ----------------------------------------------------------------------------'''
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
-)
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -105,21 +120,23 @@ STATICFILES_FINDERS = (
 '''----------------------------------------------------------------------------
 Template
 ----------------------------------------------------------------------------'''
-TEMPLATE_DIRS = (
-    os.path.join(BASE_DIR, "templates"),
-)
-
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-)
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.core.context_processors.request',
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.request',
-    'staphopia.context_processors.google_analytics',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'staphopia.context_processors.google_analytics',
+            ],
+            'loaders':[
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ],
+        },
+    },
+]
 
 '''----------------------------------------------------------------------------
 Staphopia

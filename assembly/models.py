@@ -6,19 +6,32 @@ samples.
 """
 from django.db import models
 
-from sample.models import MetaData
+from sample.models import Sample
+
+
+# Create partition every 5 million records
+class Contigs(models.Model):
+    """Assembled contigs for each sample renamed by PROKKA."""
+
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    is_plasmids = models.BooleanField(default=False, db_index=True)
+    name = models.TextField(db_index=True)
+    sequence = models.TextField()
+
+    class Meta:
+        unique_together = ('sample', 'is_plasmids', 'name')
 
 
 class Stats(models.Model):
-
     """
     Statistics of the assembled genome.
 
     Both contigs and scaffolds are stored.
     """
 
-    sample = models.ForeignKey(MetaData, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     is_scaffolds = models.BooleanField(default=False, db_index=True)
+    is_plasmids = models.BooleanField(default=False, db_index=True)
 
     total_contig = models.PositiveSmallIntegerField()
     total_contig_length = models.PositiveIntegerField()
@@ -38,28 +51,28 @@ class Stats(models.Model):
     contigs_greater_100k = models.PositiveSmallIntegerField()
     contigs_greater_1m = models.PositiveSmallIntegerField()
 
-    percent_contigs_greater_1k = models.DecimalField(max_digits=4,
+    percent_contigs_greater_1k = models.DecimalField(max_digits=5,
                                                      decimal_places=2)
-    percent_contigs_greater_10k = models.DecimalField(max_digits=4,
+    percent_contigs_greater_10k = models.DecimalField(max_digits=5,
                                                       decimal_places=2)
-    percent_contigs_greater_100k = models.DecimalField(max_digits=4,
+    percent_contigs_greater_100k = models.DecimalField(max_digits=5,
                                                        decimal_places=2)
-    percent_contigs_greater_1m = models.DecimalField(max_digits=4,
+    percent_contigs_greater_1m = models.DecimalField(max_digits=5,
                                                      decimal_places=2)
 
-    contig_percent_a = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_percent_t = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_percent_g = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_percent_c = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_percent_n = models.DecimalField(max_digits=4, decimal_places=2)
-    contig_non_acgtn = models.DecimalField(max_digits=4, decimal_places=2)
+    contig_percent_a = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_percent_t = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_percent_g = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_percent_c = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_percent_n = models.DecimalField(max_digits=5, decimal_places=2)
+    contig_non_acgtn = models.DecimalField(max_digits=5, decimal_places=2)
     num_contig_non_acgtn = models.PositiveSmallIntegerField()
 
     class Meta:
-        unique_together = ('sample', 'is_scaffolds')
+        unique_together = ('sample', 'is_plasmids', 'is_scaffolds')
 
     def sample_tag(self):
-        """ Display sample tag in admin view. """
+        """Display sample tag in admin view."""
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'sample'

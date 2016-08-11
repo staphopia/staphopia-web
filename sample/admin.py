@@ -1,10 +1,12 @@
 from django.contrib import admin
 
-from sample.models import MetaData, SampleSummary
+from sample.models import Sample, SampleSummary
 
 
-@admin.register(MetaData)
+@admin.register(Sample)
 class SampleAdmin(admin.ModelAdmin):
+    pass
+    """
     list_display = (
         'user',
         'sample_tag',
@@ -56,6 +58,7 @@ class SampleAdmin(admin.ModelAdmin):
         'trimethoprim_mic',
         'source'
     )
+    """
 
 
 @admin.register(SampleSummary)
