@@ -59,7 +59,7 @@ def __get_rank(data):
     3: Gold, 2: Silver, 1: Bronze
     """
     if data['read_mean'] >= 95:
-        if data['coverage'] >= 50 and data['qual_mean'] >= 30:
+        if data['coverage'] >= 100 and data['qual_mean'] >= 30:
             return 3
         elif data['coverage'] >= 20 and data['qual_mean'] >= 20:
             return 2

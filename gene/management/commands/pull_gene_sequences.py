@@ -2,9 +2,11 @@
 from django.db import transaction
 from django.core.management.base import BaseCommand
 
-from ena.models import Publication
+from ena.models import ToPublication
 from gene.models import Clusters, Features
-from sample.models import SampleSummary
+from mlst.models import Srst2
+from sample.models import Sample, Publication
+from sequence.models import Stat
 
 
 class Command(BaseCommand):
@@ -25,12 +27,15 @@ class Command(BaseCommand):
                             help='Include all ranks, not just gold.')
         parser.add_argument('--unpublished', action='store_true',
                             help='Include unpublished samples as well.')
+        parser.add_argument('--limit', dest='limit', type=int,
+                            help='Limit the number of experiments to output.')
 
     @transaction.atomic
     def handle(self, *args, **opts):
         """Pull a list of gene sequences for each published sample."""
         min_rank = 0 if opts['all_ranks'] else 3
-        samples = self.get_samples(not opts['unpublished'])
+        samples = self.get_samples(not opts['unpublished'],
+                                   limit=opts['limit'])
         accessions = {}
         with open(opts['gene_list'], 'r') as fh:
             """
@@ -40,6 +45,8 @@ class Command(BaseCommand):
             2:Cluster name    5:Organisms
             """
             for line in fh:
+                if line.startswith("Cluster ID"):
+                    continue
                 cols = line.rstrip().split('\t')
                 accessions[cols[0]] = {
                     'name': cols[2],
@@ -63,8 +70,9 @@ class Command(BaseCommand):
                     c.name, val['name'], val['status'],
                 )
                 self.write_fasta(uniref90_faa, uniref_header, c.aa)
-                print("Searching for {0}".format(accession))
+                print("{0} processing".format(accession))
                 for f in self.get_features(c, not opts['unpublished']):
+                    print("\t{0} hit, writing to fasta".format(f.sample.sample_tag))
                     sample = samples[f.sample_id]
                     if (self.test_rank(sample['rank'], min_rank)):
                         hits_txt.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(
@@ -102,41 +110,42 @@ class Command(BaseCommand):
 
     def test_rank(self, rank, min_rank):
         """Test if given rank is above the minimum rank to print."""
-        rank_value = None
-        if rank == 'Gold':
-            rank_value = 3
-        elif rank == "Silver":
-            rank_value = 2
-        elif rank == "Bronze":
-            rank_value = 1
+        return rank >= min_rank
 
-        return rank_value >= min_rank
-
-    def get_samples(self, is_published):
+    def get_samples(self, is_published, limit=None):
         """Get a list of sample ids that have been published."""
         samples = {}
-        columns = ['id', 'sample_tag', 'rank', 'st_stripped', 'is_exact']
         if is_published:
-            query_set = SampleSummary.objects.filter(
-                            is_published=is_published).values(*columns)
+            query_set = Sample.objects.filter(
+                is_published=is_published
+            )
         else:
-            query_set = SampleSummary.objects.filter().values(*columns)
+            query_set = SampleSummary.objects.filter()
+
+        if limit:
+            query_set = query_set[:limit]
 
         for sample in query_set:
-            samples[sample['id']] = {
-                'tag': sample['sample_tag'],
-                'rank': sample['rank'],
-                'mlst': sample['st_stripped'],
-                'is_exact': sample['is_exact']
+            mlst = Srst2.objects.get(sample=sample)
+            stat = Stat.objects.get(sample=sample, is_original=False)
+            samples[sample.id] = {
+                'tag': sample.sample_tag,
+                'rank': stat.rank,
+                'mlst': mlst.st_stripped,
+                'is_exact': mlst.is_exact
             }
         print(len(samples))
         return samples
 
+    def get_rank(self, sample):
+        return Stat.objects.filter(sample=sample, is_original=False)
+
     def get_pmids(self, tag):
         """Get associated PubMed IDs."""
         pmids = []
-        for pubmed in Publication.objects.filter(experiment_accession=tag):
-            pmids.append(pubmed.pmid)
+        for pubmed in ToPublication.objects.filter(experiment_accession=tag):
+            pub = Publication.objects.get(id=pubmed.publication_id)
+            pmids.append(pub.pmid)
         return pmids
 
     def write_fasta(self, file_handle, header, seq):

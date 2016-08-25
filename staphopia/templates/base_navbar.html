@@ -31,8 +31,6 @@
                 <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>
             </ul>
             <!-- Right Nav Section -->
-            {% site_env as env %}
-            {% if env == "dev" %}
             <ul class="nav navbar-nav navbar-right">
             {% if user.is_authenticated %}
                 <li>
@@ -61,7 +59,6 @@
                         <span class="glyphicon glyphicon-log-in"></span>
                     </a>
                 </li>
-            {% endif %}
             </ul>
             {% endif %}
         </div>

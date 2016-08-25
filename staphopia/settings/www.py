@@ -4,8 +4,7 @@ from staphopia.settings.private import DEV_PASS
 '''----------------------------------------------------------------------------
 SECURITY WARNING: don't run with debug turned on in production!
 ----------------------------------------------------------------------------'''
-DEBUG = False
-TEMPLATE_DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 
@@ -30,7 +29,7 @@ https://docs.djangoproject.com/en/1.6/howto/static-files/
 ----------------------------------------------------------------------------'''
 STATIC_URL = '/static/'
 
-SITE_ID = 1
+SITE_ID = 3
 SITE_ENV = 'www'
 
 LOGIN_URL = '/accounts/login/'

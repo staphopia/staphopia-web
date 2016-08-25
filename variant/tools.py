@@ -245,6 +245,7 @@ class Variants(object):
     @timeit
     def create_snp(self, record, reference, annotation, feature):
         """Create a new snp."""
+        print(record.POS, feature.feature)
         return SNP.objects.create(
             reference=reference,
             annotation=annotation,
@@ -270,7 +271,6 @@ class Variants(object):
             is_synonymous=record.INFO['IsSynonymous'],
             is_transition=record.INFO['IsTransition'],
             is_genic=record.INFO['IsGenic'],
-
         )
 
     def get_snps(self):

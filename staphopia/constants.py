@@ -1,2 +1,1 @@
-UNIREF50 = ("/home/staphopia/analysis-pipeline/data/annotation/"
-            "uniref50-bacteria.tab")
+UNIREF50 = "/staphopia/apps/analysis-pipeline/data/annotation/uniref50-bacteria.tab"

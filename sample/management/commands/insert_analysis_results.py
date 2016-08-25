@@ -43,6 +43,8 @@ class Command(BaseCommand):
                             help='Sample contains paired reads.')
         parser.add_argument('--is_public', action='store_true',
                             help='Sample should be made public.')
+        parser.add_argument('--is_published', action='store_true',
+                            help='Sample is published.')
         parser.add_argument('--runtime', action='store_true',
                             help='Insert runtimes as well.')
         parser.add_argument('--force', action='store_true',
@@ -83,7 +85,8 @@ class Command(BaseCommand):
                 Sample.objects.filter(md5sum=fq_md5sum).update(
                     sample_tag=opts['sample_tag'],
                     is_paired=opts['is_paired'],
-                    is_public=opts['is_public']
+                    is_public=opts['is_public'],
+                    is_published=opts['is_published']
                 )
         except Sample.DoesNotExist:
             # Create new sample
@@ -93,10 +96,11 @@ class Command(BaseCommand):
                     sample_tag=opts['sample_tag'],
                     md5sum=fq_md5sum,
                     is_paired=opts['is_paired'],
-                    is_public=opts['is_public']
+                    is_public=opts['is_public'],
+                    is_published=opts['is_published']
                 )
                 print("Created new sample: {0} {1}".format(sample.id,
-                                                       sample.sample_tag))
+                                                           sample.sample_tag))
             except IntegrityError as e:
                 raise CommandError(
                     'Error, unable to create Sample object. {0}'.format(e)
