@@ -24,7 +24,6 @@ from variant.models import (
     SNP,
     ToIndel,
     ToSNP,
-    Confidence,
     Counts
 )
 
@@ -62,7 +61,6 @@ class Variants(object):
         # Lists for bulk creation
         self.snps = []
         self.indels = []
-        self.confidence = []
 
         # Read through VCF
         self.read_vcf()
@@ -71,7 +69,6 @@ class Variants(object):
         """Insert variants into the database."""
         self.insert_snps()
         self.insert_indels()
-        self.insert_confidence()
         self.insert_counts()
 
     @timeit
@@ -382,22 +379,18 @@ class Variants(object):
             except AttributeError:
                 PL = ""
 
-            self.confidence.append(
-                Confidence(
-                    sample=self.sample,
-                    reference_position=record.POS,
-                    AC=str(record.INFO['AC']),
-                    AD=str(AD),
-                    AF=record.INFO['AF'][0],
-                    DP=record.INFO['DP'],
-                    GQ=GQ,
-                    GT=str(GT),
-                    MQ=record.INFO['MQ'],
-                    PL=str(PL),
-                    QD=QD,
-                    quality=record.QUAL
-                )
-            )
+            confidence = {
+                'AC':str(record.INFO['AC']),
+                'AD':str(AD),
+                'AF':record.INFO['AF'][0],
+                'DP':record.INFO['DP'],
+                'GQ':GQ,
+                'GT':str(GT),
+                'MQ':record.INFO['MQ'],
+                'PL':str(PL),
+                'QD':QD,
+                'quality':record.QUAL
+            }
 
             # Insert SNP/Indel
             if record.is_snp:
@@ -411,7 +404,8 @@ class Variants(object):
                             sample=self.sample,
                             snp_id=snp,
                             comment=comment,
-                            filters=record_filters
+                            filters=record_filters,
+                            confidence=confidence
                         )
                     )
                 except IntegrityError as e:
@@ -427,6 +421,7 @@ class Variants(object):
                             sample=self.sample,
                             indel=indel,
                             filters=record_filters,
+                            confidence=confidence
                         )
                     )
                 except IntegrityError as e:
@@ -457,19 +452,11 @@ class Variants(object):
 
     @transaction.atomic
     @timeit
-    def insert_confidence(self):
-        """Insert variant confidences in bulk."""
-        Confidence.objects.bulk_create(self.confidence, batch_size=50000)
-        return None
-
-    @transaction.atomic
-    @timeit
     def insert_counts(self):
         """Insert variant counts."""
         Counts.objects.create(
             sample=self.sample,
             snp=len(self.snps),
             indel=len(self.indels),
-            confidence=len(self.confidence)
         )
         return None

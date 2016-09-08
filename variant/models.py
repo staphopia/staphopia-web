@@ -8,6 +8,7 @@ import architect
 import os
 
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 from sample.models import Sample
 
@@ -21,6 +22,7 @@ class ToIndel(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     indel = models.ForeignKey('Indel', on_delete=models.CASCADE)
     filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
+    confidence = JSONField()
 
     class Meta:
         unique_together = ('sample', 'indel')
@@ -72,6 +74,7 @@ class ToSNP(models.Model):
     snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
     comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
     filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
+    confidence = JSONField()
 
     class Meta:
         unique_together = ('sample', 'snp')
@@ -137,33 +140,12 @@ class SNP(models.Model):
     reference_strain.admin_order_field = 'reference'
 
 
-# Create partition every 20 million records
-@architect.install('partition', type='range', subtype='integer',
-                   constraint='20000000', column='id')
-class Confidence(models.Model):
-    """INFO and Qual, fields specific to each variant."""
-
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    reference_position = models.PositiveIntegerField()
-    AC = models.TextField(default="")
-    AD = models.TextField(default="")
-    AF = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
-    DP = models.PositiveIntegerField(default=0)
-    GQ = models.PositiveIntegerField(default=0)
-    GT = models.TextField(default="")
-    MQ = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
-    PL = models.TextField(default="")
-    QD = models.DecimalField(default=0.0, max_digits=8, decimal_places=3)
-    quality = models.DecimalField(max_digits=8, decimal_places=3)
-
-
 class Counts(models.Model):
     """Counts for quick reference."""
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     snp = models.PositiveIntegerField(default=0)
     indel = models.PositiveIntegerField(default=0)
-    confidence = models.PositiveIntegerField(default=0)
 
 
 class SNPCounts(models.Model):
