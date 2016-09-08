@@ -20,7 +20,6 @@ from variant.models import (
     SNP,
     ToIndel,
     ToSNP,
-    Confidence,
     Counts
 )
 

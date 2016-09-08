@@ -5,7 +5,6 @@ from variant.models import (
     Indel,
     Annotation,
     Comment,
-    Confidence,
     Feature,
     Filter,
     Reference
@@ -30,11 +29,6 @@ class AnnotationSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
-
-
-class ConfidenceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Confidence
 
 
 class FilterSerializer(serializers.ModelSerializer):

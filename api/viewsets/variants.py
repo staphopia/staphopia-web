@@ -13,7 +13,6 @@ from variant.models import (
     ToIndel,
     Annotation,
     Comment,
-    Confidence,
     Feature,
     Filter,
     Reference
@@ -23,7 +22,6 @@ from api.serializers.variants import (
     InDelSerializer,
     AnnotationSerializer,
     CommentSerializer,
-    ConfidenceSerializer,
     FilterSerializer,
     FeatureSerializer,
     ReferenceSerializer
@@ -152,29 +150,6 @@ class CommentViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-
-
-class ConfidenceViewSet(viewsets.ReadOnlyModelViewSet):
-    """A simple ViewSet for listing or retrieving SNP."""
-
-    queryset = Confidence.objects.all()
-    serializer_class = ConfidenceSerializer
-
-    @list_route(methods=['post'])
-    def bulk(self, request):
-        """Given a list of Annotation IDs, return info for each Annotation."""
-        if request.method == 'POST':
-            validator = validate_list_of_ids(request.data)
-            if validator['has_errors']:
-                return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
-            else:
-                return Response(get_ids_in_bulk(
-                    'variant_confidence',
-                    request.data['ids']
-                ))
 
 
 class FeatureViewSet(viewsets.ReadOnlyModelViewSet):

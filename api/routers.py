@@ -40,7 +40,6 @@ from api.viewsets.variants import (
     InDelViewSet,
     AnnotationViewSet,
     CommentViewSet,
-    ConfidenceViewSet,
     FeatureViewSet,
     FilterViewSet,
     ReferenceViewSet
@@ -93,7 +92,6 @@ router.register(r'variant/snp', SNPViewSet)
 router.register(r'variant/indel', InDelViewSet)
 router.register(r'variant/annotation', AnnotationViewSet)
 router.register(r'variant/comment', CommentViewSet)
-router.register(r'variant/confidence', ConfidenceViewSet)
 router.register(r'variant/feature', FeatureViewSet)
 router.register(r'variant/filter', FilterViewSet)
 router.register(r'variant/reference', ReferenceViewSet)
