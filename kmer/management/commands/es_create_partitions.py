@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 
 from kmer.partitions import PARTITIONS
 
-ES_HOST = 'staphopia.genetics.emory.edu:9200'
+ES_HOST = 'staphopia.emory.edu:9200'
 INDEX_MAPPING = {
     "settings": {
         "number_of_shards": 5,

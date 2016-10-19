@@ -11,9 +11,9 @@ class CustomReadOnlyModelViewSet(mixins.RetrieveModelMixin,
     """
     A viewset that provides default `list()` and `retrieve()` actions.
     """
-    def formatted_response(self, data):
-        if len(data):
-            return Response(format_results(data))
+    def formatted_response(self, data, time=None, return_empty=False):
+        if len(data) or return_empty:
+            return Response(format_results(data, time=time))
         else:
             data = {"message": "Query did not return any hits."}
             return Response(data, status=status.HTTP_404_NOT_FOUND)

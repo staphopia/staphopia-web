@@ -82,8 +82,23 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def genes(self, request, pk=None):
-        return self.paginate(get_gene_features_by_sample(pk), page_size=250,
-                             is_serialized=True)
+        if 'product_id' in request.GET:
+            validator = validate_positive_integer(request.GET['product_id'])
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                return self.paginate(
+                    get_gene_features_by_sample(
+                        pk, product_id=request.GET['product_id']
+                    ),
+                    page_size=250,
+                    is_serialized=True
+                )
+        else:
+            return self.paginate(
+                get_gene_features_by_sample(pk), page_size=250,
+                is_serialized=True
+            )
 
     @detail_route(methods=['get'])
     def indels(self, request, pk=None):

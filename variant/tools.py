@@ -380,16 +380,16 @@ class Variants(object):
                 PL = ""
 
             confidence = {
-                'AC':str(record.INFO['AC']),
-                'AD':str(AD),
-                'AF':record.INFO['AF'][0],
-                'DP':record.INFO['DP'],
-                'GQ':GQ,
-                'GT':str(GT),
-                'MQ':record.INFO['MQ'],
-                'PL':str(PL),
-                'QD':QD,
-                'quality':record.QUAL
+                'AC': str(record.INFO['AC']),
+                'AD': str(AD),
+                'AF': str(record.INFO['AF'][0]),
+                'DP': str(record.INFO['DP']),
+                'GQ': str(GQ),
+                'GT': str(GT),
+                'MQ': str(record.INFO['MQ']),
+                'PL': str(PL),
+                'QD': str(QD),
+                'quality': str(record.QUAL)
             }
 
             # Insert SNP/Indel
@@ -431,7 +431,6 @@ class Variants(object):
     @timeit
     def delete_objects(self):
         """Delete all objects for a given sample."""
-        Confidence.objects.filter(sample=self.sample).delete()
         ToSNP.objects.filter(sample=self.sample).delete()
         ToIndel.objects.filter(sample=self.sample).delete()
         Counts.objects.filter(sample=self.sample).delete()

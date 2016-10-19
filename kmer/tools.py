@@ -18,11 +18,11 @@ from django.core.management.base import CommandError
 from kmer.models import Total
 from staphopia.utils import timeit
 
-CHUNK_SIZE = 1000000
+CHUNK_SIZE = 50000
 INDEX_NAME = "kmers"
 TYPE_NAME = "kmer"
-HOST = "staphopia.genetics.emory.edu:9200"
-ES_HOST = "http://staphopia.genetics.emory.edu:9200/kmers/kmer/_bulk"
+HOST = "staphopia.emory.edu:9200"
+ES_HOST = "http://staphopia.emory.edu:9200/kmers/kmer/_bulk"
 SCRIPT = ("if (!ctx._source.samples.contains(s)){"
           "ctx._source.samples.add(s); ctx._source.count += 1;}")
 
@@ -101,7 +101,7 @@ def insert_kmer_stats(sample, total, singletons):
     )
 
     print("{0}: Inserted {1} kmers ({2} are singletons)".format(
-        sample.db_tag, total, singletons
+        sample.sample_tag, total, singletons
     ))
 
 
@@ -172,7 +172,7 @@ def insert_kmer_counts(jf, sample):
         if count == 1:
             singletons += 1
 
-        if total % 1000000 == 0:
+        if total % CHUNK_SIZE == 0:
             print('\tProcessed {0} of {1} kmers'.format(total, len(jf_dump)))
 
     # Insert the totals
