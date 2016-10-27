@@ -1,3 +1,6 @@
+from django.contrib.auth.models import User
+# from django.db.models import Q
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
@@ -24,7 +27,8 @@ from api.utils import (
     get_resitance_by_samples,
     get_samples_by_tag,
     get_snps_by_sample,
-    get_tags_by_sample
+    get_tags_by_sample,
+    get_public_samples
 )
 
 from api.validators import validate_positive_integer, validate_list_of_ids
@@ -62,7 +66,24 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
         else:
             queryset = Sample.objects.all()
 
+        '''
+        if not request.user.is_superuser:
+            queryset = Sample.objects.filter(
+                Q(is_public=True) | Q(user_id=request.user.pk)
+            )
+        '''
         return self.paginate(queryset, serializer=SampleSerializer)
+
+    @list_route(methods=['get'])
+    def public(self, request):
+        """Given a list of SNP IDs, return table info for each SNP."""
+        ena = User.objects.get(username='ena')
+        if 'all_samples' in request.GET and request.user.is_superuser:
+            samples = get_public_samples(ena.pk, ena.username, all_samples=True)
+        else:
+            samples = get_public_samples(ena.pk, ena.username)
+
+        return self.paginate(samples, page_size=250, is_serialized=True)
 
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):
@@ -82,7 +103,24 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def genes(self, request, pk=None):
-        if 'product_id' in request.GET:
+        if 'product_id' in request.GET and 'cluster_id' in request.GET:
+            product = validate_positive_integer(request.GET['product_id'])
+            cluster = validate_positive_integer(request.GET['cluster_id'])
+            if product['has_errors']:
+                return Response(product)
+            elif cluster['has_errors']:
+                return Response(cluster)
+            else:
+                return self.paginate(
+                    get_gene_features_by_sample(
+                        pk,
+                        product_id=request.GET['product_id'],
+                        cluster_id=request.GET['cluster_id']
+                    ),
+                    page_size=250,
+                    is_serialized=True
+                )
+        elif 'product_id' in request.GET:
             validator = validate_positive_integer(request.GET['product_id'])
             if validator['has_errors']:
                 return Response(validator)
@@ -90,6 +128,18 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 return self.paginate(
                     get_gene_features_by_sample(
                         pk, product_id=request.GET['product_id']
+                    ),
+                    page_size=250,
+                    is_serialized=True
+                )
+        elif 'cluster_id' in request.GET:
+            validator = validate_positive_integer(request.GET['cluster_id'])
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                return self.paginate(
+                    get_gene_features_by_sample(
+                        pk, cluster_id=request.GET['cluster_id']
                     ),
                     page_size=250,
                     is_serialized=True

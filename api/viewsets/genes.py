@@ -45,7 +45,19 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
     serializer_class = GeneFeatureSerializer
 
     def list(self, request):
-        if 'product_id' in request.GET:
+        if 'product_id' in request.GET and 'cluster_id' in request.GET:
+            product = validate_positive_integer(request.GET['product_id'])
+            cluster = validate_positive_integer(request.GET['cluster_id'])
+            if product['has_errors']:
+                return Response(product)
+            elif cluster['has_errors']:
+                return Response(cluster)
+            else:
+                queryset = Features.objects.filter(
+                    product_id=request.GET['product_id'],
+                    cluster_id=request.GET['cluster_id']
+                )
+        elif 'product_id' in request.GET:
             validator = validate_positive_integer(request.GET['product_id'])
             if validator['has_errors']:
                 return Response(validator)
@@ -53,11 +65,19 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                 queryset = Features.objects.filter(
                     product_id=request.GET['product_id']
                 )
+        elif 'cluster_id' in request.GET:
+            validator = validate_positive_integer(request.GET['cluster_id'])
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                queryset = Features.objects.filter(
+                    cluster_id=request.GET['cluster_id']
+                )
         else:
             queryset = Features.objects.all()
-
-        return self.paginate(queryset, serializer=GeneFeatureSerializer,
-                             page_size=10)
+        return Response(request)
+        #return self.paginate(queryset, serializer=GeneFeatureSerializer,
+        #                     page_size=10)
 
 
 class GeneProductViewSet(CustomReadOnlyModelViewSet):

@@ -30,13 +30,24 @@ def get_ids_in_bulk(table, ids, id_col="id"):
     return query_database(sql)
 
 
-def get_gene_features_by_sample(sample_id, product_id=None):
+def get_gene_features_by_sample(sample_id, product_id=None, cluster_id=None):
     """Return genes associated with a sample."""
     sql = None
-    if product_id:
+    if product_id and cluster_id:
+        sql = """SELECT * FROM gene_features
+                 WHERE sample_id={0} AND product_id={1}
+                 AND cluster_id={2};""".format(
+            sample_id, product_id, cluster_id
+        )
+    elif product_id:
         sql = """SELECT * FROM gene_features
                  WHERE sample_id={0} AND product_id={1};""".format(
             sample_id, product_id
+        )
+    elif cluster_id:
+        sql = """SELECT * FROM gene_features
+                 WHERE sample_id={0} AND cluster_id={1};""".format(
+            sample_id, cluster_id
         )
     else:
         sql = """SELECT * FROM gene_features WHERE sample_id={0};""".format(
@@ -178,7 +189,7 @@ def get_resitance_by_samples(sample_ids, resistance_id=None):
 
 
 def get_samples_by_tag(tag_id):
-    """Return sampels associated with a tag."""
+    """Return samples associated with a tag."""
     sql = """SELECT t.sample_id, s.user_id, s.sample_tag,
                     s.is_paired, s.is_public, s.is_published
              FROM sample_totag AS t
@@ -187,6 +198,43 @@ def get_samples_by_tag(tag_id):
              WHERE t.tag_id={0}
              ORDER BY s.sample_tag ASC;""".format(tag_id)
     return query_database(sql)
+
+
+def get_public_samples(user_id, user, is_published=True, all_samples=False):
+    """Return sample info associated with a tag."""
+    published = None
+    if is_published:
+        published = 'AND s.is_published=TRUE'
+    elif all_samples:
+        published = ''
+    else:
+        published = 'AND s.is_published=FALSE'
+
+    sql = """SELECT s.id, s.user_id, s.sample_tag, s.is_paired, s.is_public,
+                   s.is_published, t.id as tag_id, tag.tag, pub.pmid
+            FROM sample_sample AS s
+            LEFT JOIN sample_totag AS t
+            ON s.id=t.sample_id
+            LEFT JOIN sample_tag AS tag
+            ON t.tag_id=tag.id
+            LEFT JOIN ena_topublication AS p
+            ON s.sample_tag=p.experiment_accession
+            LEFT JOIN sample_publication AS pub
+            ON p.publication_id=pub.id
+            WHERE s.user_id={0} {1}
+            ORDER BY s.sample_tag ASC""".format(user_id, published)
+
+    results = {}
+
+    for row in query_database(sql):
+        if row['sample_tag'] not in results:
+            results[row['sample_tag']] = row
+            results[row['sample_tag']]['username'] = user
+            results[row['sample_tag']]['pmid'] = [int(row['pmid'])]
+        else:
+            results[row['sample_tag']]['pmid'].append(int(row['pmid']))
+
+    return [vals for k, vals in results.items()]
 
 
 def get_sccmec_coverage_by_sample(sample_id):
