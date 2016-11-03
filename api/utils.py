@@ -30,7 +30,7 @@ def get_ids_in_bulk(table, ids, id_col="id"):
     return query_database(sql)
 
 
-def get_gene_features_by_sample(sample_id, product_id=None, cluster_id=None):
+def get_genes_by_sample(sample_id, product_id=None, cluster_id=None):
     """Return genes associated with a sample."""
     sql = None
     if product_id and cluster_id:
@@ -52,6 +52,32 @@ def get_gene_features_by_sample(sample_id, product_id=None, cluster_id=None):
     else:
         sql = """SELECT * FROM gene_features WHERE sample_id={0};""".format(
             sample_id
+        )
+    return query_database(sql)
+
+
+def get_genes_by_samples(ids, product_id=None, cluster_id=None):
+    """Return genes associated with a sample."""
+    sql = None
+    if product_id and cluster_id:
+        sql = """SELECT * FROM gene_features
+                 WHERE sample_id IN ({0}) AND product_id={1}
+                 AND cluster_id={2};""".format(
+            ','.join([str(i) for i in ids]), product_id, cluster_id
+        )
+    elif product_id:
+        sql = """SELECT * FROM gene_features
+                 WHERE sample_id IN ({0}) AND product_id={1};""".format(
+            ','.join([str(i) for i in ids]), product_id
+        )
+    elif cluster_id:
+        sql = """SELECT * FROM gene_features
+                 WHERE sample_id IN ({0}) AND cluster_id={1};""".format(
+            ','.join([str(i) for i in ids]), cluster_id
+        )
+    else:
+        sql = """SELECT * FROM gene_features WHERE sample_id IN ({0});""".format(
+            ','.join([str(i) for i in ids])
         )
     return query_database(sql)
 

@@ -1,10 +1,10 @@
 from rest_framework import viewsets
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
-from api.utils import get_gene_features_by_product, format_results
-from api.validators import validate_positive_integer
+from api.utils import get_gene_features_by_product, get_genes_by_samples, format_results
+from api.validators import validate_positive_integer, validate_list_of_ids
 from api.serializers.genes import (
     GeneClusterSerializer,
     GeneFeatureSerializer,
@@ -43,6 +43,70 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
 
     queryset = Features.objects.all()
     serializer_class = GeneFeatureSerializer
+
+    @list_route(methods=['post'])
+    def bulk_by_sample(self, request):
+        """Given a list of sample IDs, return table info for each gene."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            else:
+                if 'product_id' in request.GET and 'cluster_id' in request.GET:
+                    product = validate_positive_integer(
+                        request.GET['product_id']
+                    )
+                    cluster = validate_positive_integer(
+                        request.GET['cluster_id']
+                    )
+                    if product['has_errors']:
+                        return Response(product)
+                    elif cluster['has_errors']:
+                        return Response(cluster)
+                    else:
+                        return self.paginate(
+                            get_genes_by_samples(
+                                request.data['ids'],
+                                product_id=request.GET['product_id'],
+                                cluster_id=request.GET['cluster_id']
+                            ),
+                            page_size=100, is_serialized=True
+                        )
+                elif 'product_id' in request.GET:
+                    validator = validate_positive_integer(request.GET['product_id'])
+                    if validator['has_errors']:
+                        return Response(validator)
+                    else:
+                        return self.paginate(
+                            get_genes_by_samples(
+                                request.data['ids'],
+                                product_id=request.GET['product_id']
+                            ),
+                            page_size=100, is_serialized=True
+                        )
+                elif 'cluster_id' in request.GET:
+                    validator = validate_positive_integer(request.GET['cluster_id'])
+                    if validator['has_errors']:
+                        return Response(validator)
+                    else:
+                        return self.paginate(
+                            get_genes_by_samples(
+                                request.data['ids'],
+                                cluster_id=request.GET['cluster_id']
+                            ),
+                            page_size=100, is_serialized=True
+                        )
+                else:
+                    return self.paginate(
+                        get_genes_by_samples(request.data['ids']),
+                        page_size=100, is_serialized=True
+                    )
+
+            return self.paginate(queryset, serializer=GeneFeatureSerializer,
+                                 page_size=10)
 
     def list(self, request):
         if 'product_id' in request.GET and 'cluster_id' in request.GET:

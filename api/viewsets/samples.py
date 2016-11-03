@@ -22,7 +22,7 @@ from api.serializers.sequence_types import BlastSerializer, Srst2Serializer
 from api.serializers.sequences import SequenceStatSerializer
 
 from api.utils import (
-    get_gene_features_by_sample,
+    get_genes_by_sample,
     get_indels_by_sample,
     get_resitance_by_samples,
     get_samples_by_tag,
@@ -112,7 +112,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 return Response(cluster)
             else:
                 return self.paginate(
-                    get_gene_features_by_sample(
+                    get_genes_by_sample(
                         pk,
                         product_id=request.GET['product_id'],
                         cluster_id=request.GET['cluster_id']
@@ -126,7 +126,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 return Response(validator)
             else:
                 return self.paginate(
-                    get_gene_features_by_sample(
+                    get_genes_by_sample(
                         pk, product_id=request.GET['product_id']
                     ),
                     page_size=250,
@@ -138,7 +138,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 return Response(validator)
             else:
                 return self.paginate(
-                    get_gene_features_by_sample(
+                    get_genes_by_sample(
                         pk, cluster_id=request.GET['cluster_id']
                     ),
                     page_size=250,
@@ -146,7 +146,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 )
         else:
             return self.paginate(
-                get_gene_features_by_sample(pk), page_size=250,
+                get_genes_by_sample(pk), page_size=250,
                 is_serialized=True
             )
 
