@@ -11,7 +11,7 @@ from django.core.mail import EmailMessage
 from django.db import transaction, Error
 from django.core.management.base import BaseCommand, CommandError
 
-from ena.models import Study, Experiment, Run
+from ena.models import Study, Experiment, Run, ToPublication
 
 
 class Command(BaseCommand):
@@ -29,6 +29,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Query ENA and retrieve latest results."""
         if options['empty']:
+            ToPublication.objects.all().delete()
             Study.objects.all().delete()
             Experiment.objects.all().delete()
             Run.objects.all().delete()

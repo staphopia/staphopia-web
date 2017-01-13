@@ -23,12 +23,13 @@ INDEX_NAME = "kmers"
 TYPE_NAME = "kmer"
 HOST = "staphopia.emory.edu:9200"
 ES_HOST = "http://staphopia.emory.edu:9200/kmers/kmer/_bulk"
-SCRIPT = ("if (!ctx._source.samples.contains(s)){"
-          "ctx._source.samples.add(s); ctx._source.count += 1;}")
+SCRIPT = ("if (!ctx._source.samples.contains(params.s)){"
+          "ctx._source.samples.add(params.s); ctx._source.count += 1;}")
 
-BULK_SCRIPT = ("for(var i=0; i < sample.length; i++){"
-               "if (!ctx._source.samples.contains(sample[i])){"
-               "ctx._source.samples.add(sample[i]); ctx._source.count += 1;}}")
+BULK_SCRIPT = ("for(int i = 0; i < params.sample.length; i++){"
+               "if (!ctx._source.samples.contains(params.sample[i])){"
+               "ctx._source.samples.add(params.sample[i]);"
+               "ctx._source.count += 1;}}")
 
 
 def chunks(l, n):
@@ -126,7 +127,7 @@ def insert_in_bulk(jf, partition):
         bulk_data.append({
             "script": {
                 "inline": BULK_SCRIPT,
-                "lang": "javascript",
+                "lang": "painless",
                 "params": {"sample": v}
             },
             "upsert": {"count": len(v), "samples": v}
@@ -164,7 +165,7 @@ def insert_kmer_counts(jf, sample):
         bulk_data.append({
             "script": {
                 "inline": SCRIPT,
-                "lang": "javascript",
+                "lang": "painless",
                 "params": {"s": sample_name}
             },
             "upsert": {"count": 1, "samples": [sample_name]}

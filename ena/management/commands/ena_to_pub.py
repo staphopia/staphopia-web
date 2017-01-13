@@ -22,33 +22,53 @@ class Command(BaseCommand):
     help = 'Link Study accessions to PubMed IDs.'
 
     def add_arguments(self, parser):
-        parser.add_argument('study', help='Study accession for ENA entry.')
         parser.add_argument('pmid', help='PubMed ID to link ENA entries to.')
+        parser.add_argument('study', help='Study accession for ENA entry.')
+        parser.add_argument('--output', help='Print output info.')
 
     def handle(self, *args, **options):
-        study = Study.objects.get(pk=options['study'])
+        stats = {}
+        try:
+            study = Study.objects.get(pk=options['study'])
+        except Study.DoesNotExist:
+            try:
+                study = Study.objects.get(
+                    secondary_study_accession=options['study']
+                )
+            except Study.DoesNotExist:
+                print("Study {0} not in the database.".format(
+                    options['study']
+                ), file=sys.stderr)
+                sys.exit()
+
         try:
             publication = Publication.objects.get(pmid=options['pmid'])
-            print("Found PubMed ID: {0}".format(options['pmid']))
+            print("Found PubMed ID: {0}".format(options['pmid']),
+                  file=sys.stderr)
         except Publication.DoesNotExist:
             pubmed_info = self.get_pubmed_info(options['pmid'])
             publication = self.insert_publication(options['pmid'], pubmed_info)
-            print("Creating PubMed ID: {0}".format(options['pmid']))
+            print("Creating PubMed ID: {0}".format(options['pmid']),
+                  file=sys.stderr)
 
+        total = 0
         for experiment in Experiment.objects.filter(study_accession=study):
             to_pub, created = ToPublication.objects.get_or_create(
                 experiment_accession=experiment,
                 publication=publication
             )
-            try:
+            total += 1
+            '''try:
                 sample = Sample.objects.get(sample_tag=experiment.pk)
                 sample.is_published = True
                 sample.save()
                 print('{0}\t{1}\t{2}'.format(
                     experiment.pk, publication.pmid, created
-                ))
+                ),file=sys.stderr)
             except Sample.DoesNotExist:
-                print("Experiment {0} not in the database.".format(experiment.pk))
+                print("Experiment {0} not in the database.".format(experiment.pk),file=sys.stderr)'''
+        print("\t".join([str(total), publication.pmid, study.pk,
+                         study.secondary_study_accession, publication.title]))
 
     @transaction.atomic
     def insert_publication(self, pmid, pubmed_info):
@@ -59,7 +79,7 @@ class Command(BaseCommand):
         )
         print('{0} ({1})\t{2}'.format(
             pmid, created, pubmed_info['title']
-        ))
+        ), file=sys.stderr)
 
         return publication
 
@@ -86,6 +106,9 @@ class Command(BaseCommand):
             pass
         return pmids
 
+    def fix_unicode(self, string):
+        return string.encode('ascii', 'ignore').decode('ascii')
+
     def get_author_name(self, author):
         """Parse out author names."""
         try:
@@ -108,7 +131,12 @@ class Command(BaseCommand):
         except:
             initial = ''
 
-        name = '{0} {1} {2} ({3})'.format(firstname, lastname, suffix, initial)
+        name = '{0} {1} {2} ({3})'.format(
+            self.fix_unicode(firstname),
+            self.fix_unicode(lastname),
+            self.fix_unicode(suffix),
+            self.fix_unicode(initial)
+        )
         return name.replace('  ', ' ')
 
     def get_article_id(self, article):
@@ -126,8 +154,8 @@ class Command(BaseCommand):
         keywords = set([i.get_text() for i in soup.find_all(keyword_items)])
         return {
             'authors': ';'.join(authors),
-            'title': soup.find('articletitle').get_text(),
-            'abstract': soup.find('abstracttext').get_text(),
+            'title': soup.find('articletitle').get_text().encode('ascii', 'ignore').decode('ascii'),
+            'abstract': soup.find('abstracttext').get_text().encode('ascii', 'ignore').decode('ascii'),
             'reference_ids': ';'.join(ids),
             'keywords': ';'.join(list(keywords))
         }

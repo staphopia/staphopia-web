@@ -49,5 +49,5 @@ class Command(BaseCommand):
     def create_partition(self, partition):
         """Send data to elasticsearch."""
         index = "http://{0}/kmer_{1}".format(ES_HOST, partition.lower())
-        res = requests.post(index, json=INDEX_MAPPING)
+        res = requests.put(index, json=INDEX_MAPPING)
         return res.text

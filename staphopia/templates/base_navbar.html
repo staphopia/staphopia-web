@@ -20,6 +20,7 @@
             </a>
         </div>
         <div class="collapse navbar-collapse">
+            {% if user.is_authenticated %}
             <!-- Left Nav Section -->
             <ul class="nav navbar-nav">
                 <li class="{% active request home %}"><a href="/">Home</a></li>
@@ -32,7 +33,6 @@
             </ul>
             <!-- Right Nav Section -->
             <ul class="nav navbar-nav navbar-right">
-            {% if user.is_authenticated %}
                 <li>
                     <a data-toggle="tooltip" data-placement="bottom"
                        title="View Samples" href="/samples/{{ user.username }}/">
@@ -52,7 +52,14 @@
                         <span class="glyphicon glyphicon-log-out"></span>
                     </a>
                 </li>
+            </ul>
             {% else %}
+            <!-- Left Nav Section -->
+            <ul class="nav navbar-nav">
+                <li class="{% active request home %}"><a href="/">Home</a></li>
+            </ul>
+            <!-- Right Nav Section -->
+            <ul class="nav navbar-nav navbar-right">
                 <li>
                     <a data-toggle="tooltip" data-placement="bottom"
                        title="Sign In" href="/accounts/login/">
