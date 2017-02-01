@@ -26,6 +26,8 @@ from api.utils import (
     get_indels_by_sample,
     get_resitance_by_samples,
     get_samples_by_tag,
+    get_sccmec_primers_by_sample,
+    get_sccmec_coverage_by_sample,
     get_snps_by_sample,
     get_tags_by_sample,
     get_public_samples
@@ -162,15 +164,20 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def sccmec_coverages(self, request, pk=None):
-        hits = Coverage.objects.filter(sample_id=pk)
-        serializer = SCCmecCoverageSerializer(hits, many=True)
-        return self.formatted_response(serializer.data)
+        return self.formatted_response(get_sccmec_coverage_by_sample(pk))
 
     @detail_route(methods=['get'])
     def sccmec_primers(self, request, pk=None):
-        hits = Primers.objects.filter(sample_id=pk)
-        serializer = SCCmecPrimerSerializer(hits, many=True)
-        return self.formatted_response(serializer.data)
+        if 'exact_hits' in request.GET:
+            return self.formatted_response(
+                get_sccmec_primers_by_sample(pk, exact_hits=True)
+            )
+        elif 'predict' in request.GET:
+            return self.formatted_response(
+                get_sccmec_primers_by_sample(pk, predict=True)
+            )
+        else:
+            return self.formatted_response(get_sccmec_primers_by_sample(pk))
 
     @detail_route(methods=['get'])
     def sccmec_proteins(self, request, pk=None):

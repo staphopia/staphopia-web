@@ -7,7 +7,7 @@ import sys
 
 from bs4 import BeautifulSoup
 
-from django.db import transaction
+from django.db import IntegrityError
 from django.core.management.base import BaseCommand
 
 from ena.models import Experiment, ToPublication
@@ -46,18 +46,23 @@ class Command(BaseCommand):
                         }
                     self.insert_ena_to_pub(experiment, pubmed[pmid]['obj'])
 
-            time.sleep(1)
+            time.sleep(0.33)
 
             i += 1
             print("{0} of {1} ({2:.2f}%)".format(i, total, i / total * 100))
 
-    @transaction.atomic
     def insert_publication(self, pmid, pubmed_info):
         """Insert publication into the database."""
-        publication, created = Publication.objects.get_or_create(
-            pmid=pmid,
-            **pubmed_info
-        )
+        created = False
+        try:
+            publication = Publication.objects.create(
+                pmid=pmid,
+                **pubmed_info
+            )
+            created = True
+        except IntegrityError:
+            publication = Publication.objects.get(pmid=pmid)
+
         print('{0} ({1})\t{2}'.format(
             pmid, created, pubmed_info['title']
         ))
@@ -66,10 +71,19 @@ class Command(BaseCommand):
 
     def insert_ena_to_pub(self, experiment, publication):
         """Insert link to ToPublication table."""
-        topub, created = ToPublication.objects.get_or_create(
-            experiment_accession=experiment,
-            publication=publication
-        )
+        created = False
+        try:
+            topub = ToPublication.objects.create(
+                experiment_accession=experiment,
+                publication=publication
+            )
+            created = True
+        except IntegrityError:
+            topub = ToPublication.objects.get(
+                experiment_accession=experiment,
+                publication=publication
+            )
+
         print('{0} ({1})\t{2}'.format(
             experiment.experiment_accession, created, publication.pmid
         ))

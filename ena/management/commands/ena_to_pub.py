@@ -41,15 +41,13 @@ class Command(BaseCommand):
                 ), file=sys.stderr)
                 sys.exit()
 
+        created = False
         try:
             publication = Publication.objects.get(pmid=options['pmid'])
-            print("Found PubMed ID: {0}".format(options['pmid']),
-                  file=sys.stderr)
         except Publication.DoesNotExist:
             pubmed_info = self.get_pubmed_info(options['pmid'])
             publication = self.insert_publication(options['pmid'], pubmed_info)
-            print("Creating PubMed ID: {0}".format(options['pmid']),
-                  file=sys.stderr)
+            created = True
 
         total = 0
         for experiment in Experiment.objects.filter(study_accession=study):
@@ -67,7 +65,7 @@ class Command(BaseCommand):
                 ),file=sys.stderr)
             except Sample.DoesNotExist:
                 print("Experiment {0} not in the database.".format(experiment.pk),file=sys.stderr)'''
-        print("\t".join([str(total), publication.pmid, study.pk,
+        print("\t".join([str(total), publication.pmid, str(created), study.pk,
                          study.secondary_study_accession, publication.title]))
 
     @transaction.atomic

@@ -3,14 +3,10 @@
 
     Outputs Experiments and corresponding runs information in JSON format.
 '''
-import json
-
-from optparse import make_option
-
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
-from ena.models import Experiment, Run, ToSample
+from ena.models import Experiment, ToSample
 
 
 class Command(BaseCommand):
@@ -23,13 +19,12 @@ class Command(BaseCommand):
         """Command line arguements."""
         parser.add_argument('experiment', help='Experiment to update.')
         parser.add_argument('status', help='Current status of the job.')
-        parser.add_argument('--server', help='Serve job is being processed on.')
+        parser.add_argument('--server', help='Server job is processed on.')
         parser.add_argument('--path', help='Location of the job.')
         parser.add_argument('--delete', action='store_true',
                             help='Delete experiment from table.')
         parser.add_argument('--get', action='store_true',
                             help='Get status of experiment.')
-
 
     def handle(self, *args, **options):
         # ENA to Sample
@@ -57,7 +52,7 @@ class Command(BaseCommand):
                 )
                 if options['server'] and options['path']:
                     try:
-                        ena_to_sample, created = ToSample.objects.update_or_create(
+                        ena_to_sample, c = ToSample.objects.update_or_create(
                             experiment_accession=experiment,
                             server=options['server'],
                             status=options['status'],
@@ -73,7 +68,7 @@ class Command(BaseCommand):
                         )
                 else:
                     try:
-                        ena_to_sample, created = ToSample.objects.update_or_create(
+                        ena_to_sample, c = ToSample.objects.update_or_create(
                             experiment_accession=experiment,
                             status=options['status'],
                         )
@@ -85,5 +80,3 @@ class Command(BaseCommand):
                         )
             except Experiment.DoesNotExist:
                 print('{0} does not exist.'.format(options['experiment']))
-
-

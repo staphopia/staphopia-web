@@ -6,6 +6,7 @@ from sccmec.tools import UTIL1, UTIL2, etc...
 """
 import json
 import numpy
+from collections import OrderedDict
 
 from django.core.management.base import CommandError
 from django.db import transaction
@@ -176,3 +177,70 @@ def __read_coverage(coverage):
         sccmec[cassette]['per_base_coverage'][position] = coverage
 
     return sccmec
+
+
+def predict_type_by_primers(blast_results):
+    primers = {
+        # ccr
+        'ccrA1': False, 'ccrA2': False, 'ccrA3': False, 'ccrA4': False,
+        'ccrB': False, 'ccrB4': False,
+        'ccrC': False,
+
+        # IS elements
+        'IS431': False, 'IS1272': False,
+
+        # mec
+        'mecA': False, 'mecR1': False, 'mecI': False
+    }
+
+    for hit in blast_results:
+        name = hit['title'].split('|')[0]
+        primers[name] = True
+
+    # Determine mec class
+    mec_class = {'A': False, 'B': False, 'C': False}
+    if primers['IS431'] and primers['mecA'] and primers['mecR1']:
+        mec_class['C'] = True
+
+        if primers['mecI']:
+            mec_class['A'] = True
+            mec_class['C'] = False
+
+        if primers['IS1272']:
+            mec_class['B'] = True
+            mec_class['C'] = False
+
+    mec_types = OrderedDict([
+        ('I', False), ('II', False), ('III', False), ('IV', False),
+        ('V', False), ('VI', False), ('VII', False), ('VIII', False),
+        ('IX', False), ('X', False), ('XI', False)
+    ])
+
+    if primers['ccrA1'] and primers['ccrB'] and mec_class['B']:
+        mec_types['I'] = True
+
+    if primers['ccrA2'] and primers['ccrB'] and mec_class['A']:
+        mec_types['II'] = True
+
+    if primers['ccrA3'] and primers['ccrB'] and mec_class['A']:
+        mec_types['III'] = True
+
+    if primers['ccrA2'] and primers['ccrB'] and mec_class['B']:
+        mec_types['IV'] = True
+
+    if primers['ccrC'] and mec_class['C']:
+        mec_types['V'] = True
+
+    if primers['ccrA4'] and primers['ccrB4'] and mec_class['B']:
+        mec_types['VI'] = True
+
+    if primers['ccrC'] and mec_class['C']:
+        mec_types['VII'] = True
+
+    if primers['ccrA4'] and primers['ccrB4'] and mec_class['A']:
+        mec_types['VIII'] = True
+
+    if primers['ccrA1'] and primers['ccrB'] and mec_class['C']:
+        mec_types['IX'] = True
+
+    return mec_types
