@@ -20,7 +20,7 @@ def query_database(sql):
     cursor = connection.cursor()
     cursor.execute(sql)
     cols = [d[0] for d in cursor.description]
-    return [dict(zip(cols, row)) for row in cursor.fetchall()]
+    return [OrderedDict(zip(cols, row)) for row in cursor.fetchall()]
 
 
 def get_ids_in_bulk(table, ids, id_col="id"):
@@ -213,7 +213,14 @@ def get_kmer_by_sequence(sequence, samples):
 
 def get_indels_by_sample(sample_id):
     """Return indels associated with a sample."""
-    sql = """SELECT * FROM variant_toindel WHERE sample_id={0};""".format(
+    sql = """SELECT v.indel_id, i.reference_position, i.reference_base,
+                    i.alternate_base, i.is_deletion, v.confidence,
+                    i.annotation_id, i.feature_id, i.reference_id,
+                    v.filters_id, v.sample_id
+             FROM variant_toindel AS v
+             LEFT JOIN variant_indel as i
+             ON v.indel_id=i.id
+             WHERE sample_id={0};""".format(
         sample_id
     )
     return query_database(sql)
