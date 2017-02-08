@@ -24,9 +24,6 @@
             <!-- Left Nav Section -->
             <ul class="nav navbar-nav">
                 <li class="{% active request home %}"><a href="/">Home</a></li>
-                {% if user.is_authenticated %}
-                <li class="{% active request submission %}"><a href="/submission/">Submission</a></li>
-                {% endif %}
                 <li class="{% active request samples %}"><a href="/samples/">Samples</a></li>
                 <li class="{% active request top10 %}"><a href="/top10/">Top 10</a></li>
                 <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>

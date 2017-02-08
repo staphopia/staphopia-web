@@ -6,6 +6,7 @@ pipeline.
 """
 import architect
 import os
+import json
 
 from django.db import models
 from django.contrib.postgres.fields import JSONField
@@ -34,6 +35,14 @@ class ToIndel(models.Model):
     indel_id.admin_order_field = 'indel'
 
 
+class ToIndelJSON(models.Model):
+    """A linking table between samples and InDels."""
+
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    count = models.PositiveIntegerField(default=0, db_index=True)
+    indels = JSONField(default=json.dumps({}))
+
+
 class Indel(models.Model):
     """Information unique to the SNP."""
 
@@ -45,6 +54,7 @@ class Indel(models.Model):
     reference_base = models.TextField()
     alternate_base = models.TextField()
     is_deletion = models.BooleanField(default=False, db_index=True)
+    members = JSONField(default=json.dumps([]))
 
     class Meta:
         unique_together = ('reference', 'reference_position', 'reference_base',
@@ -97,6 +107,20 @@ class ToSNP(models.Model):
     snp_count.short_description = 'SNP Count'
 
 
+class ToSNPJSON(models.Model):
+    """A linking table between samples and SNPs."""
+
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    count = models.PositiveIntegerField(default=0, db_index=True)
+    snps = JSONField(default=json.dumps({}))
+
+    def sample_tag(self):
+        """Display sample_tag in admin view."""
+        return self.variant.sample.sample_tag
+    sample_tag.short_description = 'Sample Tag'
+    sample_tag.admin_order_field = 'variant'
+
+
 class SNP(models.Model):
     """Information unique to the SNP."""
 
@@ -121,6 +145,7 @@ class SNP(models.Model):
     is_synonymous = models.PositiveSmallIntegerField()
     is_transition = models.PositiveSmallIntegerField()
     is_genic = models.PositiveSmallIntegerField()
+    members = JSONField(default=json.dumps([]))
 
     class Meta:
         unique_together = ('reference', 'reference_position', 'reference_base',

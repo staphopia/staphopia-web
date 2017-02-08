@@ -40,7 +40,6 @@ urlpatterns = [
     # Grappelli & Admin Site
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^submission/', sample.views.submission, name='submission'),
     url(r'^top10/', sample.views.top10, name='top10'),
     url(r'^contact/', staphopia.views.contact, name='contact'),
     url(r'^settings/account/', staphopia.views.account_settings,
