@@ -5,7 +5,8 @@ from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import format_results, get_ids_in_bulk, get_snps_by_samples
-from api.validators import validate_list_of_ids
+from api.validators import validate_positive_integer, validate_list_of_ids
+
 from variant.models import (
     SNP,
     ToSNP,
@@ -33,6 +34,22 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
 
     queryset = SNP.objects.all()
     serializer_class = SNPSerializer
+
+    def list(self, request):
+        if 'reference_position' in request.GET:
+            validator = validate_positive_integer(
+                request.GET['reference_position']
+            )
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                queryset = SNP.objects.filter(
+                    reference_position=request.GET['reference_position']
+                )
+        else:
+            queryset = SNP.objects.all()
+
+        return self.paginate(queryset, serializer=SNPSerializer)
 
     @detail_route(methods=['get'])
     def samples(self, request, pk=None):
