@@ -5,6 +5,8 @@ To use:
 from variant.tools import UTIL1, UTIL2, etc...
 """
 from __future__ import print_function
+from collections import OrderedDict
+import json
 import sys
 import time
 import vcf
@@ -24,6 +26,8 @@ from variant.models import (
     SNP,
     ToIndel,
     ToSNP,
+    ToSNPJSON,
+    ToIndelJSON,
     Counts
 )
 
@@ -34,7 +38,7 @@ def insert_variant_results(input, sample, force=False):
     v = Variants(input, sample)
     if force:
         print("\tForce used, emptying Variant related results.")
-        v.delete_objects()
+        v.delete_objects_json()
 
     v.insert_variants()
 
@@ -63,13 +67,12 @@ class Variants(object):
         self.indels = []
 
         # Read through VCF
-        self.read_vcf()
+        self.read_vcf_json()
 
     def insert_variants(self):
         """Insert variants into the database."""
-        self.insert_snps()
-        self.insert_indels()
-        self.insert_counts()
+        self.insert_snps_json()
+        self.insert_indels_json()
 
     @timeit
     def open_vcf(self, input):
@@ -270,6 +273,7 @@ class Variants(object):
             is_genic=record.INFO['IsGenic'],
         )
 
+    @timeit
     def get_snps(self):
         """Get all the snps in the database, for positions to be inserted."""
         self.all_snps = {}
@@ -282,7 +286,7 @@ class Variants(object):
                 snp.reference_base,
                 snp.alternate_base
             )
-            self.all_snps[key] = snp.pk
+            self.all_snps[key] = snp
 
     def get_snp(self, record, reference, annotation, feature):
         """Get an individual snp."""
@@ -297,7 +301,7 @@ class Variants(object):
             except KeyError:
                 try:
                     snp = self.create_snp(record, reference, annotation,
-                                          feature).pk
+                                          feature)
                 except IntegrityError:
                     print("trying SNP ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT[0]
@@ -345,6 +349,86 @@ class Variants(object):
                     continue
 
         return indel
+
+    def add_member(self, members, sample):
+        json_data = json.loads(members)
+        json_data.append(sample)
+        return json.dumps(sorted(set(json_data)))
+
+    @timeit
+    def read_vcf_json(self):
+        """Read through the VCF records."""
+        # Insert VCF Records
+        for record in self.records:
+            # Get annotation, filter, comment
+            annotation = self.get_annotation(record)
+            feature = self.get_feature(record.INFO['FeatureType'][0])
+
+            # Store variant confidence
+            sample_data = record.samples[0].data
+            QD = record.INFO['QD'] if 'QD' in record.INFO else 0.0
+            try:
+                AD = sample_data.AD
+            except AttributeError:
+                AD = ""
+
+            try:
+                GQ = sample_data.GQ
+            except AttributeError:
+                GQ = 0
+
+            try:
+                GT = sample_data.GT
+            except AttributeError:
+                GT = ""
+
+            try:
+                PL = sample_data.PL
+            except AttributeError:
+                PL = ""
+
+            # Insert SNP/Indel
+            if record.is_snp:
+                snp = self.get_snp(record, self.reference, annotation, feature)
+                print
+                snp.members = self.add_member(snp.members, self.sample.pk)
+                snp.save()
+                self.snps.append(OrderedDict((
+                    ('sample_id', self.sample.pk),
+                    ('snp_id', snp.pk),
+                    ('AC', str(record.INFO['AC'])),
+                    ('AD', str(AD)),
+                    ('AF', str(record.INFO['AF'][0])),
+                    ('DP', str(record.INFO['DP'])),
+                    ('GQ', str(GQ)),
+                    ('GT', str(GT)),
+                    ('MQ', str(record.INFO['MQ'])),
+                    ('PL', str(PL)),
+                    ('QD', str(QD)),
+                    ('quality', str(record.QUAL)),
+                    ('comment', record.INFO['Comments'][0]),
+                    ('filters', record.FILTER)
+                )))
+            else:
+                indel = self.get_indel(record, self.reference, annotation,
+                                       feature)
+                indel.members = self.add_member(indel.members, self.sample.pk)
+                indel.save()
+                self.indels.append(OrderedDict((
+                    ('sample_id', self.sample.pk),
+                    ('indel_id', indel.pk),
+                    ('AC', str(record.INFO['AC'])),
+                    ('AD', str(AD)),
+                    ('AF', str(record.INFO['AF'][0])),
+                    ('DP', str(record.INFO['DP'])),
+                    ('GQ', str(GQ)),
+                    ('GT', str(GT)),
+                    ('MQ', str(record.INFO['MQ'])),
+                    ('PL', str(PL)),
+                    ('QD', str(QD)),
+                    ('quality', str(record.QUAL)),
+                    ('filters', record.FILTER)
+                )))
 
     @timeit
     def read_vcf(self):
@@ -394,7 +478,7 @@ class Variants(object):
 
             # Insert SNP/Indel
             if record.is_snp:
-                comment = self.get_comment(record.INFO['Comments'][0])
+                comment = record.INFO['Comments'][0]
                 snp = self.get_snp(record, self.reference, annotation, feature)
 
                 # Store SNP
@@ -431,9 +515,16 @@ class Variants(object):
     @timeit
     def delete_objects(self):
         """Delete all objects for a given sample."""
-        ToSNP.objects.filter(sample=self.sample).delete()
-        ToIndel.objects.filter(sample=self.sample).delete()
+        ToSNPJSON.objects.filter(sample=self.sample).delete()
+        ToIndelJSON.objects.filter(sample=self.sample).delete()
         Counts.objects.filter(sample=self.sample).delete()
+
+    @transaction.atomic
+    @timeit
+    def delete_objects_json(self):
+        """Delete all objects for a given sample."""
+        ToSNPJSON.objects.filter(sample=self.sample).delete()
+        ToIndelJSON.objects.filter(sample=self.sample).delete()
 
     @transaction.atomic
     @timeit
@@ -444,9 +535,31 @@ class Variants(object):
 
     @transaction.atomic
     @timeit
+    def insert_snps_json(self):
+        """Insert to snps in bulk."""
+        ToSNPJSON.objects.create(
+            sample=self.sample,
+            count=len(self.snps),
+            snps=json.dumps(self.snps, separators=(',', ':'))
+        )
+        return None
+
+    @transaction.atomic
+    @timeit
     def insert_indels(self):
         """Insert to indels in bulk."""
         ToIndel.objects.bulk_create(self.indels, batch_size=50000)
+        return None
+
+    @transaction.atomic
+    @timeit
+    def insert_indels_json(self):
+        """Insert to indels in bulk."""
+        ToIndelJSON.objects.create(
+            sample=self.sample,
+            count=len(self.indels),
+            indels=json.dumps(self.indels, separators=(',', ':'))
+        )
         return None
 
     @transaction.atomic
