@@ -9,7 +9,7 @@
             <div class="fix-top-margin alert alert-info" role="alert">
                 <strong>You are already signed in as {{ user.username }}!</strong>
                 <p>
-                If you would like to log in as another user, please 
+                If you would like to log in as another user, please
                 <a href="/accounts/logout/">Sign Out</a>.
                 </p>
         </div>
@@ -39,11 +39,11 @@
             <form class="form-horizontal" role="form" method="post" action="?next={{ next|default:"/" }}">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label class="col-sm-2 col-md-2 control-label" for="id_username">Username </label> 
+                    <label class="col-sm-2 col-md-2 control-label" for="id_username">Username </label>
                     <div class="col-sm-6 col-md-5">
                         <input id="id_username" maxlength="254" name="username" type="text" class="form-control input-md">
                     </div>
-                    {% if form.username.errors %} 
+                    {% if form.username.errors %}
                     <div class="col-sm-4 col-md-4">
                         <span class="error">*{{ form.username.errors|join:", " }}</span>
                     </div>
@@ -51,11 +51,11 @@
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 col-md-2 control-label" for="id_password">Password </label>
-                    
+
                     <div class="col-sm-6 col-md-5">
                         <input id="id_password" name="password" type="password" class="form-control input-md">
                     </div>
-                    {% if form.password.errors %} 
+                    {% if form.password.errors %}
                     <div class="col-sm-4 col-md-4">
                         <span class="error">*{{ form.password.errors|join:", " }}</span>
                     </div>

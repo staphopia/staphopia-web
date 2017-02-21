@@ -1,11 +1,24 @@
-{% load humanize %}
-Hello!
+{% load i18n %}
+{% blocktrans %}Dear {{ user }},{% endblocktrans %}
+{% if is_generated %}
+{% blocktrans with site.name as site_name %}Your account of {{ site_name }} was activated by inspector{% endblocktrans %}
 
-We received your Staphopia account registration request. Here is the link to complete the registration process:
+{% trans 'The password of your account was generated automatically and displayed below.' %}
+{% trans 'Please click the following url to login.' %}
+{% trans 'It is strongly recommended that you change your initial password to something more secure.' %}
 
-http://django.staphopia.com/accounts/activate/{{ activation_key }}/
+{% trans '::Your account information::' %}
+{% blocktrans %}USERNAME: {{ user }}{% endblocktrans %}
+{% blocktrans %}PASSWORD: {{ password }}{% endblocktrans %}
 
-If you did not make this request, please disregard this message. The account will expire automatically in {{ expiration_days|apnumber }} days.
+http://{{ site.domain }}{% url 'login' %}
+{% else %}
+{% blocktrans with site.name as site_name %}Your account of {{ site_name }} was successfully activated{% endblocktrans %}
 
-Thank you, 
-The Staphopia Team
+{% trans 'Please click the following url to login.' %}
+
+{% trans '::Your account information::' %}
+{% blocktrans %}USERNAME: {{ user }}{% endblocktrans %}
+
+http://{{ site.domain }}{% url 'login' %}
+{% endif %}

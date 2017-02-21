@@ -1,0 +1,57 @@
+ENA	Translation	Link
+Agricultural Biotechnology Center	Agricultural Biotechnology Center	http://www.abc.hu/en/
+AIDRC	Australian Infectious Diseases Research Centre	http://www.aidrc.org.au/
+BI	Broad Institute	https://www.broadinstitute.org/genomics
+Department of Medicine, University of Cambridge	Department of Medicine, University of Cambridge	http://www.med.cam.ac.uk/
+Emory University	Emory University	http://www.emory.edu/home/index.html
+Geneva University Hospitals	Geneva University Hospitals	http://www.hug-ge.ch/en
+GIFU_MED	Gifu University	http://www.gifu-u.ac.jp/en/academics/faculty/medicine.html
+Harbin Medical University	Harbin Medical University	http://www.hrbmu.edu.cn/en/
+Harvard Medical School	Harvard Medical School	https://hms.harvard.edu/
+Houston Methodist Hospital	Houston Methodist Hospital	http://www.houstonmethodist.org/
+HMRI-DID	Hunter Medical Research Institute	https://hmri.org.au/
+ILLUMINA	Illumina	https://www.illumina.com/
+JCVI	J. Craig Venter Institute	http://www.jcvi.org/cms/home/
+LSHTM	London School of Hygiene & Tropical Medicine	https://www.lshtm.ac.uk/
+National Health Laboratory	Luxembourg National Health Laboratory	http://www.lns.public.lu/
+National Center for Biological Sciences,NCBS-TIFR	National Center for Biological Sciences	https://www.ncbs.res.in/
+National Council Research	National Research Council (CNR)	https://www.cnr.it/en
+NECKER HOSPITAL	Necker-Enfants Malades Hospital	http://hopital-necker.aphp.fr/
+National Institute of Standards and Technology	NIST: National Institute of Standards and Technology	https://www.nist.gov/
+PHRI	PHRI: Public Health Research Institute Center	http://www.phri.org/
+PUBLIC HEALTH ENGLAND	Public Health England	https://www.gov.uk/government/organisations/public-health-england
+Robert Koch Institut	Robert Koch Institut	http://www.rki.de/EN/Home/homepage_node.html
+SC	Sanger Institute	http://www.sanger.ac.uk/
+STSI	Scripps Translational Science Institute	http://www.stsiweb.org/
+Statens Serum Institut	Statens Serum Institut	http://www.ssi.dk/english.aspx
+Teagasc	Teagasc | Agriculture and Food Development Authority	https://www.teagasc.ie/
+DTU-GE	Technical University of Denmark	http://www.dtu.dk/english
+TGEN-NORTH	TGen North	https://www.tgen.org/research/tgen-north.aspx
+The Pennsylvania State University	The Pennsylvania State University	http://www.psu.edu/
+The Roslin Institute	The Roslin Institute	http://www.roslin.ed.ac.uk/
+ROSLIN	The Roslin Institute	http://www.roslin.ed.ac.uk/
+UNIVERSITY OF SHEFFIELD	The University of Sheffield	http://www.sheffield.ac.uk/
+WARWICK	The University of Warwick	http://www2.warwick.ac.uk/fac/sci/lifesci/
+TGEN	Translational Genomics Research Institute (TGen)	https://www.tgen.org/
+UCD-100K	UC Davis 100K Foodborne Pathogen Genome Project	http://100kgenome.vetmed.ucdavis.edu/index.cfm
+Universiti Teknologi MARA	Universiti Teknologi MARA	http://www.uitm.edu.my/index.php/en/
+IFH_MS	University Hospital Muenster	https://www.uni-muenster.de/en/
+UASWS	University of Applied Sciences of Western Switzerland	https://www.hes-so.ch/en/homepage-hes-so-1679.html
+BIRMINGHAM UNIVERSITY	University of Birmingham	http://www.birmingham.ac.uk/
+UBC	University of British Columbia	https://www.ubc.ca/
+University of Edinburgh	University of Edinburgh	http://www.ed.ac.uk/
+LIV	University of Liverpool	https://www.liverpool.ac.uk/genomic-research/
+UMIGS	University of Maryland Institute for Genome Sciences	http://www.igs.umaryland.edu/
+UNIVERSITY OF MELBOURNE	University of Melbourne	http://research.unimelb.edu.au/
+University of Melbourne	University of Melbourne	http://research.unimelb.edu.au/
+UNIMELB	University of Melbourne	http://research.unimelb.edu.au/
+University of Oxford	University of Oxford	http://www.well.ox.ac.uk/ogc/home
+UNIVERISTY OF OXFORD	University of Oxford	http://www.well.ox.ac.uk/ogc/home
+University of Pittsburgh	University of Pittsburgh	http://www.genetics.pitt.edu/
+UNIVERSITY OF SCIENCE AND TECHNOLOGY OF CHINA	University of Science and Technology of China	http://en.ustc.edu.cn/
+University of Washington	University of Washington	https://depts.washington.edu/molmicdx/
+UWSP	University of Wisconsin - Stevens Point	https://www.uwsp.edu/Pages/default.aspx
+UZH	University of Zurich	http://www.uzh.ch/en.html
+Washington University	Washington University Genome Sequencing Center	http://genome.wustl.edu/
+WUGSC	Washington University Genome Sequencing Center	http://genome.wustl.edu/
+WWU	Western Washington University	https://www.wwu.edu/

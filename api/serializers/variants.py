@@ -14,11 +14,13 @@ from variant.models import (
 class SNPSerializer(serializers.ModelSerializer):
     class Meta:
         model = SNP
+        exclude = ('members',)
 
 
 class InDelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Indel
+        exclude = ('members',)
 
 
 class AnnotationSerializer(serializers.ModelSerializer):
