@@ -1,0 +1,2 @@
+{% load i18n %}
+[Staphopia Registration] A new registration was request by {{ user }}

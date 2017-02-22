@@ -71,8 +71,9 @@ class Run(models.Model):
 class CenterNames(models.Model):
     """Convert ENA abbreviations to readable names."""
 
-    ena_name = models.TextField()
+    ena_name = models.TextField(unique=True)
     name = models.TextField()
+    link = models.TextField()
 
 
 class ToPublication(models.Model):

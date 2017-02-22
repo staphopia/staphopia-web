@@ -7,5 +7,5 @@ https://{% current_domain %}/settings/email/change/activate/{{ email_modificatio
 
 If you did not make this request, please disreagard this email.
 
-Thanks,
-The Staphopia Team
+Thank you!
+Staphopia Team

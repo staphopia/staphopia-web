@@ -48,7 +48,6 @@ class Command(BaseCommand):
             print('\tDeleting Sample {0}'.format(hit.sample.sample_tag))
             hit.sample.delete()
 
-
     @transaction.atomic
     def delete_rows(self, models, sample):
         """Delete all rows from amodel associated with a sample."""
@@ -57,4 +56,3 @@ class Command(BaseCommand):
                 model.__name__, sample.sample_tag
             ))
             model.objects.filter(sample=sample).delete()
-

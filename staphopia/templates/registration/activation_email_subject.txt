@@ -1,1 +1,2 @@
-Staphopia Account Activation
+{% load i18n %}
+Your Staphopia account was activated!

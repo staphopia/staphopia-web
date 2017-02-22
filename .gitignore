@@ -3,8 +3,9 @@
 *.py[cod]
 *.sqlite3
 *.sh
-*.txt
+./*.txt
 !requirements.txt
+!staphopia/templates/registration/*.txt
 
 logs/*
 !logs/.gitignore

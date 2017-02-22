@@ -1,0 +1,9 @@
+{% load i18n %}
+Dear {{ user }},
+
+We have received you request for a Staphopia account. Within the next few days an admin will review your request. Once accepted you will receive an email to complete the activation of your new Staphopia account.
+
+If you need further assistance please use Staphopia's contact form (https://{{ site.domain }}/contact/).
+
+Thank you!
+Staphopia Team

@@ -27,6 +27,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'registration',
+    'registration.contrib.notification',
     'django_email_changer',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,6 +57,9 @@ INSTALLED_APPS = (
 
 # django-registration
 ACCOUNT_ACTIVATION_DAYS = 7
+REGISTRATION_SUPPLEMENT_CLASS = None
+DEFAULT_FROM_EMAIL = 'usa300@staphopia.com'
+REGISTRATION_FROM_EMAIL = ("Staphopia's Friendly Robot <usa300@staphopia.com>")
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 # django_email_changer
@@ -64,7 +68,9 @@ EMAIL_CHANGE_NOTIFICATION_SUBJECT = ('[Email Update] - Please verify '
 EMAIL_CHANGE_NOTIFICATION_FROM = ("Staphopia's Friendly Robot "
                                   "<usa300@staphopia.com>")
 
-
+ADMINS = [
+    ('Robert Petit', 'rpetit@emory.edu')
+]
 '''----------------------------------------------------------------------------
 REST API
 ----------------------------------------------------------------------------'''

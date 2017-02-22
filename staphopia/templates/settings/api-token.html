@@ -4,16 +4,22 @@
 {% block container %}
     <div class="row">
         {% include "settings/sidebar.html" %}
-
         <div class="col-sm-9 col-md-10">
             <div class="row">
                 <div>
                     <h3>Staphopia API Token</h3>
+                    <p class="indent">
+                        Below you will find your API token. This token provides
+                        read only access to the Staphopia API. Currently a R package
+                        is in the works. If you would like access to it, please use the
+                        <a href="/contact/">Contact Form</a> to request access to the
+                        private GitHub repository.
+                    </p>
                     <hr />
                 </div>
             </div>
             <div class="row">
-                <div>
+                <div class="col-sm-8 col-md-8 col-sm-offset-2 col-md-offset-2">
                     {% get_token request.user as token %}
                     <p class="indent">
                         TOKEN = {{ token }}
