@@ -1,24 +1,16 @@
 {% load i18n %}
-{% blocktrans %}Dear {{ user }},{% endblocktrans %}
-{% if is_generated %}
-{% blocktrans with site.name as site_name %}Your account of {{ site_name }} was activated by inspector{% endblocktrans %}
+{% load settings %}
+{% get_token user as token %}
 
-{% trans 'The password of your account was generated automatically and displayed below.' %}
-{% trans 'Please click the following url to login.' %}
-{% trans 'It is strongly recommended that you change your initial password to something more secure.' %}
+Dear {{ user }},
 
-{% trans '::Your account information::' %}
-{% blocktrans %}USERNAME: {{ user }}{% endblocktrans %}
-{% blocktrans %}PASSWORD: {{ password }}{% endblocktrans %}
+Your Staphopia account was successfully activated! Please click the following url to login. http://{{ site.domain }}{% url 'login' %}
 
-http://{{ site.domain }}{% url 'login' %}
-{% else %}
-{% blocktrans with site.name as site_name %}Your account of {{ site_name }} was successfully activated{% endblocktrans %}
+Your account information:
+Username: {{ user }}
+API Token: {{ token }}
 
-{% trans 'Please click the following url to login.' %}
+The API token allows read access to Staphopia's API. Currently an R package is available upon request. Please use the contact form (https://{{ site.domain }}/contact/), to request access to the private GitHub repository.
 
-{% trans '::Your account information::' %}
-{% blocktrans %}USERNAME: {{ user }}{% endblocktrans %}
-
-http://{{ site.domain }}{% url 'login' %}
-{% endif %}
+Thank you!
+Staphopia Team

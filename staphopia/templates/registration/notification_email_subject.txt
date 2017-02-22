@@ -1,2 +1,2 @@
 {% load i18n %}
-{% blocktrans with site.name as site_name %}A new registration was created by {{ user }} -- {{ site_name }}{% endblocktrans %}
+[Staphopia Registration] A new registration was request by {{ user }}

@@ -1,9 +1,14 @@
 {% load i18n %}
-{% blocktrans %}Dear {{ user }},{% endblocktrans %}
+Dear {{ user }},
 
-{% trans 'I am afraid that your account registration was rejected by an admin.' %}
+I am afraid that your account registration was rejected by an admin.
 
 {% if message %}
-{% trans 'Rejection reasons:' %}
+Rejection reasons:
 {{ message }}
 {% endif %}
+
+If you have any questions, please use the contact form (https://{{ site.domain }}/contact/).
+
+Thank you,
+Staphopia Team

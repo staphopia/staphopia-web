@@ -1,10 +1,13 @@
 {% load i18n %}
-{% blocktrans %}Dear {{ user }},{% endblocktrans %}
+Dear {{ user }},
 
-{% blocktrans with site.name as site_name %}Your registration to {{ site_name }} was accepted by an admin.{% endblocktrans %}
+Your registration to Staphopia has been accepted by an admin!
 
-{% trans 'Please click the following url and set your account password to finish activation.' %}
+Please use the following link and set your account password and finish activation.
 
 http://{{ site.domain }}{% url 'registration_activate' activation_key=activation_key %}
 
-{% blocktrans %}The activation link above will be expired in {{ expiration_days }} days.{% endblocktrans %}
+The activation link above will be expired in {{ expiration_days }} days.
+
+Thank you!
+Staphopia Team
