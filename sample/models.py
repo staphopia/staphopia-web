@@ -82,19 +82,62 @@ class Publication(models.Model):
     keywords = models.TextField()
 
 
-class ToMetaData(models.Model):
-    """Link samples to metadata."""
-
-    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
-    metadata = models.ForeignKey('MetaData', on_delete=models.CASCADE)
-    value = models.TextField()
-
-
 class MetaData(models.Model):
     """Meta data associated with a sample."""
 
     field = models.TextField(unique=True)
     description = models.TextField()
+
+
+class EnaMetaData(models.Model):
+    """ENA Meta data associated with a sample."""
+    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    study_accession = models.TextField()
+    study_title = models.TextField(
+        help_text="Title of the study as would be used in a publication."
+    )
+    study_alias = models.TextField()
+
+    secondary_study_accession = models.TextField()
+    sample_accession = models.TextField()
+    secondary_sample_accession = models.TextField()
+    submission_accession = models.TextField()
+    experiment_accession = models.TextField()
+    experiment_title = models.TextField(
+        help_text=("Short text that can be used to call out experiment "
+                   "records in searches or in displays.")
+    )
+    experiment_alias = models.TextField()
+
+    tax_id = models.PositiveIntegerField(help_text="NCBI Taxonomy Identifier.")
+    scientific_name = models.TextField(
+        help_text="Scientific name of sample that distinguishes its taxonomy."
+    )
+
+    instrument_platform = models.TextField(
+        help_text=("Which sequencing platform and platform-specific "
+                   "runtime parameters.")
+    )
+    instrument_model = models.TextField(
+        help_text="Specific model of the platform used for sequencing."
+    )
+    library_layout = models.TextField(
+        help_text="Single, paired or other configuration of reads."
+    )
+    library_strategy = models.TextField(
+        help_text="Sequencing technique intended for this library."
+    )
+    library_selection = models.TextField(help_text="")
+
+    center_name = models.TextField(
+        help_text="Sequencing center that submitted the sample to ENA/SRA"
+    )
+    center_link = models.TextField(
+        help_text="Sequencing center link that submitted the sample to ENA/SRA"
+    )
+    first_public = models.DateField(
+        help_text="Date sample was submitted to ENA/SRA."
+    )
 
 
 def content_file_name(instance, filename):

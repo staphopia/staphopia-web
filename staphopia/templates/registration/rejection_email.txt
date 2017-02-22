@@ -1,0 +1,14 @@
+{% load i18n %}
+Dear {{ user }},
+
+I am afraid that your account registration was rejected by an admin.
+
+{% if message %}
+Rejection reasons:
+{{ message }}
+{% endif %}
+
+If you have any questions, please use the contact form (https://{{ site.domain }}/contact/).
+
+Thank you,
+Staphopia Team

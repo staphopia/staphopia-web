@@ -1,0 +1,10 @@
+{% load i18n %}
+A new Staphopia account registration has been requested.
+
+Name: {{ user.first_name }} {{ user.last_name }}
+Email: {{ user.email }}
+Username: {{ user }}
+
+Please click the following url and inspect his/her registration:
+
+http://{{ site.domain }}{% url 'admin:index' %}registration/registrationprofile/{{ profile.pk }}/

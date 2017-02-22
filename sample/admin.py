@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from sample.models import Sample, SampleSummary
+from sample.models import Sample
 
 
 @admin.register(Sample)
@@ -60,7 +60,7 @@ class SampleAdmin(admin.ModelAdmin):
     )
     """
 
-
+"""
 @admin.register(SampleSummary)
 class SamplesSummaryAdmin(admin.ModelAdmin):
     list_display = (
@@ -71,3 +71,4 @@ class SamplesSummaryAdmin(admin.ModelAdmin):
         'is_paired',
         'is_published',
     )
+"""

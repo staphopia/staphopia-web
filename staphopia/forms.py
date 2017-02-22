@@ -11,7 +11,6 @@ class RegistrationFormWithName(RegistrationFormUniqueEmail):
     first_name = forms.CharField(max_length=50, label='First Name')
     last_name = forms.CharField(max_length=50, label='Last Name')
 
-
 class ContactForm(forms.Form):
     name = forms.CharField(max_length=100)
     email = forms.EmailField(max_length=100)

@@ -4,7 +4,7 @@ from staphopia.settings.private import DEV_PASS
 '''----------------------------------------------------------------------------
 SECURITY WARNING: don't run with debug turned on in production!
 ----------------------------------------------------------------------------'''
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 
@@ -36,6 +36,7 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_EXEMPT_URLS = (
     r'^accounts/login/',
     r'^api/*',
+    r'^',
 )
 
 GOOGLE_ANALYTICS_PROPERTY_ID = 'UA-37140301-1'

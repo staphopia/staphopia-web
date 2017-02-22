@@ -1,0 +1,13 @@
+{% load i18n %}
+Dear {{ user }},
+
+Your registration to Staphopia has been accepted by an admin!
+
+Please use the following link and set your account password and finish activation.
+
+http://{{ site.domain }}{% url 'registration_activate' activation_key=activation_key %}
+
+The activation link above will be expired in {{ expiration_days }} days.
+
+Thank you!
+Staphopia Team

@@ -33,7 +33,7 @@ class Command(BaseCommand):
             # Experiment already has a sampleid
             to_sample = ToSample.objects.get(experiment_accession=experiment)
         except ToSample.DoesNotExist:
-            raise CommandError('This epriment is not in Smaple table.')
+            raise CommandError('This experiment is not in Sample table.')
 
         run = Run.objects.filter(experiment_accession=experiment)[:1].get()
         Sample.objects.filter(pk=to_sample.sample.pk).update(
