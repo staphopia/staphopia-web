@@ -1,8 +1,65 @@
 {% extends 'base.html' %}
+{% load staticfiles %}
 {% load top10 %}
 {% block container %}
-<div class="row">
-    {% top10_sequencing_centers %}
-    {% top10_sequence_types %}
- </div>
+
+<div class="row" style="padding-top: 3em;">
+    <div>
+      <!-- Nav tabs -->
+      <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active">
+            <a href="#sequencing-centers" aria-controls="sequencing-centers" role="tab" data-toggle="tab">
+                Top 10 Sequencing Contributors
+            </a>
+        </li>
+        <li role="presentation">
+            <a href="#mlst" aria-controls="mlst" role="tab" data-toggle="tab">
+                Top 10 Sequenced MLSTs
+            </a>
+        </li>
+      </ul>
+
+      <!-- Tab panes -->
+      <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active contains-chart" id="sequencing-centers"
+             style="min-width: 400px; height: 800px; margin: 0 auto">
+
+        </div>
+        <div role="tabpanel" class="tab-pane contains-chart" id="mlst"
+             style="min-width: 400px; height: 600px; margin: 0 auto">
+        </div>
+      </div>
+
+    </div>
+</div>
+
+<div id="hidden-table" style="position: absolute; left: -9999em;">
+{% top10_sequencing_centers %}
+{% top10_sequence_types %}
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="{% static "/static/js/staphopia-charts.js" %}"></script>
+
+<script>
+    $('#myTabs a').click(function (e) {
+        e.preventDefault();
+        $(this).tab('show');
+    });
+
+    // fix dimensions of chart that was in a hidden element
+    jQuery(document).on( 'shown.bs.tab', 'a[data-toggle="tab"]', function (e) { // on tab selection event
+        jQuery( ".contains-chart" ).each(function() { // target each element with the .contains-chart class
+            var chart = jQuery(this).highcharts(); // target the chart itself
+            chart.reflow() // reflow that chart
+        });
+    })
+
+    generate_sequencing_center_chart();
+    generate_mlst_chart();
+</script>
 {% endblock %}

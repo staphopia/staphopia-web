@@ -91,7 +91,7 @@ class MetaData(models.Model):
 
 class EnaMetaData(models.Model):
     """ENA Meta data associated with a sample."""
-    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    sample = models.OneToOneField('Sample', on_delete=models.CASCADE)
     study_accession = models.TextField()
     study_title = models.TextField(
         help_text="Title of the study as would be used in a publication."

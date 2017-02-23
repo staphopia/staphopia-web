@@ -4,24 +4,19 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.core.urlresolvers import reverse_lazy
 
-from rest_framework.authtoken import views as token_views
-
 # Thrid Party Apps
 from django_email_changer.views import (
     ActivateUserEmailModification,
     ActivationEmailSentSuccessView,
     CreateUserEmailModificationRequest,
 )
-
-# Registrations
-
 # Staphopia
-from staphopia.forms import RegistrationFormWithName
 from staphopia.settings.common import *
 
 # Views
 import staphopia.views
 import sample.views
+import sample.charts
 import api.views
 
 # API ViewSet Routers
@@ -37,8 +32,8 @@ urlpatterns = [
     # Grappelli & Admin Site
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^top10/', sample.views.top10, name='top10'),
-    url(r'^contact/', staphopia.views.contact, name='contact'),
+    url(r'^top10/$', sample.views.top10, name='top10'),
+    url(r'^contact/$', staphopia.views.contact, name='contact'),
     url(r'^settings/account/', staphopia.views.account_settings,
         name='account_settings'),
 
@@ -64,10 +59,14 @@ urlpatterns = [
         name="django_email_changer_change_view"),
 
     # django-registration
-    # url(r'^accounts/$', RedirectView.as_view(url='/',)),
     url(r'^accounts/register/$', staphopia.views.RegistrationView.as_view(),
         name='registration_register'),
     url('^accounts/', include('registration.urls')),
+
+    # Charts
+    url(r'^chart-data/sequencing-centers/$',
+        sample.charts.top_sequencing_centers,
+        name='chart_centers'),
 
     # Fix for password reset
     url(r'^accounts/password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
@@ -83,15 +82,10 @@ urlpatterns = [
     url(r'^accounts/password/reset/$', auth_views.password_reset,
         {'post_reset_redirect': '/accounts/password/reset/done/'},
         name="password_reset"),
-    #url('^accounts/activate/$', ActivationView.as_view(),
-    #    {'activation_key': 'None'}, name='registration_activate'),
     url(r'^settings/admin/$',
         auth_views.password_change,
         {'post_change_redirect': reverse_lazy('auth_password_change_done')},
         name='auth_password_change'),
-
-    # enable unique email registration feature
-    #url(r'^accounts/', include(registration.backends.default.urls)),
-
     url(r'^$', staphopia.views.index, name='home'),
+    url(r'^.*$', RedirectView.as_view(url='/',)),
 ]
