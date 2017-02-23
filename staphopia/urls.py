@@ -64,9 +64,9 @@ urlpatterns = [
     url('^accounts/', include('registration.urls')),
 
     # Charts
-    url(r'^chart-data/sequencing-centers/$',
-        sample.charts.top_sequencing_centers,
-        name='chart_centers'),
+    # url(r'^chart-data/sequencing-centers/$',
+    #    sample.charts.top_sequencing_centers,
+    #    name='chart_centers'),
 
     # Fix for password reset
     url(r'^accounts/password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
