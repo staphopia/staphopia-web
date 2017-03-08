@@ -87,6 +87,7 @@ def validate_analysis(directory, sample_tag, optional=False,
         'sccmec_coverage': '{0}/sccmec/cassette-coverages.gz',
         'sccmec_primers': '{0}/sccmec/primers.json',
         'sccmec_proteins': '{0}/sccmec/proteins.json',
+        'sccmec_subtypes': '{0}/sccmec/subtypes.json',
 
         # Annotation
         'annotation_genes': '{0}/annotation/{1}.ffn.gz',

@@ -44,6 +44,7 @@ class Command(BaseCommand):
             raise CommandError('Sample should already exist.')
 
         # Insert analysis results
+        '''
         print("Inserting SCCmec Coverage Stats...")
         insert_sccmec_coverage(files['sccmec_coverage'], sample,
                                force=opts['force'])
@@ -51,6 +52,10 @@ class Command(BaseCommand):
                             force=opts['force'])
         insert_sccmec_blast(files['sccmec_proteins'], sample, is_primers=False,
                             force=opts['force'])
+        '''
+        print("Inserting SCCmec subtype BLAST results...")
+        insert_sccmec_blast(files['sccmec_subtypes'], sample, is_primers=False,
+                            is_subtype=True, force=opts['force'])
 
         print(json.dumps({
             'sample_id': sample.pk,

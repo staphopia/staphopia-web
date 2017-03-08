@@ -60,6 +60,12 @@ class Primers(GenericBlast):
     pass
 
 
+class Subtypes(GenericBlast):
+    """BLAST hits against SCCmec subtype primers."""
+
+    pass
+
+
 class Proteins(GenericBlast):
     """BLAST hits against SCCmec proteins."""
 

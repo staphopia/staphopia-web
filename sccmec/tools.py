@@ -13,7 +13,7 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 
 from assembly.tools import get_contig
-from sccmec.models import Cassette, Coverage, Proteins, Primers
+from sccmec.models import Cassette, Coverage, Proteins, Primers, Subtypes
 from staphopia.utils import gziplines, get_blast_query, read_json, timeit
 from sample.tools import get_program_id
 
@@ -79,9 +79,17 @@ def insert_sccmec_coverage(coverage, sample, force=False):
 
 @timeit
 @transaction.atomic
-def insert_sccmec_blast(blast, sample, is_primers=True, force=True):
+def insert_sccmec_blast(blast, sample, is_primers=True, is_subtype=False,
+                        force=True):
     """."""
-    obj = Primers if is_primers else Proteins
+    obj = None
+    if is_primers:
+        obj = Primers
+    elif is_subtype:
+        obj = Subtypes
+    else:
+        obj = Proteins
+
     hits = []
 
     if force:

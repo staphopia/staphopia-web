@@ -156,11 +156,13 @@ class Command(BaseCommand):
                             force=opts['force'])
         insert_sccmec_blast(files['sccmec_proteins'], sample, is_primers=False,
                             force=opts['force'])
+        insert_sccmec_blast(files['sccmec_subtypes'], sample, is_primers=False,
+                            is_subtype=True, force=opts['force'])
 
-        print("Inserting Variants...")
-        insert_variant_results(files['variants'], sample, force=opts['force'])
+        #print("Inserting Variants...")
+        #insert_variant_results(files['variants'], sample, force=opts['force'])
 
-        print("Inserting Gene Annotations...")
+        '''print("Inserting Gene Annotations...")
         insert_gene_annotations(
             files['annotation_genes'], files['annotation_proteins'],
             files['annotation_contigs'], files['annotation_gff'],
@@ -176,7 +178,7 @@ class Command(BaseCommand):
         insert_blast_results(
             blastp, files['annotation_gff'], sample, compressed=True,
             force=opts['force']
-        )
+        )'''
 
         print(json.dumps({
             'sample_id': sample.pk,
