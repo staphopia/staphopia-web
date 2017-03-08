@@ -37,7 +37,7 @@ class Command(BaseCommand):
         try:
             sample = Sample.objects.get(md5sum=fq_md5sum)
             print("Found existing sample: {0} ({1})".format(
-                sample.db_tag, sample.md5sum
+                sample.sample_tag, sample.md5sum
             ))
         except Sample.DoesNotExist:
             # Create new sample
@@ -55,11 +55,5 @@ class Command(BaseCommand):
         '''
         print("Inserting SCCmec subtype BLAST results...")
         insert_sccmec_blast(files['sccmec_subtypes'], sample, is_primers=False,
-                            is_subtype=True, force=opts['force'])
-
-        print(json.dumps({
-            'sample_id': sample.pk,
-            'db_tag': sample.db_tag,
-            'sample_tag': sample.sample_tag,
-            'is_paired': sample.is_paired,
-        }))
+                            is_subtype=True)
+        print("Insert Complete")
