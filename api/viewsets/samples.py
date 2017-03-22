@@ -28,6 +28,7 @@ from api.utils import (
     get_samples_by_tag,
     get_sccmec_primers_by_sample,
     get_sccmec_coverage_by_sample,
+    get_sccmec_subtypes_by_sample,
     get_snps_by_sample,
     get_tags_by_sample,
     get_public_samples
@@ -178,6 +179,19 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             )
         else:
             return self.formatted_response(get_sccmec_primers_by_sample(pk))
+
+    @detail_route(methods=['get'])
+    def sccmec_subtypes(self, request, pk=None):
+        if 'exact_hits' in request.GET:
+            return self.formatted_response(
+                get_sccmec_subtypes_by_sample(pk, exact_hits=True)
+            )
+        elif 'predict' in request.GET:
+            return self.formatted_response(
+                get_sccmec_subtypes_by_sample(pk, predict=True)
+            )
+        else:
+            return self.formatted_response(get_sccmec_subtypes_by_sample(pk))
 
     @detail_route(methods=['get'])
     def sccmec_proteins(self, request, pk=None):

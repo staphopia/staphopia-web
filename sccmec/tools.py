@@ -187,7 +187,7 @@ def __read_coverage(coverage):
     return sccmec
 
 
-def predict_type_by_primers(blast_results):
+def predict_type_by_primers(blast_results, sample_id):
     primers = {
         # ccr
         'ccrA1': False, 'ccrA2': False, 'ccrA3': False, 'ccrA4': False,
@@ -219,6 +219,7 @@ def predict_type_by_primers(blast_results):
             mec_class['C'] = False
 
     mec_types = OrderedDict([
+        ('sample_id', sample_id),
         ('I', False), ('II', False), ('III', False), ('IV', False),
         ('V', False), ('VI', False), ('VII', False), ('VIII', False),
         ('IX', False), ('X', False), ('XI', False)
@@ -251,4 +252,62 @@ def predict_type_by_primers(blast_results):
     if primers['ccrA1'] and primers['ccrB'] and mec_class['C']:
         mec_types['IX'] = True
 
-    return mec_types
+    return [mec_types]
+
+
+def predict_subtype_by_primers(blast_results, sample_id):
+    primers = {
+        'ia-1a3': False, 'ia-1a4': False,
+        'iia-kdpB1': False, 'iia-kdpB2': False,
+        'iib-2b3': False, 'iib-2b4': False,
+        'iiia-3a1': False, 'iiia-3ab': False,
+        'iva-f': False, 'iva-r': False,
+        'ivbf-f': False, 'ivbf-r': False,
+        'ivce-f': False, 'ivce-r': False,
+        'ivd-f': False, 'ivd-r': False,
+        'ivg-f': False, 'ivg-r': False,
+        'ivh-f': False, 'ivh-r': False,
+    }
+
+    for hit in blast_results:
+        name = hit['title'].split('|')[0]
+        primers[name] = True
+
+    subtypes = OrderedDict([
+        ('sample_id', sample_id),
+        ('Ia', False), ('IIa', False), ('IIb', False), ('IIIa', False),
+        ('IVa', False), ('IVb', False), ('IVc', False), ('IVd', False),
+        ('IVg', False), ('IVh', False),
+    ])
+
+    if primers['ia-1a3'] and primers['ia-1a4']:
+        subtypes['Ia'] = True
+
+    if primers['iia-kdpB1'] and primers['iia-kdpB2']:
+        subtypes['IIa'] = True
+
+    if primers['iib-2b3'] and primers['iib-2b4']:
+        subtypes['IIb'] = True
+
+    if primers['iiia-3a1'] and primers['iiia-3ab']:
+        subtypes['IIIa'] = True
+
+    if primers['iva-f'] and primers['iva-r']:
+        subtypes['IVa'] = True
+
+    if primers['ivbf-f'] and primers['ivbf-r']:
+        subtypes['IVb'] = True
+
+    if primers['ivce-f'] and primers['ivce-r']:
+        subtypes['IVc'] = True
+
+    if primers['ivd-f'] and primers['ivd-r']:
+        subtypes['IVd'] = True
+
+    if primers['ivg-f'] and primers['ivg-r']:
+        subtypes['IVg'] = True
+
+    if primers['ivh-f'] and primers['ivh-r']:
+        subtypes['IVh'] = True
+
+    return [subtypes]

@@ -3,41 +3,28 @@
 <div class="panel-group" id="accordion">
     <div class="panel panel-info">
         <!-- Rank -->
-        <div class="panel-heading"><em>{{ sample_tag }}</em></div>
+        <div class="panel-heading" style="text-align: center">{{ sample_tag }}</div>
         <div class="panel-body text-center">
             {% if rank == 3 %}
-                <img src="{% static "img/gold.png" %}">
+                <img title="Gold quality data."src="{% static "img/gold.png" %}">
             {% elif rank == 2 %}
-                <img src="{% static "img/silver.png" %}">
+                <img title="Silver quality data." src="{% static "img/silver.png" %}">
             {% else %}
-                <img src="{% static "img/bronze.png" %}">
+                <img title="Bronze quality data." src="{% static "img/bronze.png" %}">
             {% endif %}
         </div>
 
         <!-- Summary -->
         <div class="list-group">
-            <a id="summary" class="list-group-item list-group-item-info title-group" data-parent="#accordion"
-               href="#collapseSummary" data-toggle="collapse">
-                Summary
+            <a id="summary" class="list-group-item list-group-item-info title-group">
+                Sample Summary
             </a>
         </div>
         <div id="collapseSummary" class="list-group panel-collapse collapse in">
             <a id='show-meta-data' class="list-group-item active" href="#">Meta-Data</a>
-            <a id='show-phenotype' class="list-group-item" href="#">Phenotype</a>
-            <a id='show-sequence' class="list-group-item" href="#">Sequence</a>
+            <a id='show-sequence' class="list-group-item" href="#">Sequence Quality</a>
             <a id='show-assembly' class="list-group-item" href="#">Assembly</a>
-        </div>
-
-        <!-- MLST -->
-        <div class="list-group">
-            <a id="mlst" class="list-group-item list-group-item-info title-group" data-parent="#accordion"
-               href="#collapseMLST" data-toggle="collapse">
-                MLST
-            </a>
-        </div>
-        <div id="collapseMLST" class="list-group panel-collapse collapse">
-            <a id='show-mlst' class="list-group-item" href="#">Outline</a>
-            <a id='show-mlst-related' class="list-group-item" href="#">Related Samples</a>
+            <a id='show-mlst' class="list-group-item" href="#">MLST</a>
         </div>
     </div>
 </div>

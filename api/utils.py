@@ -3,7 +3,8 @@ from collections import OrderedDict
 
 from django.db import connection
 
-from sccmec.tools import predict_type_by_primers
+from sccmec.tools import predict_type_by_primers, predict_subtype_by_primers
+
 
 def format_results(results, time=None):
     """Format query results to be similar to Django Rest Framework output."""
@@ -277,10 +278,39 @@ def get_sccmec_primers_by_sample(sample_id, exact_hits=False, predict=False):
                  WHERE p.sample_id={0};""".format(sample_id)
 
     if predict:
-        return predict_type_by_primers(query_database(sql))
+        return predict_type_by_primers(query_database(sql), sample_id)
     else:
         return query_database(sql)
 
+
+def get_sccmec_subtypes_by_sample(sample_id, exact_hits=False, predict=False):
+    """Return SCCmec primer hits asscociated with a sample_id."""
+    sql = None
+    if exact_hits or predict:
+        sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
+                        p.identity, p.mismatch, p.gaps, p.hamming_distance,
+                        p.query_from, p.query_to, p.hit_from, p.hit_to,
+                        p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
+                        p.program_id
+                 FROM sccmec_subtypes AS p
+                 LEFT JOIN staphopia_blastquery AS s
+                 ON p.query_id=s.id
+                 WHERE p.sample_id={0} AND p.hamming_distance=0;""".format(sample_id)
+    else:
+        sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
+                        p.identity, p.mismatch, p.gaps, p.hamming_distance,
+                        p.query_from, p.query_to, p.hit_from, p.hit_to,
+                        p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
+                        p.program_id
+                 FROM sccmec_subtypes AS p
+                 LEFT JOIN staphopia_blastquery AS s
+                 ON p.query_id=s.id
+                 WHERE p.sample_id={0};""".format(sample_id)
+
+    if predict:
+        return predict_subtype_by_primers(query_database(sql), sample_id)
+    else:
+        return query_database(sql)
 
 
 def get_sccmec_coverage_by_sample(sample_id):

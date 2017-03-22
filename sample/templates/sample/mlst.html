@@ -6,12 +6,12 @@
         <div class="row">
             <div class='col-xs-12 col-md-10 col-md-offset-1'>
                 {% if mlst.is_exact %}
-                    {{ sample_tag }} is an exact match to <strong>ST{{mlst.st_stripped}}</strong>.
+                    {{ mlst.sample.sample_tag }} is an exact match to <strong>ST{{mlst.st_stripped}}</strong>.
                 {% elif mlst.st_stripped > 0 %}
-                    {{ sample_tag }} is <strong>similar to ST{{mlst.st_stripped}}</strong>, although it is not an exact match.
+                    {{ mlst.sample.sample_tag }} is <strong>similar to ST{{mlst.st_stripped}}</strong>, although it is not an exact match.
                     This could be due to low coverage coverage or poor mapping quality.
                 {% else %}
-                    Given the data, a <strong>sequence type was not determined</strong> for {{sample_tag}}.
+                    Given the data, a <strong>sequence type was not determined</strong> for {{mlst.sample.sample_tag}}.
                     One or more loci has multiple mismatches or poor coverage.
                 {% endif %}
                 Please see the summary below.

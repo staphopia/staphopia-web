@@ -39,10 +39,10 @@ def top10(request):
     return render_to_response('top10.html', {}, RequestContext(request))
 
 
-def sample(request, sample_tag=None):
-    if sample_tag:
+def sample(request, sample_id=None):
+    if sample_id:
         return render_to_response('sample/results.html',
-                                  {'sample_tag': sample_tag},
+                                  {'sample_id': sample_id},
                                   RequestContext(request))
     else:
         return render_to_response('samples.html', {}, RequestContext(request))

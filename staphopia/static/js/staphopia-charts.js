@@ -73,3 +73,33 @@ function generate_mlst_chart() {
         }
     });
 }
+
+function generate_sequence_quality_chart() {
+    Highcharts.chart('sequence-quality-chart', {
+        data: { table: 'seqeunce-quality-table'},
+        chart: { type: 'column'},
+        title: { text: 'Per Base Sequencing Quality'},
+        xAxis: {
+            type: 'category',
+            title: { text: 'Position' },
+            labels: {
+                useHTML: true,
+                style: {
+                    fontSize: '12px',
+                    fontFamily: 'Verdana, sans-serif'
+                }
+            }
+        },
+        yAxis: {
+            type: 'logarithmic',
+            allowDecimals: false,
+            title: { text: 'Mean Quality' }
+        },
+        tooltip: {
+            formatter: function () {
+                return '<b>' + this.series.name + '</b><br/>' +
+                    this.point.y + ' ' + this.point.name;
+            }
+        }
+    });
+}

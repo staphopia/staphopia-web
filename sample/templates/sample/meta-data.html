@@ -7,11 +7,7 @@
                 <ul class="list-group row no-border condensed">
                     <li class="list-group-item col-xs-6 text-right">Owner</li>
                     <li class="list-group-item col-xs-6">
-                        {% if sample.user.username == "ena" %}
-                            {{ sample.user.username }}_bot
-                        {% else %}
-                            {{ sample.user.username }}
-                        {% endif %}
+                        {{ sample.username }}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Sample Visibility</li>
@@ -25,18 +21,35 @@
 
                     <li class="list-group-item col-xs-6 text-right">ENA Link</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.sample_tag }}
+                        {% if sample.username == "ena" %}
+                            <a target="_blank" href="http://www.ebi.ac.uk/ena/data/view/{{ sample.sample_tag}}">
+                                {{ sample.sample_tag }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
                     </li>
 
-                    <li class="list-group-item col-xs-6 text-right">Publication Link</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.is_published|default:"-" }}
+                    <li class="list-group-item col-xs-6 text-right">PubMed Link (PMID)</li>
+                    <li class="list-group-item col-xs-6" style="min-height:65px">
+                        {% if sample.is_published %}
+                            {% get_publications sample.sample_id as pubs %}
+                            {% for pub in pubs %}
+                                {% if forloop.counter > 1 %}
+                                    , <a target="_blank" href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid}}">
+                                        {{ pub.pmid }}
+                                    </a>
+                                {% else %}
+                                    <a target="_blank" href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid}}">
+                                        {{ pub.pmid }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            Unpublished, or missing publication information.
+                        {% endif %}
                     </li>
 
-                    <li class="list-group-item col-xs-6 text-right">Funding Agency</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.funding_agency|default:"-" }}
-                    </li>
                 </ul>
 
                 <ul class="list-group row no-border condensed">
@@ -57,28 +70,33 @@
                 </ul>
 
                 <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Sequencing Date</li>
+                    <li class="list-group-item col-xs-6 text-right">Sequencing First Public</li>
                     <li class="list-group-item col-xs-6">
-                        {% if sample.sequencing_date.year == 1900 %}
+                        {% if sample.first_public == 1900 %}
                             -
                         {% else %}
-                            {{ sample.sequencing_date }}
+                            {{ sample.first_public }}
                         {% endif %}
                     </li>
-
                     <li class="list-group-item col-xs-6 text-right">Sequencing Center</li>
                     <li class="list-group-item col-xs-6">
-                        {% get_center_name sample.sequencing_center %}
+                        {% if sample.center_link %}
+                            <a target="_blank" href="{{ sample.center_link }}">
+                                {{ sample.center_name|default:"-" }}
+                            </a>
+                        {% else %}
+                            {{ sample.center_name|default:"-" }}
+                        {% endif %}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Sequencing Platform</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.sequencing_platform|default:"-" }}
+                        {{ sample.instrument_model|default:"-" }}
                     </li>
 
-                    <li class="list-group-item col-xs-6 text-right">Library Method</li>
+                    <li class="list-group-item col-xs-6 text-right">Library Strategy</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.sequencing_library_method|default:"-" }}
+                        {{ sample.library_strategy|default:"-" }}
                     </li>
                 </ul>
             </div>
@@ -86,29 +104,32 @@
                 <ul class="list-group row no-border condensed">
                     <li class="list-group-item col-xs-6 text-right">Strain</li>
                     <li class="list-group-item col-xs-6">
-                        {% get_taxon_id sample.sample_tag as tax_id %}
-                        <a target="_blank" href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={{ tax_id }}">
-                            {{ sample.strain|default:"-" }}
-                        </a>
+                        {% if sample.tax_id %}
+                            <a target="_blank" href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={{ sample.tax_id }}">
+                                {{ sample.strain|default:"-" }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
                     </li>
 
-                    <li class="list-group-item col-xs-6 text-right">Isolation Date</li>
+                    <li class="list-group-item col-xs-6 text-right">Collection Date</li>
                     <li class="list-group-item col-xs-6">
                         {% if sample.isolation_date.year == 1900 %}
                             -
                         {% else %}
-                            {{ sample.isolation_date }}
+                            {{ sample.collection_date|default:"-" }}
                         {% endif %}
+                    </li>
+
+                    <li class="list-group-item col-xs-6 text-right">Isolation Source</li>
+                    <li class="list-group-item col-xs-6">
+                        {{ sample.isolation_source|capfirst|default:"-" }}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Isolation Country</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.isolation_country|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Isolation City</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.isolation_city|default:"-" }}
+                        {{ sample.country|default:"-" }}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Isolation Region</li>
@@ -118,24 +139,24 @@
                 </ul>
 
                 <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Host Name</li>
+                    <li class="list-group-item col-xs-6 text-right">Host</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.hsot_name|default:"-" }}
+                        {{ sample.host|capfirst|default:"-" }}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Host Gender</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.host_gender|default:"-" }}
+                        {{ sample.host_sex|default:"-" }}
                     </li>
 
-                    <li class="list-group-item col-xs-6 text-right">Host Age</li>
+                    <li class="list-group-item col-xs-6 text-right">Host Body Site</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.host_age|default:"-" }}
+                        {{ sample.host_body_site|default:"-" }}
                     </li>
 
                     <li class="list-group-item col-xs-6 text-right">Host Health</li>
                     <li class="list-group-item col-xs-6">
-                        {{ sample.host_health|default:"-" }}
+                        {{ sample.host_status|capfirst|default:"-" }}
                     </li>
                 </ul>
             </div>

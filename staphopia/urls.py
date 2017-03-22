@@ -38,11 +38,11 @@ urlpatterns = [
         name='account_settings'),
 
     # Samples
-    url(r'^samples/data/$', sample.views.sample_summary,
+    url(r'^sample/data/$', sample.views.sample_summary,
         name='samples_data'),
-    url(r'^samples/(?P<sample_tag>[^/]+)/$', sample.views.sample,
+    url(r'^sample/(?P<sample_id>[0-9]+)/?$', sample.views.sample,
         name='sample_results'),
-    url(r'^samples/$', sample.views.sample, name='samples'),
+    url(r'^sample/$', sample.views.sample, name='samples'),
 
     # Autofill Genome Submission fields
     url(r'^settings/autofill/', include('autofill.urls'), name='autofill'),

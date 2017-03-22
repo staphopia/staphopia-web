@@ -112,6 +112,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'staphopia.middleware.LoginRequiredMiddleware',
 )
+APPEND_SLASH = True
 
 '''----------------------------------------------------------------------------
 Static
