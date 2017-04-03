@@ -35,11 +35,10 @@ def validate_positive_integer(data):
         try:
             if float(data):
                 error = True
-                msg = ("Query must be a positive integer. Recieved a float, make "
-                       "sure query is not in scientific notation.")
+                msg = ("Query must be a positive integer. Recieved a float, "
+                       "make sure query is not in scientific notation.")
         except ValueError:
             error = True
             msg = "Query must be a positive integer."
-
 
     return {"has_errors": error, "message": msg, "data": data}

@@ -105,8 +105,52 @@ def get_genes_by_samples(ids, product_id=None, cluster_id=None):
             ','.join([str(i) for i in ids]), cluster_id
         )
     else:
-        sql = """SELECT * FROM gene_features WHERE sample_id IN ({0});""".format(
+        sql = """SELECT *
+                 FROM gene_features
+                 WHERE sample_id IN ({0});""".format(
             ','.join([str(i) for i in ids])
+        )
+    return query_database(sql)
+
+
+def get_gene_features(product_id=None, cluster_id=None):
+    """Return filtered gene features."""
+    sql = None
+    columns = ['g.id', 'g.start', 'g.end', 'g.is_positive', 'g."is_tRNA"',
+               'g."is_rRNA"', 'g.phase', 'g.prokka_id', 'g.dna', 'g.aa',
+               'g.cluster_id', 'c.name AS cluster_name', 'g.contig_id',
+               'g.inference_id', 'g.note_id', 'g.product_id', 'p.product',
+               'g.sample_id']
+
+    if product_id and cluster_id:
+        sql = """SELECT {0}
+                 FROM gene_features as g
+                 LEFT JOIN gene_product as p
+                 ON p.id = g.product_id
+                 LEFT JOIN gene_clusters as c
+                 ON c.id = g.cluster_id
+                 WHERE g.product_id={1} AND g.cluster_id={2};""".format(
+                    ','.join(columns), product_id, cluster_id
+                )
+    elif product_id:
+        sql = """SELECT {0}
+                 FROM gene_features as g
+                 LEFT JOIN gene_product as p
+                 ON p.id = g.product_id
+                 LEFT JOIN gene_clusters as c
+                 ON c.id = g.cluster_id
+                 WHERE g.product_id={1};""".format(
+            ','.join(columns), product_id
+        )
+    elif cluster_id:
+        sql = """SELECT {0}
+                 FROM gene_features as g
+                 LEFT JOIN gene_product as p
+                 ON p.id = g.product_id
+                 LEFT JOIN gene_clusters as c
+                 ON c.id = g.cluster_id
+                 WHERE  g.cluster_id={1};""".format(
+            ','.join(columns), cluster_id
         )
     return query_database(sql)
 
@@ -268,7 +312,9 @@ def get_samples(sample_id=None, sample_ids=None):
                  FROM sample_sample as s
                  LEFT JOIN mlst_srst2 as m
                  ON s.id = m.sample_id
-                 WHERE s.id IN ({0})""".format(','.join([str(i) for i in sample_ids]))
+                 WHERE s.id IN ({0})""".format(
+                ','.join([str(i) for i in sample_ids])
+                )
     else:
         sql = """SELECT s.id, s.sample_tag, s.is_paired, s.is_public, s.md5sum,
                         s.user_id, m.st_original, m.st_stripped,
@@ -304,7 +350,8 @@ def get_sccmec_primers_by_sample(sample_id, exact_hits=False, predict=False):
                  FROM sccmec_primers AS p
                  LEFT JOIN staphopia_blastquery AS s
                  ON p.query_id=s.id
-                 WHERE p.sample_id={0} AND p.hamming_distance=0;""".format(sample_id)
+                 WHERE p.sample_id={0} AND
+                       p.hamming_distance=0;""".format(sample_id)
     else:
         sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
                         p.identity, p.mismatch, p.gaps, p.hamming_distance,
@@ -334,7 +381,8 @@ def get_sccmec_subtypes_by_sample(sample_id, exact_hits=False, predict=False):
                  FROM sccmec_subtypes AS p
                  LEFT JOIN staphopia_blastquery AS s
                  ON p.query_id=s.id
-                 WHERE p.sample_id={0} AND p.hamming_distance=0;""".format(sample_id)
+                 WHERE p.sample_id={0} AND
+                       p.hamming_distance=0;""".format(sample_id)
     else:
         sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
                         p.identity, p.mismatch, p.gaps, p.hamming_distance,

@@ -3,7 +3,12 @@ from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
-from api.utils import get_gene_features_by_product, get_genes_by_samples, format_results
+from api.utils import (
+    get_gene_features_by_product,
+    get_genes_by_samples,
+    get_gene_features,
+    format_results
+)
 from api.validators import validate_positive_integer, validate_list_of_ids
 from api.serializers.genes import (
     GeneClusterSerializer,
@@ -76,7 +81,9 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                             page_size=100, is_serialized=True
                         )
                 elif 'product_id' in request.GET:
-                    validator = validate_positive_integer(request.GET['product_id'])
+                    validator = validate_positive_integer(
+                        request.GET['product_id']
+                    )
                     if validator['has_errors']:
                         return Response(validator)
                     else:
@@ -88,7 +95,9 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                             page_size=100, is_serialized=True
                         )
                 elif 'cluster_id' in request.GET:
-                    validator = validate_positive_integer(request.GET['cluster_id'])
+                    validator = validate_positive_integer(
+                        request.GET['cluster_id']
+                    )
                     if validator['has_errors']:
                         return Response(validator)
                     else:
@@ -105,10 +114,8 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                         page_size=100, is_serialized=True
                     )
 
-            return self.paginate(queryset, serializer=GeneFeatureSerializer,
-                                 page_size=10)
-
     def list(self, request):
+        queryset = None
         if 'product_id' in request.GET and 'cluster_id' in request.GET:
             product = validate_positive_integer(request.GET['product_id'])
             cluster = validate_positive_integer(request.GET['cluster_id'])
@@ -117,7 +124,7 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
             elif cluster['has_errors']:
                 return Response(cluster)
             else:
-                queryset = Features.objects.filter(
+                queryset = get_gene_features(
                     product_id=request.GET['product_id'],
                     cluster_id=request.GET['cluster_id']
                 )
@@ -126,7 +133,7 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
             if validator['has_errors']:
                 return Response(validator)
             else:
-                queryset = Features.objects.filter(
+                queryset = get_gene_features(
                     product_id=request.GET['product_id']
                 )
         elif 'cluster_id' in request.GET:
@@ -134,15 +141,17 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
             if validator['has_errors']:
                 return Response(validator)
             else:
-                queryset = Features.objects.filter(
+                queryset = get_gene_features(
                     cluster_id=request.GET['cluster_id']
                 )
         else:
-            queryset = Features.objects.all()
+            return Response({
+                "message": ("Unable to retrieve all gene features, you must "
+                            "use filters such as 'product_id' and "
+                            "'cluster_id'.")
+            })
 
-        #return Response(queryset)
-        return self.paginate(queryset, serializer=GeneFeatureSerializer,
-                             page_size=10)
+        return self.paginate(queryset, is_serialized=True, page_size=100)
 
 
 class GeneProductViewSet(CustomReadOnlyModelViewSet):
