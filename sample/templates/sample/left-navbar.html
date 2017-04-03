@@ -12,6 +12,7 @@
             {% else %}
                 <img title="Bronze quality data." src="{% static "img/bronze.png" %}">
             {% endif %}
+
         </div>
 
         <!-- Summary -->
@@ -21,7 +22,13 @@
             </a>
         </div>
         <div id="collapseSummary" class="list-group panel-collapse collapse in">
-            <a id='show-meta-data' class="list-group-item active" href="#">Meta-Data</a>
+            {% if user == 'ena' %}
+                <a title="European Nucleotide Archive (ENA) related information"
+                   id='show-ena-info' class="list-group-item active" href="#">ENA Information</a>
+                <a id='show-meta-data' class="list-group-item" href="#">Meta-Data</a>
+            {% else %}
+                <a id='show-meta-data' class="list-group-item active" href="#">Meta-Data</a>
+            {% endif %}
             <a id='show-sequence' class="list-group-item" href="#">Sequence Quality</a>
             <a id='show-assembly' class="list-group-item" href="#">Assembly</a>
             <a id='show-mlst' class="list-group-item" href="#">MLST</a>

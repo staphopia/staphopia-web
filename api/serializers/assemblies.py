@@ -11,3 +11,9 @@ class AssemblyStatSerializer(serializers.ModelSerializer):
 class ContigSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contigs
+        fields = ('id', 'is_plasmids', 'name', 'sample')
+
+
+class ContigFullSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contigs

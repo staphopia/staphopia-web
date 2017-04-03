@@ -35,16 +35,19 @@ def get_ids_in_bulk(table, ids, id_col="id"):
 def get_genes_by_sample(sample_id, product_id=None, cluster_id=None):
     """Return genes associated with a sample."""
     sql = None
-    columns = ['g.id', 'g.start', 'g.end', 'g.is_positive', '\'g.is_tRNA\'',
-               '\'g.is_rRNA\'', 'g.phase', 'g.prokka_id', 'g.dna', 'g.aa',
-               'g.cluster_id', 'g.contig_id', 'g.inference_id', 'g.note_id',
-               'g.product_id', 'p.product', 'g.sample_id']
+    columns = ['g.id', 'g.start', 'g.end', 'g.is_positive', 'g."is_tRNA"',
+               'g."is_rRNA"', 'g.phase', 'g.prokka_id', 'g.dna', 'g.aa',
+               'g.cluster_id', 'c.name AS cluster_name', 'g.contig_id',
+               'g.inference_id', 'g.note_id', 'g.product_id', 'p.product',
+               'g.sample_id']
 
     if product_id and cluster_id:
         sql = """SELECT {0}
                  FROM gene_features as g
                  LEFT JOIN gene_product as p
                  ON p.id = g.product_id
+                 LEFT JOIN gene_clusters as c
+                 ON c.id = g.cluster_id
                  WHERE g.sample_id={1} AND g.product_id={2}
                  AND g.cluster_id={3};""".format(
                     ','.join(columns), sample_id, product_id, cluster_id
@@ -54,6 +57,8 @@ def get_genes_by_sample(sample_id, product_id=None, cluster_id=None):
                  FROM gene_features as g
                  LEFT JOIN gene_product as p
                  ON p.id = g.product_id
+                 LEFT JOIN gene_clusters as c
+                 ON c.id = g.cluster_id
                  WHERE g.sample_id={1} AND g.product_id={2};""".format(
             ','.join(columns), sample_id, product_id
         )
@@ -62,6 +67,8 @@ def get_genes_by_sample(sample_id, product_id=None, cluster_id=None):
                  FROM gene_features as g
                  LEFT JOIN gene_product as p
                  ON p.id = g.product_id
+                 LEFT JOIN gene_clusters as c
+                 ON c.id = g.cluster_id
                  WHERE g.sample_id={1} AND g.cluster_id={2};""".format(
             ','.join(columns), sample_id, cluster_id
         )
@@ -70,6 +77,8 @@ def get_genes_by_sample(sample_id, product_id=None, cluster_id=None):
                  FROM gene_features as g
                  LEFT JOIN gene_product as p
                  ON p.id = g.product_id
+                 LEFT JOIN gene_clusters as c
+                 ON c.id = g.cluster_id
                  WHERE g.sample_id={1};""".format(
             ','.join(columns), sample_id
         )

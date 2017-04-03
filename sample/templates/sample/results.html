@@ -14,10 +14,13 @@
 {% get_assembly_stats sample_id as assembly %}
 <div class="row">
     <div class='col-sm-3 col-md-2'>
-        {% include "sample/left-navbar.html" with rank=fq.1.rank sample_tag=meta_data.sample_tag %}
+        {% include "sample/left-navbar.html" with rank=fq.1.rank sample_tag=meta_data.sample_tag user=meta_data.username %}
     </div>
     <div class='col-sm-9 col-md-10'>
         <!-- Summary -->
+        {% if meta_data.username == 'ena' %}
+            {% include "sample/ena-info.html" with sample=meta_data %}
+        {% endif %}
         {% include "sample/meta-data.html" with sample=meta_data %}
         {% include "sample/phenotype.html" with sample=meta_data %}
         {% include "sample/sequence.html" with fq=fq %}
@@ -40,7 +43,9 @@
     <script src="{% static "/static/js/staphopia-charts.js" %}"></script>
 
     <script>
-    var current_result = 'show-meta-data'
+
+    var current_result = $('#collapseSummary').find('a.active').attr('id')
+
     $(document).ready(function() {
         show_panel(current_result);
         $("div.panel-collapse a").click(function() {

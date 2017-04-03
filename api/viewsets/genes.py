@@ -139,9 +139,10 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                 )
         else:
             queryset = Features.objects.all()
-        return Response(request)
-        #return self.paginate(queryset, serializer=GeneFeatureSerializer,
-        #                     page_size=10)
+
+        #return Response(queryset)
+        return self.paginate(queryset, serializer=GeneFeatureSerializer,
+                             page_size=10)
 
 
 class GeneProductViewSet(CustomReadOnlyModelViewSet):
