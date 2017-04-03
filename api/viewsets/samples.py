@@ -25,6 +25,7 @@ from api.utils import (
     get_genes_by_sample,
     get_indels_by_sample,
     get_resitance_by_samples,
+    get_samples,
     get_samples_by_tag,
     get_sccmec_primers_by_sample,
     get_sccmec_coverage_by_sample,
@@ -50,6 +51,13 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     queryset = Sample.objects.all()
     serializer_class = SampleSerializer
 
+    def retrieve(self, request, pk=None):
+        validator = validate_positive_integer(pk)
+        if validator['has_errors']:
+            return Response(validator)
+        else:
+            return self.paginate(get_samples(sample_id=pk), is_serialized=True)
+
     def list(self, request):
         if 'st' in request.GET:
             validator = validate_positive_integer(request.GET['st'])
@@ -65,9 +73,10 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                     ids = Srst2.objects.filter(
                         st_stripped=request.GET['st']
                     ).values_list('sample_id', flat=True)
-                queryset = Sample.objects.filter(id__in=ids)
+                queryset = get_samples(sample_ids=ids)
         else:
-            queryset = Sample.objects.all()
+            queryset = get_samples()
+
 
         '''
         if not request.user.is_superuser:
@@ -75,7 +84,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 Q(is_public=True) | Q(user_id=request.user.pk)
             )
         '''
-        return self.paginate(queryset, serializer=SampleSerializer)
+        return self.paginate(queryset, is_serialized=True)
 
     @list_route(methods=['get'])
     def public(self, request):

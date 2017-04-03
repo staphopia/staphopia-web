@@ -250,6 +250,36 @@ def get_resitance_by_samples(sample_ids, resistance_id=None):
     return query_database(sql)
 
 
+def get_samples(sample_id=None, sample_ids=None):
+    """Return samples."""
+    sql = None
+    if sample_id:
+        sql = """SELECT s.id, s.sample_tag, s.is_paired, s.is_public, s.md5sum,
+                        s.user_id, m.st_original, m.st_stripped,
+                        m.is_exact AS st_is_exact_match
+                 FROM sample_sample as s
+                 LEFT JOIN mlst_srst2 as m
+                 ON s.id = m.sample_id
+                 WHERE s.id={0}""".format(sample_id)
+    elif sample_ids:
+        sql = """SELECT s.id, s.sample_tag, s.is_paired, s.is_public, s.md5sum,
+                        s.user_id, m.st_original, m.st_stripped,
+                        m.is_exact AS st_is_exact_match
+                 FROM sample_sample as s
+                 LEFT JOIN mlst_srst2 as m
+                 ON s.id = m.sample_id
+                 WHERE s.id IN ({0})""".format(','.join([str(i) for i in sample_ids]))
+    else:
+        sql = """SELECT s.id, s.sample_tag, s.is_paired, s.is_public, s.md5sum,
+                        s.user_id, m.st_original, m.st_stripped,
+                        m.is_exact AS st_is_exact_match
+                 FROM sample_sample as s
+                 LEFT JOIN mlst_srst2 as m
+                 ON s.id = m.sample_id"""
+
+    return query_database(sql)
+
+
 def get_samples_by_tag(tag_id):
     """Return samples associated with a tag."""
     sql = """SELECT t.sample_id, s.user_id, s.sample_tag,
