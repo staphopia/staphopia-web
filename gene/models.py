@@ -9,7 +9,7 @@ from django.db import models
 
 from assembly.models import Contigs
 from sample.models import Sample, Program
-from variant.models import Reference
+from variant.models import Reference, Annotation
 
 
 class Clusters(models.Model):
@@ -48,37 +48,15 @@ class Organism(models.Model):
     name = models.TextField()
 
 
-class References(models.Model):
+class ReferenceMapping(models.Model):
     """Annotation mapping to Variant references."""
 
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
-    contig = models.ForeignKey(
-        'ReferenceSequence', on_delete=models.CASCADE, default=0
-    )
+    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
 
-    start = models.PositiveIntegerField()
-    end = models.PositiveIntegerField()
-    is_positive = models.BooleanField()
-    is_tRNA = models.BooleanField()
-    phase = models.PositiveSmallIntegerField()
-
-    dna = models.TextField()
-    aa = models.TextField()
-
     class Meta:
-        unique_together = ('reference', 'contig', 'cluster', 'start', 'end')
-
-
-class ReferenceSequence(models.Model):
-    """Sequence for each reference renamed by PROKKA."""
-
-    reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
-    name = models.TextField(db_index=True)
-    sequence = models.TextField()
-
-    class Meta:
-        unique_together = ('reference', 'name')
+        unique_together = ('reference', 'annotation', 'cluster')
 
 
 # Create partition every 10 million records

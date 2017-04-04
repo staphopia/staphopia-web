@@ -1,12 +1,8 @@
 """ Insert PROKKA output into the database. """
-# from django.db import connection, transaction
-from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
-from staphopia.utils import timeit, gziplines, read_fasta
-from sample.models import MetaData
-from gene.models import Clusters, ReferenceSequence, References
-from variant.models import Reference
+from gene.models import ReferenceMapping, Clusters
+from variant.models import Reference, Annotation
 
 
 class Command(BaseCommand):
@@ -15,132 +11,111 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('reference', metavar='REFERENCE',
                             help='Name of the reference.')
+        parser.add_argument('blastp', metavar='BLASTP',
+                            help=('BLASTP output of Prokka proteins against '
+                                  'the reference proteins'))
         parser.add_argument('gff', metavar='GFF3_GZIP',
                             help=('PROKKA annotations in GFF3 format (output '
-                                  'with .gff.gz extension)'))
-        parser.add_argument('contigs', metavar='FNA_GZIP',
-                            help=('Assembled contigs renamed by PROKKA (output'
-                                  ' with .fna.gz extension)'))
-        parser.add_argument('genes', metavar='FFN_GZIP',
-                            help=('Predicted gene sequences from PROKKA ('
-                                  'output with .ffn.gz extension)'))
-        parser.add_argument('proteins', metavar='FAA_GZIP',
-                            help=('Predicted protein sequences from PROKKA ('
-                                  'output with .faa.gz extension)'))
-        parser.add_argument('uniref90', metavar='UNIREF90_TAB',
-                            help=('All UniRef90 protein sequences in '
-                                  'compressed tab delimited format '
-                                  '(name\tsequence)'))
+                                  'with .gff extension)'))
 
     def handle(self, *args, **opts):
-        # Get MetaData instance
+        # Get Reference
         try:
-            self.reference = Reference.objects.get(name=opts['reference'])
-        except MetaData.DoesNotExist:
-            raise CommandError('sample_tag {0} does not exist'.format(
-                opts['sample_tag']
-            ))
+            reference = Reference.objects.get(name=opts['reference'])
+        except Reference.DoesNotExist:
+            raise CommandError(
+                    'Reference does not exist, please load the reference.'
+                )
 
-        # Read Fasta files
-        self.contigs = read_fasta(opts['contigs'], compressed=True)
-        self.genes = read_fasta(opts['genes'], compressed=True)
-        self.proteins = read_fasta(opts['proteins'], compressed=True)
-        self.uniref90 = opts['uniref90']
+        # Reference Annotations
+        annotations = self.get_annotation_ids(reference)
 
-        # Insert contigs to database
-        self.contig_pks = self.insert_contigs()
+        # Read BLASTP output
+        prokka_to_ref = {}
+        with open(opts['blastp'], 'r') as fh:
+            for line in fh:
+                cols = line.split('\t')
+                prokka_to_ref[cols[1]] = cols[0]
 
         # Read GFF3 File and insert features
-        features = self.read_gff(opts['gff'])
-        References.objects.bulk_create(features, batch_size=500)
+        prokka_to_uniref = self.read_gff(opts['gff'])
 
-    @timeit
-    def insert_contigs(self):
-        pks = {}
-        for name, sequence in self.contigs.items():
-            try:
-                contig, created = ReferenceSequence.objects.get_or_create(
-                    reference=self.reference,
-                    name=name,
-                    sequence=sequence
-                )
-                pks[name] = contig.pk
-            except IntegrityError as e:
-                raise CommandError('Error inserting contigs: {0}'.format(e))
+        for prokka_id, protein_id in prokka_to_ref.items():
+            annotation_obj = annotations[protein_id]
+            cluster_obj = Clusters.objects.get(
+                name=prokka_to_uniref[prokka_id]
+            )
 
-        return pks
+            ref, created = ReferenceMapping.objects.get_or_create(
+                reference=reference,
+                annotation=annotation_obj,
+                cluster=cluster_obj
+            )
 
-    def get_cluster_pk(self, cluster):
-        try:
-            cluster = Clusters.objects.get(name=cluster)
-        except Clusters.DoesNotExist:
-            from subprocess import Popen, PIPE
-            print cluster
-            f = Popen(['grep', cluster, self.uniref90], stdout=PIPE)
-            stdout, stderr = f.communicate()
-            name, seq = stdout.rstrip().split('\t')
-            cluster = Clusters.objects.create(name=name, aa=seq)
-        return cluster.pk
+            print("{0} mapped to {1}\t{2}".format(
+                protein_id,
+                prokka_to_uniref[prokka_id],
+                created
+            ))
 
-    @timeit
+    def get_annotation_ids(self, reference):
+        """Return the primary key of each protein_id."""
+        annotations = {}
+        for annotation in Annotation.objects.filter(reference=reference):
+            annotations[annotation.protein_id] = annotation
+        return annotations
+
     def read_gff(self, gff_file):
-        features = []
-        types = ['CDS', 'tRNA']
+        """Read through the GFF and extract annotations."""
+        prokka_to_uniref = {}
+        types = ['CDS', 'tRNA', 'rRNA']
 
-        for line in gziplines(gff_file):
-            if line.startswith('##'):
-                # Don't need these lines
-                if line.startswith('##FASTA'):
-                    # Don't read the sequence
-                    break
-                continue
-            else:
-                '''
-                Parse the feature
-                Columns: 0:contig       3:start       6:strand
-                         1:source       4:end         7:phase
-                         2:type         5:score       8:attributes
+        done_reading = False
+        with open(gff_file, 'r') as fh:
+            for line in fh:
+                if done_reading:
+                    continue
+                line = line.rstrip()
+                if line.startswith('##'):
+                    # Don't need these lines
+                    if line.startswith('##FASTA'):
+                        # Done, process no more
+                        done_reading = True
+                    continue
+                else:
+                    '''
+                    Parse the feature
+                    Columns: 0:contig       3:start       6:strand
+                             1:source       4:end         7:phase
+                             2:type         5:score       8:attributes
 
-                Example: Attribute
-                ID=PROKKA_00001;
-                Parent=PROKKA_00001_gene;
-                inference=ab initio prediction:Prodigal:2.6,similar to AA
-                          sequence:RefSeq:UniRef90_A0A0D1GFR5;
-                locus_tag=PROKKA_00001;
-                product=Strain SA-120 Contig630%2C whole genome shotgun
-                        sequence;
-                protein_id=gnl|PROKKA|PROKKA_00001
-                '''
-                # Only parse those features of type in types
-                cols = line.split('\t')
-                if cols[2] in types:
-                    # Parse attributes
-                    cluster = 'NO_MATCHING_CLUSTER'
-                    id = None
-                    for attribute in cols[8].split(';'):
-                        if attribute.startswith('ID'):
-                            id = attribute.split('=')[1]
-                        elif attribute.startswith('inference'):
-                            if 'UniRef90_' in attribute:
-                                cluster = 'UniRef90_{0}'.format(
-                                    attribute.split('UniRef90_')[1]
+                    Example: Attribute
+                    ID=PROKKA_00001;
+                    Parent=PROKKA_00001_gene;
+                    inference=ab initio prediction:Prodigal:2.6,similar to AA
+                              sequence:RefSeq:UniRef90_A0A0D1GFR5;
+                    locus_tag=PROKKA_00001;
+                    product=Strain SA-120 Contig630%2C whole genome shotgun
+                            sequence;
+                    protein_id=gnl|PROKKA|PROKKA_00001
+                    '''
+                    # Only parse those features of type in types
+                    cols = line.split('\t')
+                    if cols[2] in types:
+                        # Parse attributes
+                        cluster = 'no-matching-cluster'
+
+                        attributes = dict( a.split('=') for a in cols[8].split(';'))
+                        prokka_id = attributes['ID']
+                        if 'inference' in attributes:
+                            if 'UniRef50_' in attributes['inference']:
+                                cluster = 'UniRef50_{0}'.format(
+                                    attributes['inference'].split('UniRef50_')[1]
                                 )
 
-                    features.append(
-                        References(
-                            reference=self.reference,
-                            contig_id=self.contig_pks[cols[0]],
-                            cluster_id=self.get_cluster_pk(cluster),
+                        if cols[2] in ['tRNA', 'rRNA']:
+                            cluster = 'predicted-rna'
 
-                            start=int(cols[3]),
-                            end=int(cols[4]),
-                            is_positive=True if cols[6] == '+' else False,
-                            is_tRNA=True if cols[2] == 'tRNA' else False,
-                            phase=int(cols[7]),
+                        prokka_to_uniref[prokka_id] = cluster
 
-                            dna=self.genes[id] if id in self.genes else '',
-                            aa=self.proteins[id] if id in self.proteins else '',
-                        )
-                    )
-
-        return features
+        return prokka_to_uniref
