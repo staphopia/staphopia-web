@@ -54,9 +54,10 @@ class ReferenceMapping(models.Model):
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
     annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('reference', 'annotation', 'cluster')
+        unique_together = ('reference', 'annotation', 'cluster', 'product')
 
 
 # Create partition every 10 million records

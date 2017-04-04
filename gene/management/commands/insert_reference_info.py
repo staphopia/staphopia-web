@@ -1,7 +1,7 @@
 """ Insert PROKKA output into the database. """
 from django.core.management.base import BaseCommand, CommandError
 
-from gene.models import ReferenceMapping, Clusters
+from gene.models import ReferenceMapping, Clusters, Product
 from variant.models import Reference, Annotation
 
 
@@ -43,18 +43,23 @@ class Command(BaseCommand):
         for prokka_id, protein_id in prokka_to_ref.items():
             annotation_obj = annotations[protein_id]
             cluster_obj = Clusters.objects.get(
-                name=prokka_to_uniref[prokka_id]
+                name=prokka_to_uniref[prokka_id]['cluster']
+            )
+            product_obj = Product.objects.get(
+                product=prokka_to_uniref[prokka_id]['product']
             )
 
             ref, created = ReferenceMapping.objects.get_or_create(
                 reference=reference,
                 annotation=annotation_obj,
-                cluster=cluster_obj
+                cluster=cluster_obj,
+                product=product_obj
             )
 
-            print("{0} mapped to {1}\t{2}".format(
+            print("{0} mapped to {1} ({2})\t{3}".format(
                 protein_id,
-                prokka_to_uniref[prokka_id],
+                prokka_to_uniref[prokka_id]['cluster'],
+                prokka_to_uniref[prokka_id]['product'],
                 created
             ))
 
@@ -105,7 +110,7 @@ class Command(BaseCommand):
                         # Parse attributes
                         cluster = 'no-matching-cluster'
 
-                        attributes = dict( a.split('=') for a in cols[8].split(';'))
+                        attributes = dict(a.split('=') for a in cols[8].split(';'))
                         prokka_id = attributes['ID']
                         if 'inference' in attributes:
                             if 'UniRef50_' in attributes['inference']:
@@ -116,6 +121,13 @@ class Command(BaseCommand):
                         if cols[2] in ['tRNA', 'rRNA']:
                             cluster = 'predicted-rna'
 
-                        prokka_to_uniref[prokka_id] = cluster
+                        product = "none"
+                        if 'product' in attributes:
+                            product = attributes['product']
+
+                        prokka_to_uniref[prokka_id] = {
+                            'cluster': cluster,
+                            'product': product
+                        }
 
         return prokka_to_uniref
