@@ -16,7 +16,6 @@ from staphopia.settings.common import *
 # Views
 import staphopia.views
 import sample.views
-import sample.charts
 import api.views
 
 # API ViewSet Routers
