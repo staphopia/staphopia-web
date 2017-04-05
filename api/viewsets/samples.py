@@ -24,7 +24,7 @@ from api.serializers.sequences import SequenceStatSerializer
 from api.utils import (
     get_genes_by_sample,
     get_indels_by_sample,
-    get_resitance_by_samples,
+    get_resistance_by_samples,
     get_samples,
     get_samples_by_tag,
     get_sccmec_primers_by_sample,

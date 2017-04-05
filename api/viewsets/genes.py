@@ -6,6 +6,7 @@ from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import (
     get_gene_features_by_product,
     get_genes_by_samples,
+    get_gene_feature,
     get_gene_features,
     format_results
 )
@@ -56,9 +57,9 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
             validator = validate_list_of_ids(request.data, max_query=500)
             if validator['has_errors']:
                 return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
+                    "message": validator['message'],
+                    "data": request.data
+                })
             else:
                 if 'product_id' in request.GET and 'cluster_id' in request.GET:
                     product = validate_positive_integer(
@@ -114,7 +115,15 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                         page_size=100, is_serialized=True
                     )
 
+    def retrieve(self, request, pk=None):
+        validator = validate_positive_integer(pk)
+        if validator['has_errors']:
+            return Response(validator)
+        else:
+            return self.paginate(get_gene_feature(pk), is_serialized=True)
+
     def list(self, request):
+        """Adjust the default listing of genes."""
         queryset = None
         if 'product_id' in request.GET and 'cluster_id' in request.GET:
             product = validate_positive_integer(request.GET['product_id'])

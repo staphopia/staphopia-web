@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from django.db import connection
 
+from api.constants import COLUMNS
 from sccmec.tools import predict_type_by_primers, predict_subtype_by_primers
 
 
@@ -27,7 +28,9 @@ def query_database(sql):
 def get_ids_in_bulk(table, ids, id_col="id"):
     """Return information from a given table for a list of ids."""
     sql = "SELECT * FROM {0} WHERE {1} IN ({2});".format(
-        table, id_col,  ','.join([str(i) for i in ids])
+        table,
+        id_col,
+        ','.join([str(i) for i in ids])
     )
     return query_database(sql)
 
@@ -35,123 +38,178 @@ def get_ids_in_bulk(table, ids, id_col="id"):
 def get_genes_by_sample(sample_id, product_id=None, cluster_id=None):
     """Return genes associated with a sample."""
     sql = None
-    columns = ['g.id', 'g.start', 'g.end', 'g.is_positive', 'g."is_tRNA"',
-               'g."is_rRNA"', 'g.phase', 'g.prokka_id', 'g.dna', 'g.aa',
-               'g.cluster_id', 'c.name AS cluster_name', 'g.contig_id',
-               'g.inference_id', 'g.note_id', 'g.product_id', 'p.product',
-               'g.sample_id']
+    columns = COLUMNS['gene_features']
 
     if product_id and cluster_id:
-        sql = """SELECT {0}
-                 FROM gene_features as g
-                 LEFT JOIN gene_product as p
-                 ON p.id = g.product_id
-                 LEFT JOIN gene_clusters as c
-                 ON c.id = g.cluster_id
-                 WHERE g.sample_id={1} AND g.product_id={2}
-                 AND g.cluster_id={3};""".format(
-                    ','.join(columns), sample_id, product_id, cluster_id
-                )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE g.sample_id={1} AND g.product_id={2}
+            AND g.cluster_id={3};
+        """.format(','.join(columns), sample_id, product_id, cluster_id)
     elif product_id:
-        sql = """SELECT {0}
-                 FROM gene_features as g
-                 LEFT JOIN gene_product as p
-                 ON p.id = g.product_id
-                 LEFT JOIN gene_clusters as c
-                 ON c.id = g.cluster_id
-                 WHERE g.sample_id={1} AND g.product_id={2};""".format(
-            ','.join(columns), sample_id, product_id
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE g.sample_id={1} AND g.product_id={2};
+        """.format(','.join(columns), sample_id, product_id)
     elif cluster_id:
-        sql = """SELECT {0}
-                 FROM gene_features as g
-                 LEFT JOIN gene_product as p
-                 ON p.id = g.product_id
-                 LEFT JOIN gene_clusters as c
-                 ON c.id = g.cluster_id
-                 WHERE g.sample_id={1} AND g.cluster_id={2};""".format(
-            ','.join(columns), sample_id, cluster_id
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE g.sample_id={1} AND g.cluster_id={2};
+        """.format(','.join(columns), sample_id, cluster_id)
     else:
-        sql = """SELECT {0}
-                 FROM gene_features as g
-                 LEFT JOIN gene_product as p
-                 ON p.id = g.product_id
-                 LEFT JOIN gene_clusters as c
-                 ON c.id = g.cluster_id
-                 WHERE g.sample_id={1};""".format(
-            ','.join(columns), sample_id
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE g.sample_id={1};
+        """.format(','.join(columns), sample_id)
     return query_database(sql)
 
 
 def get_genes_by_samples(ids, product_id=None, cluster_id=None):
     """Return genes associated with a sample."""
     sql = None
+    columns = COLUMNS['gene_features']
+
     if product_id and cluster_id:
-        sql = """SELECT * FROM gene_features
-                 WHERE sample_id IN ({0}) AND product_id={1}
-                 AND cluster_id={2};""".format(
-            ','.join([str(i) for i in ids]), product_id, cluster_id
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE sample_id IN ({1}) AND product_id={2} AND cluster_id={3};
+        """.format(','.join(columns), ','.join([str(i) for i in ids]),
+                   product_id, cluster_id)
     elif product_id:
-        sql = """SELECT * FROM gene_features
-                 WHERE sample_id IN ({0}) AND product_id={1};""".format(
-            ','.join([str(i) for i in ids]), product_id
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE sample_id IN ({1}) AND product_id={2};
+        """.format(','.join(columns), ','.join([str(i) for i in ids]),
+                   product_id)
     elif cluster_id:
-        sql = """SELECT * FROM gene_features
-                 WHERE sample_id IN ({0}) AND cluster_id={1};""".format(
-            ','.join([str(i) for i in ids]), cluster_id
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE sample_id IN ({1}) AND cluster_id={2};
+        """.format(','.join(columns), ','.join([str(i) for i in ids]),
+                   cluster_id)
     else:
-        sql = """SELECT *
-                 FROM gene_features
-                 WHERE sample_id IN ({0});""".format(
-            ','.join([str(i) for i in ids])
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE sample_id IN ({1});
+        """.format(','.join(columns), ','.join([str(i) for i in ids]))
+    return query_database(sql)
+
+
+def get_gene_feature(feature_id):
+    """Return filtered gene features."""
+    columns = COLUMNS['gene_features']
+    sql = """
+        SELECT {0}
+        FROM gene_features as g
+        LEFT JOIN gene_product as p
+        ON p.id = g.product_id
+        LEFT JOIN gene_clusters as c
+        ON c.id = g.cluster_id
+        LEFT JOIN gene_referencemapping as a
+        ON c.id = a.cluster_id
+        WHERE g.id={1};
+    """.format(','.join(columns), feature_id)
+
     return query_database(sql)
 
 
 def get_gene_features(product_id=None, cluster_id=None):
     """Return filtered gene features."""
     sql = None
-    columns = ['g.id', 'g.start', 'g.end', 'g.is_positive', 'g."is_tRNA"',
-               'g."is_rRNA"', 'g.phase', 'g.prokka_id', 'g.dna', 'g.aa',
-               'g.cluster_id', 'c.name AS cluster_name', 'g.contig_id',
-               'g.inference_id', 'g.note_id', 'g.product_id', 'p.product',
-               'g.sample_id']
+    columns = COLUMNS['gene_features']
 
     if product_id and cluster_id:
-        sql = """SELECT {0}
-                 FROM gene_features as g
-                 LEFT JOIN gene_product as p
-                 ON p.id = g.product_id
-                 LEFT JOIN gene_clusters as c
-                 ON c.id = g.cluster_id
-                 WHERE g.product_id={1} AND g.cluster_id={2};""".format(
-                    ','.join(columns), product_id, cluster_id
-                )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE g.product_id={1} AND g.cluster_id={2};
+        """.format(','.join(columns), product_id, cluster_id)
     elif product_id:
-        sql = """SELECT {0}
-                 FROM gene_features as g
-                 LEFT JOIN gene_product as p
-                 ON p.id = g.product_id
-                 LEFT JOIN gene_clusters as c
-                 ON c.id = g.cluster_id
-                 WHERE g.product_id={1};""".format(
-            ','.join(columns), product_id
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE g.product_id={1};
+        """.format(','.join(columns), product_id)
     elif cluster_id:
-        sql = """SELECT {0}
-                 FROM gene_features as g
-                 LEFT JOIN gene_product as p
-                 ON p.id = g.product_id
-                 LEFT JOIN gene_clusters as c
-                 ON c.id = g.cluster_id
-                 WHERE  g.cluster_id={1};""".format(
-            ','.join(columns), cluster_id
-        )
+        sql = """
+            SELECT {0}
+            FROM gene_features as g
+            LEFT JOIN gene_product as p
+            ON p.id = g.product_id
+            LEFT JOIN gene_clusters as c
+            ON c.id = g.cluster_id
+            LEFT JOIN gene_referencemapping as a
+            ON c.id = a.cluster_id
+            WHERE  g.cluster_id={1};
+        """.format(','.join(columns), cluster_id)
     return query_database(sql)
 
 
@@ -280,7 +338,7 @@ def get_indels_by_sample(sample_id):
     return query_database(sql)
 
 
-def get_resitance_by_samples(sample_ids, resistance_id=None):
+def get_resistance_by_samples(sample_ids, resistance_id=None):
     """Return snps associated with a sample."""
     optional = ""
     if resistance_id:
