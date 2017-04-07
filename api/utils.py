@@ -320,7 +320,6 @@ def get_kmer_by_sequence(sequence, samples):
                                 "sample_id": sample_id,
                                 "count": count
                             })
-        results.append(url)
     return results
 
 

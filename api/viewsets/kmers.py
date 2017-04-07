@@ -39,6 +39,7 @@ class KmerViewSet(CustomReadOnlyModelViewSet):
 
     @list_route(methods=['get'])
     def kmer_test(self, request, pk=None):
+        import time
         start = time.time()
         results = get_kmer_by_sequence(KMER_TEST_SEQUENCE, [10173])
         time = '{0}ms'.format(
