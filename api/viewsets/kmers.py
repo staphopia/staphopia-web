@@ -31,6 +31,8 @@ class KmerViewSet(CustomReadOnlyModelViewSet):
                     "data": request.data
                 })
             else:
+                if validator['make_list']:
+                    request.data['ids'] = [request.data['ids']]
                 return self.formatted_response(get_kmer_by_partition(
                     request.data['extra']['partition'],
                     request.data['extra']['kmers'],

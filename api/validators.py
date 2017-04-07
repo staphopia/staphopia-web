@@ -7,12 +7,16 @@ def validate_list_of_ids(data, field='ids',
     """Test excpected list of ids is in valid format."""
     msg = None
     error = False
+    make_list = False
     if field not in data:
         error = True
         msg = "IDs must be in an array named {0}".format(field)
     elif type(data[field]) is not list:
-        error = True
-        msg = "IDs must be in an array. Got {0}".format(type(data[field]))
+        if type(data[field]) is int:
+            make_list = True
+        else:
+            error = True
+            msg = "IDs must be in an array. Got {0}".format(type(data[field]))
     elif not all(isinstance(i, int) for i in data[field]):
         error = True
         msg = "IDs must be an array of integers."
@@ -20,7 +24,7 @@ def validate_list_of_ids(data, field='ids',
         error = True
         msg = "Maxmium of {0} IDs allowed per query.".format(max_query)
 
-    return {"has_errors": error, "message": msg}
+    return {"has_errors": error, "message": msg, "make_list": make_list}
 
 
 def validate_positive_integer(data):
