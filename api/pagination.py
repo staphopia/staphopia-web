@@ -15,7 +15,9 @@ class CustomReadOnlyModelViewSet(mixins.RetrieveModelMixin,
         if len(data) or return_empty:
             return Response(format_results(data, time=time))
         else:
-            data = {"message": "Query did not return any hits."}
+            data = {
+                "message": "Query did not return any hits."
+            }
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def paginate(self, queryset, serializer=None, page_size=None,
