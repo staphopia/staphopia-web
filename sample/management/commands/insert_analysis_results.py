@@ -135,15 +135,18 @@ class Command(BaseCommand):
                               force=opts['force'])
         insert_assembly(files['assembly'], sample, force=opts['force'])
 
-        print("Inserting Plasmid Assembly Stats...")
-        insert_assembly_stats(files['plasmid-contigs'], sample,
-                              is_scaffolds=False, force=opts['force'],
-                              is_plasmids=True)
-        insert_assembly_stats(files['plasmid-scaffolds'], sample,
-                              is_scaffolds=True, force=opts['force'],
-                              is_plasmids=True)
-        insert_assembly(files['plasmid-assembly'], sample, is_plasmids=True,
-                        force=opts['force'])
+        if files['plasmid']:
+            print("Inserting Plasmid Assembly Stats...")
+            insert_assembly_stats(files['plasmid-contigs'], sample,
+                                  is_scaffolds=False, force=opts['force'],
+                                  is_plasmids=True)
+            insert_assembly_stats(files['plasmid-scaffolds'], sample,
+                                  is_scaffolds=True, force=opts['force'],
+                                  is_plasmids=True)
+            insert_assembly(files['plasmid-assembly'], sample,
+                            is_plasmids=True, force=opts['force'])
+        else:
+            print("No Plasmid Assembly Stats To Insert...")
 
         print("Inserting MLST Results...")
         insert_mlst_blast(files['mlst_blast'], sample, force=opts['force'])
@@ -160,9 +163,9 @@ class Command(BaseCommand):
                             is_subtype=True, force=opts['force'])
 
         #print("Inserting Variants...")
-        #insert_variant_results(files['variants'], sample, force=opts['force'])
+        insert_variant_results(files['variants'], sample, force=opts['force'])
 
-        '''print("Inserting Gene Annotations...")
+        print("Inserting Gene Annotations...")
         insert_gene_annotations(
             files['annotation_genes'], files['annotation_proteins'],
             files['annotation_contigs'], files['annotation_gff'],
@@ -178,7 +181,7 @@ class Command(BaseCommand):
         insert_blast_results(
             blastp, files['annotation_gff'], sample, compressed=True,
             force=opts['force']
-        )'''
+        )
 
         print(json.dumps({
             'sample_id': sample.pk,

@@ -38,29 +38,31 @@ class Command(BaseCommand):
             total_samples
         ))
         for k, v in samples.items():
-            fq_md5sum = md5sum(v['fq'])
+            fq_md5sum = None
+            with open(v['fq'], 'r') as fh:
+                fq_md5sum = fh.readline().split()[0]
             # Test if results already inserted
             sample = None
             try:
                 sample = Sample.objects.get(md5sum=fq_md5sum)
                 samples[k]['sample_id'] = format_sample_pk(sample.pk)
                 samples[k]['sample_obj'] = sample
+                samples[k]['process'] = True
             except Sample.DoesNotExist:
-                raise CommandError(
-                    'Sample should already exist. {0} is the culprit.'.format(
-                        k
-                    )
-                )
+                print('Skip {0}, does not exist in the database.'.format(k))
+            break
 
         # All samples are in the database, we can do work now
         n = 0
         print('All samples accounted for. Processing Jellyfish counts...')
         self.open_file_handles(opts['outdir'])
         for k, v in samples.items():
-            total, singletons = self.process_jellyfish(v['jf'], v['sample_id'])
-            insert_kmer_stats(v['sample_obj'], total, singletons)
-            n += 1
-            print('{0} of {1} samples processed.'.format(n, total_samples))
+            if v['process']:
+                total, singletons = self.process_jellyfish(v['jf'],
+                                                           v['sample_id'])
+                insert_kmer_stats(v['sample_obj'], total, singletons)
+                n += 1
+                print('{0} of {1} samples processed.'.format(n, total_samples))
         self.close_file_handles()
 
     def open_file_handles(self, outdir):

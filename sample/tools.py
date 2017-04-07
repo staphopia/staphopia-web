@@ -16,7 +16,7 @@ def test_files(directory, sample_tag, files, optional=False,
                print_incomplete=False):
     """Read a dict of files, and test if they exist."""
     missing = []
-    full_path = {}
+    full_path = {'plasmid':True}
     for key, file in files.items():
         if '{1}' in file:
             file = file.format(directory, sample_tag)
@@ -26,7 +26,10 @@ def test_files(directory, sample_tag, files, optional=False,
         if os.path.exists(file):
             full_path[key] = file
         else:
-            missing.append(file)
+            if 'plasmid' in key:
+                full_path['plasmid'] = False
+            else:
+                missing.append(file)
 
     if len(missing):
         if not optional:

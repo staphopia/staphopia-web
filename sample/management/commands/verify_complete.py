@@ -19,12 +19,18 @@ class Command(BaseCommand):
                             help=('Directory of samples to verify.'))
         parser.add_argument('--incomplete', action='store_true',
                             help='Only print incomplete samples.')
+        parser.add_argument('--split', action='store_true',
+                            help='Split sample tags.')
 
     def handle(self, *args, **opts):
         """Verify an analysis completed."""
         # Validate all files are present
         for sample_dir in glob.glob('{0}/*'.format(opts['dir'])):
             sample_tag = basename(sample_dir)
+
+            if opts['split']:
+                sample_tag = sample_tag.split('_')[1]
+
             files = validate_analysis(sample_dir, sample_tag, optional=True,
                                       print_incomplete=opts['incomplete'])
 
@@ -33,3 +39,4 @@ class Command(BaseCommand):
                     print('{0}\tOK'.format(sample_tag))
                 else:
                     print('{0}\tINCOMPLETE'.format(sample_tag))
+

@@ -51,14 +51,13 @@ def get_samples(project_dir):
             path = '{0}/{1}'.format(root, d)
             try:
                 samples[d] = {
-                    'fq': glob.glob('{0}/*.cleanup.fastq.gz'.format(path))[0],
-                    'jf': glob.glob('{0}/analyses/kmer/*.jf'.format(path))[0]
+                    'fq': glob.glob('{0}/*.cleanup.fastq.gz.md5'.format(path))[0],
+                    'jf': glob.glob('{0}/analyses/kmer/*.jf'.format(path))[0],
+                    'process': False
                 }
             except IndexError:
-                raise CommandError((
-                    'Verify all samples in your project directory have been '
-                    'run. Culprit is {0}'.format(path)
-                ))
+                print('Skipping {0}, does not exist in database.'.format(path))
+            break
         break
 
     return samples
