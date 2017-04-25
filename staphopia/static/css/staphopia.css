@@ -56,6 +56,10 @@ div.fix-top-margin {
     border: none !important;
 }
 
+.small-margin {
+    margin: 5px 0px !important;
+}
+
 ul.no-border li {
     border: none !important;
 }

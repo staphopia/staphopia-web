@@ -1,5 +1,6 @@
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, render
 from django.template import RequestContext
 from django.db import transaction
 
@@ -45,7 +46,38 @@ def sample(request, sample_id=None):
                                   {'sample_id': sample_id},
                                   RequestContext(request))
     else:
-        return render_to_response('samples.html', {}, RequestContext(request))
+        sample_list = Sample.objects.all()
+        page = request.GET.get('page', 1)
+        paginator = Paginator(sample_list, 20)
+        try:
+            samples = paginator.page(page)
+        except PageNotAnInteger:
+            samples = paginator.page(1)
+        except EmptyPage:
+            samples = paginator.page(paginator.num_pages)
+
+        # Fix displaying all pages
+        # Edited from Blackeagle52's response on StackOverflow
+        # http://stackoverflow.com/questions/30864011/display-only-some-of-the-page-numbers-by-django-pagination
+        index = samples.number - 1
+        max_index = len(paginator.page_range)
+        total = 11
+        start_index = index - 5 if index >= 5 else 0
+        end_index = index + 6 if index <= max_index - 6 else max_index
+
+        if end_index - start_index != total:
+            if end_index == max_index:
+                start_index = max_index - total
+            else:
+                end_index = total
+
+        # My new page range
+        page_range = list(paginator.page_range)[start_index:end_index]
+
+        return render(request, 'samples.html',
+                      {'samples': samples,
+                       'page_range': page_range,
+                       'total_pages': max_index})
 
 
 def sample_summary(request):

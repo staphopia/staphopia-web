@@ -39,17 +39,19 @@
                     </a>
                 </li>
                 -->
-                <li>
-                    <a data-toggle="tooltip" data-placement="bottom"
-                       title="Account Settings" href="/settings/account/">
-                        <span class="glyphicon glyphicon-cog"></span>
-                    </a>
-                </li>
-                <li>
-                    <a data-toggle="tooltip" data-placement="bottom"
-                       title="Sign Out" href="/accounts/logout/">
-                        <span class="glyphicon glyphicon-log-out"></span>
-                    </a>
+                <li class="dropdown">
+                    <button id="dLabel" type="button" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false"
+                            class="btn btn-default navbar-btn">
+                        <span class="glyphicon glyphicon-user"></span>
+                        {{ user.username }}
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dLabel">
+                        <li><a href="/settings/email/">Account Settings</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="/accounts/logout/">Sign Out</a></li>
+                    </ul>
                 </li>
             </ul>
             {% else %}
@@ -61,11 +63,46 @@
             </ul>
             <!-- Right Nav Section -->
             <ul class="nav navbar-nav navbar-right">
-                <li>
-                    <a data-toggle="tooltip" data-placement="bottom"
-                       title="Sign In" href="/accounts/login/">
-                        <span class="glyphicon glyphicon-log-in"></span>
+                <li class="signup">
+                    <a href="/accounts/register/" style="padding: 0 15px !important;">
+                        <button type="button" class="btn btn-default navbar-btn">
+                            Sign Up
+                        </button>
                     </a>
+                </li>
+                <li class="dropdown">
+                    <button id="dLabel" type="button" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false"
+                            class="btn btn-default navbar-btn">
+                        Log in
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" style="min-width: 250px !important; padding: 10px 10px !important" aria-labelledby="dLabel">
+                        <div class="login">
+                            <div>Already a member?</div>
+                            <form action="/accounts/login/?next={{ next|default:"/" }}" method="post"
+                                  data-component="login_callout" data-element="form">
+                                {% csrf_token %}
+                                <div class="username" style="margin-top: 10px;">
+                                    <input id="id_username" maxlength="254" name="username"
+                                           type="text" class="form-control input-md"
+                                           placeholder="Username">
+                                </div>
+
+                                <div class="password" style="margin-top: 10px;">
+                                    <input id="id_password" name="password" type="password"
+                                           class="form-control input-md" placeholder="Password">
+                                </div>
+
+                                <input type="submit" class="submit btn btn-primary js-submit"
+                                       style="width: 100%; margin-top: 10px;" value="Log in">
+
+                                <div style="text-align: right; margin-top: 10px;">
+                                     <a href="/accounts/password/reset/">Forgot password?</a>
+                                </div>
+                            </form>
+                        </div>
+                    </ul>
                 </li>
             </ul>
             {% endif %}

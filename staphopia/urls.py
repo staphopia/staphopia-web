@@ -41,7 +41,7 @@ urlpatterns = [
         name='samples_data'),
     url(r'^sample/(?P<sample_id>[0-9]+)/?$', sample.views.sample,
         name='sample_results'),
-    url(r'^sample/$', sample.views.sample, name='samples'),
+    url(r'^samples/$', sample.views.sample, name='samples'),
 
     # Autofill Genome Submission fields
     url(r'^settings/autofill/', include('autofill.urls'), name='autofill'),
@@ -60,6 +60,8 @@ urlpatterns = [
     # django-registration
     url(r'^accounts/register/$', staphopia.views.RegistrationView.as_view(),
         name='registration_register'),
+    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout',
+        {'next_page': '/'}),
     url('^accounts/', include('registration.urls')),
 
     # Charts

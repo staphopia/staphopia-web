@@ -472,7 +472,7 @@ def get_sccmec_coverage_by_sample(sample_id):
     return query_database(sql)
 
 
-def get_public_samples(user_id, user, is_published=True, all_samples=False):
+def get_public_samples(user_id, user, is_published=False, all_samples=True):
     """Return sample info associated with a tag."""
     published = None
     if is_published:
@@ -483,7 +483,7 @@ def get_public_samples(user_id, user, is_published=True, all_samples=False):
         published = 'AND s.is_published=FALSE'
 
     sql = """SELECT s.id, s.user_id, s.sample_tag, s.is_paired, s.is_public,
-                   s.is_published, t.id as tag_id, tag.tag, pub.pmid
+                    s.is_published, t.id as tag_id, tag.tag, pub.pmid
             FROM sample_sample AS s
             LEFT JOIN sample_totag AS t
             ON s.id=t.sample_id
