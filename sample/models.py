@@ -85,57 +85,65 @@ class Publication(models.Model):
 class MetaData(models.Model):
     """Meta data associated with a sample."""
 
-    field = models.TextField(unique=True)
-    description = models.TextField()
-
-
-class EnaMetaData(models.Model):
-    """ENA Meta data associated with a sample."""
     sample = models.OneToOneField('Sample', on_delete=models.CASCADE)
-    study_accession = models.TextField()
+    contains_ena_metadata = models.BooleanField(default=True)
+    study_accession = models.TextField(default="",)
     study_title = models.TextField(
+        default="",
         help_text="Title of the study as would be used in a publication."
     )
-    study_alias = models.TextField()
+    study_alias = models.TextField(default="",)
 
-    secondary_study_accession = models.TextField()
-    sample_accession = models.TextField()
-    secondary_sample_accession = models.TextField()
-    submission_accession = models.TextField()
-    experiment_accession = models.TextField()
+    secondary_study_accession = models.TextField(default="",)
+    sample_accession = models.TextField(default="",)
+    secondary_sample_accession = models.TextField(default="",)
+    submission_accession = models.TextField(default="",)
+    experiment_accession = models.TextField(default="",)
     experiment_title = models.TextField(
+        default="",
         help_text=("Short text that can be used to call out experiment "
                    "records in searches or in displays.")
     )
-    experiment_alias = models.TextField()
+    experiment_alias = models.TextField(default="",)
 
-    tax_id = models.PositiveIntegerField(help_text="NCBI Taxonomy Identifier.")
+    tax_id = models.PositiveIntegerField(
+        default="",
+        help_text="NCBI Taxonomy Identifier."
+    )
     scientific_name = models.TextField(
+        default="",
         help_text="Scientific name of sample that distinguishes its taxonomy."
     )
 
     instrument_platform = models.TextField(
+        default="",
         help_text=("Which sequencing platform and platform-specific "
                    "runtime parameters.")
     )
     instrument_model = models.TextField(
+        default="",
         help_text="Specific model of the platform used for sequencing."
     )
     library_layout = models.TextField(
+        default="",
         help_text="Single, paired or other configuration of reads."
     )
     library_strategy = models.TextField(
+        default="",
         help_text="Sequencing technique intended for this library."
     )
-    library_selection = models.TextField(help_text="")
+    library_selection = models.TextField(default="", help_text="")
 
     center_name = models.TextField(
+        default="",
         help_text="Sequencing center that submitted the sample to ENA/SRA"
     )
     center_link = models.TextField(
+        default="",
         help_text="Sequencing center link that submitted the sample to ENA/SRA"
     )
     first_public = models.DateField(
+        default="",
         help_text="Date sample was submitted to ENA/SRA."
     )
 
@@ -176,26 +184,6 @@ class EnaMetaData(models.Model):
     investigation_type = models.TextField(default="")
     sequencing_method = models.TextField(default="")
     broker_name = models.TextField(default="")
-
-
-def content_file_name(instance, filename):
-    """Determine the content type of an upload."""
-    new_name = '{0}_{1}_original.{2}'.format(
-        instance.sample.user.username,
-        str(instance.sample.sample_id).zfill(6),
-        filename.split('.', 1)[1]
-    )
-    return '/'.join(['uploads', instance.sample.user.username,
-                     str(instance.sample.sample_id).zfill(6), new_name])
-
-
-class Upload(models.Model):
-    """Path to uploaded sample."""
-
-    sample = models.OneToOneField('Sample', primary_key=True,
-                                  on_delete=models.CASCADE)
-    path = models.FileField(default='', upload_to=content_file_name)
-    md5sum = models.CharField(default='', max_length=32, unique=True)
 
 
 class SampleSummary(models.Model):
@@ -329,7 +317,7 @@ class SampleSummary(models.Model):
 class Pipeline(models.Model):
     """Store pipeline version for history purposes."""
 
-    sample = models.OneToOneField('MetaData', unique=True,
+    sample = models.OneToOneField('Sample', unique=True,
                                   on_delete=models.CASCADE)
     assembly = models.TextField()
     gene = models.TextField()
@@ -345,3 +333,14 @@ class Program(models.Model):
     program = models.TextField()
     version = models.TextField()
     comments = models.TextField()
+
+
+def content_file_name(instance, filename):
+    """Determine the content type of an upload."""
+    new_name = '{0}_{1}_original.{2}'.format(
+        instance.sample.user.username,
+        str(instance.sample.sample_id).zfill(6),
+        filename.split('.', 1)[1]
+    )
+    return '/'.join(['uploads', instance.sample.user.username,
+                     str(instance.sample.sample_id).zfill(6), new_name])

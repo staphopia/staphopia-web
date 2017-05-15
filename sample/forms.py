@@ -11,7 +11,7 @@ from crispy_forms.layout import *
 from crispy_forms.bootstrap import *
 
 from autofill.models import AutoFill
-from sample.models import Sample, Upload
+from sample.models import Sample
 from sample.forms_constants import *
 
 

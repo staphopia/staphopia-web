@@ -169,7 +169,7 @@ class Filter(models.Model):
 
 
 class Reference(models.Model):
-    """Reference genome used for SNP calling."""
+    """Reference used for SNP calling."""
 
     name = models.TextField(db_index=True, unique=True)
     length = models.PositiveIntegerField(default=0)
@@ -177,6 +177,17 @@ class Reference(models.Model):
     def __unicode__(self):
         """Display reference name in admin view."""
         return u"%s" % self.name
+
+
+class ReferenceGenome(models.Model):
+    """Reference genome used for SNP calling."""
+
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    position = models.PositiveIntegerField(default=0)
+    base = models.CharField(max_length=1)
+
+    class Meta:
+        unique_together = ('reference', 'position', 'base')
 
 
 class Feature(models.Model):

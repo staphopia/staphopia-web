@@ -4,6 +4,8 @@
 *.sqlite3
 *.sh
 *.txt
+*.sql
+*.gz
 !requirements.txt
 !staphopia/templates/registration/*.txt
 
