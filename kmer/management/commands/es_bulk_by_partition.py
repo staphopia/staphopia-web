@@ -25,7 +25,7 @@ class Command(BaseCommand):
         current = 1
         print("Inserting k-mer counts, will be a while...")
         for f in files:
-            partition = splitext(basename(f))[0].lower()
+            partition = splitext(splitext(basename(f))[0])[0].lower()
             print("\tWorking on {0} ({1} of {2})".format(
                 partition, current, len(files)
             ))

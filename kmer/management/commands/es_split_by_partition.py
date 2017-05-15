@@ -50,7 +50,6 @@ class Command(BaseCommand):
                 samples[k]['process'] = True
             except Sample.DoesNotExist:
                 print('Skip {0}, does not exist in the database.'.format(k))
-            break
 
         # All samples are in the database, we can do work now
         n = 0

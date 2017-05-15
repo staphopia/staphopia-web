@@ -190,8 +190,14 @@ class Command(BaseCommand):
         total_created = 0
         for key, row in ena_data.items():
             try:
+                data = {}
+                for k, v in row.items():
+                    if k not in ['accession', 'secondary_sample_accession']:
+                        data[k] = v
                 obj, created = ena_obj.objects.update_or_create(
-                    defaults=row, **row
+                    accession=row['accession'],
+                    secondary_sample_accession=row['secondary_sample_accession'],
+                    defaults=row, **data
                 )
                 if created:
                     total_created += 1

@@ -18,7 +18,7 @@ from django.core.management.base import CommandError
 from kmer.models import Total
 from staphopia.utils import timeit
 
-CHUNK_SIZE = 50000
+CHUNK_SIZE = 30000
 INDEX_NAME = "kmers"
 TYPE_NAME = "kmer"
 HOST = "staphopia.emory.edu:9200"
@@ -50,6 +50,7 @@ def get_samples(project_dir):
         for d in dirs:
             path = '{0}/{1}'.format(root, d)
             try:
+                print glob.glob('{0}/*.cleanup.fastq.gz.md5'.format(path))[0]
                 samples[d] = {
                     'fq': glob.glob('{0}/*.cleanup.fastq.gz.md5'.format(path))[0],
                     'jf': glob.glob('{0}/analyses/kmer/*.jf'.format(path))[0],
@@ -57,7 +58,6 @@ def get_samples(project_dir):
                 }
             except IndexError:
                 print('Skipping {0}, does not exist in database.'.format(path))
-            break
         break
 
     return samples

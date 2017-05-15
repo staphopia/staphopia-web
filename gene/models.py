@@ -4,7 +4,6 @@ Gene Application Models.
 These are models to store information on the predicted gene annotation of
 Staphopia samples.
 """
-import architect
 from django.db import models
 
 from assembly.models import Contigs
@@ -60,9 +59,6 @@ class ReferenceMapping(models.Model):
         unique_together = ('reference', 'annotation', 'cluster', 'product')
 
 
-# Create partition every 10 million records
-@architect.install('partition', type='range', subtype='integer',
-                   constraint='10000000', column='id')
 class Features(models.Model):
     """Annotated info for each predicted gene."""
 
@@ -106,9 +102,6 @@ class Note(models.Model):
     note = models.TextField(db_index=True)
 
 
-# Create partition every 10 million records
-@architect.install('partition', type='range', subtype='integer',
-                   constraint='10000000', column='id')
 class BlastResults(models.Model):
     """Predicted gene BLAST hits against UniRef50."""
 
