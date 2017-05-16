@@ -338,6 +338,20 @@ def get_indels_by_sample(sample_id):
     return query_database(sql)
 
 
+def get_annotated_indels_by_sample(sample_id):
+    """Return indels associated with a sample."""
+    sql = """SELECT t.sample_id, t.indel_id, t.confidence, s.reference_position,
+                    s.reference_base, s.alternate_base
+             FROM variant_toindel AS t
+             LEFT JOIN variant_indel as s
+             ON t.indel_id=s.id
+             WHERE sample_id={0}
+             ORDER BY s.reference_position;""".format(
+        sample_id
+    )
+    return query_database(sql)
+
+
 def get_resistance_by_samples(sample_ids, resistance_id=None):
     """Return snps associated with a sample."""
     optional = ""
@@ -510,12 +524,37 @@ def get_public_samples(user_id, user, is_published=False, all_samples=True):
     return [vals for k, vals in results.items()]
 
 
+def get_reference_genome_sequence(reference_id):
+    """Return snps associated with a sample."""
+    sql = """SELECT position, base
+             FROM variant_referencegenome
+             WHERE reference_id={0}
+             ORDER BY position;""".format(
+        reference_id
+    )
+    return query_database(sql)
+
+
 def get_snps_by_sample(sample_id):
     """Return snps associated with a sample."""
     sql = """SELECT sample_id, snp_id, filters_id, comment_id
              FROM variant_tosnp
              WHERE sample_id={0}
              ORDER BY snp_id;""".format(
+        sample_id
+    )
+    return query_database(sql)
+
+
+def get_annotated_snps_by_sample(sample_id):
+    """Return snps associated with a sample."""
+    sql = """SELECT t.sample_id, t.snp_id, t.confidence, s.reference_position,
+                    s.reference_base, s.alternate_base
+             FROM variant_tosnp AS t
+             LEFT JOIN variant_snp as s
+             ON t.snp_id=s.id
+             WHERE sample_id={0}
+             ORDER BY s.reference_position;""".format(
         sample_id
     )
     return query_database(sql)

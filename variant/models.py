@@ -173,6 +173,7 @@ class Reference(models.Model):
 
     name = models.TextField(db_index=True, unique=True)
     length = models.PositiveIntegerField(default=0)
+    sequence = models.TextField(default="")
 
     def __unicode__(self):
         """Display reference name in admin view."""

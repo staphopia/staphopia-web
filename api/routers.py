@@ -35,6 +35,8 @@ from api.viewsets.sccmecs import (
 from api.viewsets.sequences import SequenceStatViewSet
 from api.viewsets.sequence_types import MlstBlastViewSet, MlstSrst2ViewSet
 
+from api.viewsets.top import TopViewSet
+
 from api.viewsets.variants import (
     SNPViewSet,
     InDelViewSet,
