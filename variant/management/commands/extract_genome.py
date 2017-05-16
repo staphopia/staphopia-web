@@ -1,5 +1,6 @@
 """Insert variant analysis results into database."""
 from itertools import islice
+import tempfile
 from django.core.management.base import BaseCommand, CommandError
 
 from api.utils import (
@@ -8,6 +9,7 @@ from api.utils import (
 )
 
 from sample.models import Sample
+from staphopia.utils import jf_query
 from variant.models import Reference
 
 
@@ -22,6 +24,10 @@ class Command(BaseCommand):
                             help=('Genome to use a reference.'))
         parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
                             help=('Sample Tag to create variant genome.'))
+        parser.add_argument('jellyfish', metavar='JELLYFISH',
+                            help=('Location to Jellyfish counts.'))
+        parser.add_argument('--printall', action='store_true',
+                            help='Prints everything variants and non.')
 
     def handle(self, *args, **opts):
         """Insert results to database."""
@@ -45,24 +51,48 @@ class Command(BaseCommand):
         self.get_alternate_genome(reference.sequence)
         self.last_position = len(self.alternate_genome.keys())
 
-        print('position\treference\talternate\tis_variant\tvariant_kmer')
+        # Get kmers of the variants
+        self.kmers = {}
         for position, base in sorted(self.alternate_genome.items()):
-            kmer = '-'
             if base['is_variant']:
-                kmer = self.build_kmer(position)
+                kmers = self.build_kmer(position, opts['jellyfish'])
+                self.alternate_genome[position]['kmers'] = kmers
+                for kmer in kmers:
+                    self.kmers[kmer] = "NOT_FOUND"
 
-            print('{0}\t{1}\t{2}\t{3}\t{4}'.format(
-                position,
-                base['reference_base'],
-                base['alternate_base'],
-                base['is_variant'],
-                kmer
-            ))
+        # verify kmers against jellyfish counts
+        self.verify_kmers(opts['jellyfish'])
 
-    def build_kmer(self, position, length=15):
+        # Print the results
+        print('position\treference\talternate\tis_variant\tvariant_kmer\tjellyfish_counts')
+        for position, base in sorted(self.alternate_genome.items()):
+            if base['is_variant']:
+                counts = []
+                for kmer in self.alternate_genome[position]['kmers']:
+                    counts.append(self.kmers[kmer])
+
+                print('{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(
+                    position,
+                    base['reference_base'],
+                    base['alternate_base'],
+                    base['is_variant'],
+                    ",".join(self.alternate_genome[position]['kmers']),
+                    ",".join(counts)
+                ))
+            elif opts['printall']:
+                print('{0}\t{1}\t{2}\t{3}\t-\t-'.format(
+                    position,
+                    base['reference_base'],
+                    base['alternate_base'],
+                    base['is_variant']
+                ))
+
+    def build_kmer(self, position, jf, length=15):
         """Build kmer with variant at center."""
         start = self.build_start_seqeunce(position - 1, length)
         end = self.build_end_sequence(position + 1, length)
+        if self.alternate_genome[position]['alternate_base'] == "-":
+            return []
         kmer = '{0}{1}{2}'.format(
             start,
             self.alternate_genome[position]['alternate_base'],
@@ -71,8 +101,7 @@ class Command(BaseCommand):
 
         expected_length = length + length + 1
         if len(kmer) > expected_length:
-            kmers = ["".join(i) for i in self.split_into_kmers(kmer, expected_length)]
-            kmer = ",".join(kmers)
+            kmer = ["".join(i) for i in self.split_into_kmers(kmer, expected_length)]
         elif len(kmer) < expected_length:
             raise CommandError(
                ('Kmer is less than the expected length of {0}'
@@ -82,8 +111,35 @@ class Command(BaseCommand):
                     kmer
                 )
             )
+        else:
+            kmer = [kmer]
 
         return kmer
+
+    def verify_kmers(self, jf):
+        """Get count of kmer via jellyfish."""
+        jf_output = None
+        with tempfile.NamedTemporaryFile() as temp:
+            for kmer in self.kmers.keys():
+                temp.write('>{0}\n{0}\n'.format(kmer))
+                temp.write('>{0}\n{0}\n'.format(self.reverse_complement(kmer)))
+
+            temp.flush()
+            jf_output = jf_query(jf, temp.name)
+
+        for line in jf_output.split('\n'):
+            if not line:
+                continue
+            kmer, count = line.rstrip().split(' ')
+            if kmer not in self.kmers:
+                self.kmers[self.reverse_complement(kmer)] = count
+            else:
+                self.kmers[kmer] = count
+
+    def reverse_complement(self, seq):
+        """Reverse complement a DNA sequence."""
+        complement = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G'}
+        return ''.join([complement[b] for b in seq[::-1]])
 
     def split_into_kmers(self, seq, k):
         """
@@ -180,7 +236,9 @@ class Command(BaseCommand):
             self.alternate_genome[position] = {
                 'reference_base': reference_base,
                 'alternate_base': alternate_base,
-                'is_variant': is_variant
+                'is_variant': is_variant,
+                'kmers': "",
+                'counts': "",
             }
 
             if deletion_is_next:

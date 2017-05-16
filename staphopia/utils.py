@@ -37,6 +37,15 @@ def md5sum(fname):
     return stdout.split()[0]
 
 
+def jf_query(jf, fasta):
+    """Get md5sum of a file."""
+    from subprocess import Popen, PIPE
+    f = Popen(['jellyfish', 'query', jf, '-s', fasta], stdout=PIPE)
+    stdout, stderr = f.communicate()
+
+    return stdout
+
+
 def gziplines(fname):
     """Use zcat to deliver lines from gzipped input."""
     from subprocess import Popen, PIPE
