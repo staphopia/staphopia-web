@@ -9,7 +9,8 @@ from api.utils import (
     get_gene_feature,
     get_gene_features,
     format_results,
-    get_clusters_by_samples
+    get_clusters_by_samples,
+    get_cluster_counts_by_samples
 )
 from api.validators import validate_positive_integer, validate_list_of_ids
 from api.serializers.genes import (
@@ -45,7 +46,7 @@ class GeneClusterViewSet(CustomReadOnlyModelViewSet):
         return Response(format_results(hits))
 
     @list_route(methods=['post'])
-    def clusters_by_sample(self, request):
+    def clusters_by_samples(self, request):
         """Given a list of sample IDs, return table info for each gene."""
         if request.method == 'POST':
             validator = validate_list_of_ids(request.data, max_query=500)
@@ -57,6 +58,20 @@ class GeneClusterViewSet(CustomReadOnlyModelViewSet):
             else:
                 return self.formatted_response(
                         get_clusters_by_samples(request.data['ids']))
+
+    @list_route(methods=['post'])
+    def cluster_counts_by_samples(self, request):
+        """Given a list of sample IDs, return table info for each gene."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=50000)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                return self.formatted_response(
+                        get_cluster_counts_by_samples(request.data['ids']))
 
 
 class GeneFeatureViewSet(CustomReadOnlyModelViewSet):

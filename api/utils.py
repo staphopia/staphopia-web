@@ -104,8 +104,18 @@ def get_clusters_by_samples(ids):
         ON c.id = g.cluster_id
         LEFT JOIN gene_referencemapping as a
         ON c.id = a.cluster_id
-        WHERE sample_id IN ({1});
+        WHERE sample_id IN ({1}) AND g."is_tRNA"=FALSE AND
+              g."is_rRNA"=FALSE;
     """.format(','.join(columns), ','.join([str(i) for i in ids]))
+
+    return query_database(sql)
+
+
+def get_cluster_counts_by_samples(ids):
+    """Return cluster counts associated with a set of samples."""
+    sql = 'SELECT * FROM cluster_counts(ARRAY[{0}]);'.format(
+        ','.join([str(i) for i in ids])
+    )
 
     return query_database(sql)
 
