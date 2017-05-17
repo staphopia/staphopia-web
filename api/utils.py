@@ -92,6 +92,24 @@ def get_genes_by_sample(sample_id, product_id=None, cluster_id=None):
     return query_database(sql)
 
 
+def get_clusters_by_samples(ids):
+    """Return genes associated with a sample."""
+    columns = COLUMNS['gene_clusters']
+    sql = """
+        SELECT {0}
+        FROM gene_features as g
+        LEFT JOIN gene_product as p
+        ON p.id = g.product_id
+        LEFT JOIN gene_clusters as c
+        ON c.id = g.cluster_id
+        LEFT JOIN gene_referencemapping as a
+        ON c.id = a.cluster_id
+        WHERE sample_id IN ({1});
+    """.format(','.join(columns), ','.join([str(i) for i in ids]))
+
+    return query_database(sql)
+
+
 def get_genes_by_samples(ids, product_id=None, cluster_id=None):
     """Return genes associated with a sample."""
     sql = None

@@ -5,6 +5,9 @@ COLUMNS = {
         'g.cluster_id', 'c.name AS cluster_name', 'g.contig_id',
         'g.inference_id', 'g.note_id', 'g.product_id', 'p.product',
         'g.sample_id', 'a.annotation_id'
+    ],
+    'gene_clusters': [
+        'g.sample_id', 'g.cluster_id', 'g.product_id'
     ]
 }
 
