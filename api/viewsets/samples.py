@@ -32,7 +32,8 @@ from api.utils import (
     get_sccmec_subtypes_by_sample,
     get_snps_by_sample,
     get_tags_by_sample,
-    get_public_samples
+    get_public_samples,
+    get_unique_st_samples
 )
 
 from api.validators import validate_positive_integer, validate_list_of_ids
@@ -88,13 +89,24 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @list_route(methods=['get'])
     def public(self, request):
-        """Given a list of SNP IDs, return table info for each SNP."""
-        if 'is_published' in request.GET:
-            samples = get_public_samples(is_published=True)
-        else:
-            samples = get_public_samples()
+        """Return all public ENA samples."""
+        samples = get_public_samples()
 
-        return self.paginate(samples, page_size=250, is_serialized=True)
+        return self.paginate(samples, page_size=500, is_serialized=True)
+
+    @list_route(methods=['get'])
+    def published(self, request):
+        """Return all published ENA samples."""
+        samples = get_public_samples(is_published=True)
+
+        return self.paginate(samples, page_size=500, is_serialized=True)
+
+    @list_route(methods=['get'])
+    def unique_st(self, request):
+        """Return all public ENA samples with a unique ST."""
+        samples = get_unique_st_samples()
+
+        return self.paginate(samples, page_size=500, is_serialized=True)
 
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):

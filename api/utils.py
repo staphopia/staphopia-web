@@ -509,6 +509,11 @@ def get_public_samples(is_published=False):
         return query_database('SELECT * FROM public_ena_samples;')
 
 
+def get_unique_st_samples():
+    """Return list of punlic ENA sampels with a unique ST."""
+    return query_database('SELECT * FROM unique_mlst_samples;')
+
+
 def get_reference_genome_sequence(reference_id):
     """Return snps associated with a sample."""
     sql = """SELECT position, base
