@@ -89,11 +89,10 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     @list_route(methods=['get'])
     def public(self, request):
         """Given a list of SNP IDs, return table info for each SNP."""
-        ena = User.objects.get(username='ena')
-        if 'all_samples' in request.GET and request.user.is_superuser:
-            samples = get_public_samples(ena.pk, ena.username, all_samples=True)
+        if 'is_published' in request.GET:
+            samples = get_public_samples(is_published=True)
         else:
-            samples = get_public_samples(ena.pk, ena.username)
+            samples = get_public_samples()
 
         return self.paginate(samples, page_size=250, is_serialized=True)
 

@@ -54,7 +54,7 @@ class Command(BaseCommand):
         # Get kmers of the variants
         self.kmers = {}
         for position, base in sorted(self.alternate_genome.items()):
-            if base['is_variant']:
+            if base['is_variant'] or opts['printall']:
                 kmers = self.build_kmer(position, opts['jellyfish'])
                 self.alternate_genome[position]['kmers'] = kmers
                 for kmer in kmers:
@@ -64,14 +64,36 @@ class Command(BaseCommand):
         self.verify_kmers(opts['jellyfish'])
 
         # Print the results
-        print('position\treference\talternate\tis_variant\tvariant_kmer\tjellyfish_counts')
+        cols = ['position', 'reference', 'alternate', 'is_variant',
+                'is_snp', 'is_insertion', 'coverage', 'genotype_quality',
+                'qual_by_depth', 'raw_quality', 'variant_kmer',
+                'jellyfish_counts']
+        print("\t".join(cols))
         for position, base in sorted(self.alternate_genome.items()):
             if base['is_variant']:
                 counts = []
                 for kmer in self.alternate_genome[position]['kmers']:
                     counts.append(self.kmers[kmer])
 
-                print('{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(
+                print('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}'.format(
+                    position,
+                    base['reference_base'],
+                    base['alternate_base'],
+                    base['is_variant'],
+                    base['is_snp'],
+                    base['is_insertion'],
+                    base['confidence']['DP'],
+                    base['confidence']['GQ'],
+                    base['confidence']['QD'],
+                    base['confidence']['quality'],
+                    ",".join(self.alternate_genome[position]['kmers']),
+                    ",".join(counts),
+                ))
+            elif opts['printall']:
+                counts = []
+                for kmer in self.alternate_genome[position]['kmers']:
+                    counts.append(self.kmers[kmer])
+                print('{0}\t{1}\t{2}\t{3}\tFalse\tFalse\t-\t-\t-\t-\t{4}\t{5}'.format(
                     position,
                     base['reference_base'],
                     base['alternate_base'],
@@ -79,34 +101,27 @@ class Command(BaseCommand):
                     ",".join(self.alternate_genome[position]['kmers']),
                     ",".join(counts)
                 ))
-            elif opts['printall']:
-                print('{0}\t{1}\t{2}\t{3}\t-\t-'.format(
-                    position,
-                    base['reference_base'],
-                    base['alternate_base'],
-                    base['is_variant']
-                ))
 
     def build_kmer(self, position, jf, length=15):
         """Build kmer with variant at center."""
         start = self.build_start_seqeunce(position - 1, length)
         end = self.build_end_sequence(position + 1, length)
         if self.alternate_genome[position]['alternate_base'] == "-":
-            return []
+            return ['SNP/InDel Overlap']
         kmer = '{0}{1}{2}'.format(
             start,
             self.alternate_genome[position]['alternate_base'],
             end
         )
 
-        expected_length = length + length + 1
-        if len(kmer) > expected_length:
-            kmer = ["".join(i) for i in self.split_into_kmers(kmer, expected_length)]
-        elif len(kmer) < expected_length:
+        total = length + length + 1
+        if len(kmer) > total:
+            kmer = ["".join(i) for i in self.split_into_kmers(kmer, total)]
+        elif len(kmer) < total:
             raise CommandError(
                ('Kmer is less than the expected length of {0}'
                 '. position: {1} ... kmer: {2}').format(
-                    expected_length,
+                    total,
                     position,
                     kmer
                 )
@@ -121,8 +136,13 @@ class Command(BaseCommand):
         jf_output = None
         with tempfile.NamedTemporaryFile() as temp:
             for kmer in self.kmers.keys():
-                temp.write('>{0}\n{0}\n'.format(kmer))
-                temp.write('>{0}\n{0}\n'.format(self.reverse_complement(kmer)))
+                if kmer.startswith('SNP/InDel'):
+                    pass
+                else:
+                    temp.write('>{0}\n{0}\n'.format(kmer))
+                    temp.write('>{0}\n{0}\n'.format(
+                        self.reverse_complement(kmer)
+                    ))
 
             temp.flush()
             jf_output = jf_query(jf, temp.name)
@@ -143,7 +163,8 @@ class Command(BaseCommand):
 
     def split_into_kmers(self, seq, k):
         """
-        Source: http://stackoverflow.com/questions/7636004/python-split-string-in-moving-window
+        Source: http://stackoverflow.com/questions/7636004/                   \
+                     python-split-string-in-moving-window
         Returns a sliding window (of width n) over data from the iterable
            s -> (s0,s1,...s[n-1]), (s1,s2,...,sn),
         """
@@ -157,6 +178,8 @@ class Command(BaseCommand):
 
     def build_start_seqeunce(self, position, length):
         seq = []
+        if position == 0:
+            position = self.last_position
 
         while len("".join(seq)) < length:
             base = self.alternate_genome[position]['alternate_base']
@@ -172,6 +195,8 @@ class Command(BaseCommand):
 
     def build_end_sequence(self, position, length):
         seq = []
+        if position > self.last_position:
+            position = 1
 
         while len("".join(seq)) < length:
             base = self.alternate_genome[position]['alternate_base']
@@ -194,14 +219,19 @@ class Command(BaseCommand):
         for base in sequence:
             reference_base = base
             alternate_base = base
+            confidence = None
             is_variant = False
+            is_snp = False
+            is_insertion = False
 
             if position in self.variants:
                 reference_base = self.variants[position]['reference_base']
                 alternate_base = self.variants[position]['alternate_base']
+                confidence = self.variants[position]['confidence']
                 is_variant = True
                 if self.variants[position]['is_snp']:
                     # SNP
+                    is_snp = True
                     if base != reference_base:
                         self.raise_reference_match_error(
                             position, base, reference_base
@@ -216,6 +246,7 @@ class Command(BaseCommand):
                     deleted_bases = reference_base[1:]
                 else:
                     # Insertion
+                    is_insertion = True
                     if base != alternate_base[0]:
                         self.raise_reference_match_error(
                             position, base, alternate_base
@@ -237,6 +268,9 @@ class Command(BaseCommand):
                 'reference_base': reference_base,
                 'alternate_base': alternate_base,
                 'is_variant': is_variant,
+                'is_snp': is_snp,
+                'is_insertion': is_insertion,
+                'confidence': confidence,
                 'kmers': "",
                 'counts': "",
             }

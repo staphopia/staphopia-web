@@ -486,42 +486,27 @@ def get_sccmec_coverage_by_sample(sample_id):
     return query_database(sql)
 
 
-def get_public_samples(user_id, user, is_published=False, all_samples=True):
+def get_public_samples(is_published=False):
     """Return sample info associated with a tag."""
-    published = None
+    sql = None
     if is_published:
-        published = 'AND s.is_published=TRUE'
-    elif all_samples:
-        published = ''
-    else:
-        published = 'AND s.is_published=FALSE'
-
-    sql = """SELECT s.id, s.user_id, s.sample_tag, s.is_paired, s.is_public,
-                    s.is_published, t.id as tag_id, tag.tag, pub.pmid
-            FROM sample_sample AS s
-            LEFT JOIN sample_totag AS t
-            ON s.id=t.sample_id
-            LEFT JOIN sample_tag AS tag
-            ON t.tag_id=tag.id
-            LEFT JOIN ena_topublication AS p
-            ON s.sample_tag=p.experiment_accession
-            LEFT JOIN sample_publication AS pub
-            ON p.publication_id=pub.id
-            WHERE s.user_id={0} {1}
-            ORDER BY s.sample_tag ASC""".format(user_id, published)
-
-    results = {}
-
-    for row in query_database(sql):
-        if row['pmid']:
+        sql = 'SELECT * FROM published_ena_samples;'
+        results = {}
+        for row in query_database(sql):
             if row['sample_tag'] not in results:
                 results[row['sample_tag']] = row
-                results[row['sample_tag']]['username'] = user
-                results[row['sample_tag']]['pmid'] = [int(row['pmid'])]
+                if row['pmid']:
+                    results[row['sample_tag']]['pmid'] = [int(row['pmid'])]
+                else:
+                    results[row['sample_tag']]['pmid'] = []
             else:
-                results[row['sample_tag']]['pmid'].append(int(row['pmid']))
+                if row['pmid']:
+                    results[row['sample_tag']]['pmid'].append(int(row['pmid']))
 
-    return [vals for k, vals in results.items()]
+        return [vals for k, vals in results.items()]
+
+    else:
+        return query_database('SELECT * FROM public_ena_samples;')
 
 
 def get_reference_genome_sequence(reference_id):
