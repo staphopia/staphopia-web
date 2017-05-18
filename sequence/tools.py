@@ -16,13 +16,25 @@ from sequence.models import Stat
 
 
 @transaction.atomic
-def insert_fastq_stats(stats, sample, is_original=False, force=False):
+def insert_fastq_stats(stats, sample, is_original=False, force=False,
+                       skip=False):
     """Insert seqeunce quality metrics into database."""
-    json_data = read_json(stats)
+    save = True
     if force:
         delete_stats(sample, is_original)
-    insert_sequence_stats(json_data["qc_stats"], json_data["read_lengths"],
-                          json_data["per_base_quality"], sample, is_original)
+    elif skip:
+        try:
+            Stat.objects.get(sample=sample, is_original=is_original)
+            print("\tSkip reloading existing Sequence Stats.")
+            save = False
+        except Stat.DoesNotExist:
+            pass
+
+    if save:
+        json_data = read_json(stats)
+        insert_sequence_stats(json_data["qc_stats"], json_data["read_lengths"],
+                              json_data["per_base_quality"], sample,
+                              is_original)
 
 
 @transaction.atomic

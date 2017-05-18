@@ -19,105 +19,111 @@ from sample.tools import get_program_id
 
 
 def insert_gene_annotations(genes, proteins, contigs, gff, sample,
-                            compressed=True, force=False, preload=False):
+                            compressed=True, force=False, preload=False,
+                            skip=False):
     """Insert gene annotations into the database."""
+    save = True
     if force:
         delete_features(sample)
+    elif skip:
+        try:
+            Features.objects.get(sample=sample)
+        except Features.MultipleObjectsReturned:
+            print("\tSkip reloading existing Gene Features.")
+            save = False
+        except Features.DoesNotExist:
+            pass
 
-    genes = read_fasta(genes, compressed=True)
-    proteins = read_fasta(proteins, compressed=True)
-    contigs = get_contigs(contigs, sample)
-    features = read_gff(gff, sample, contigs, genes, proteins, preload=preload)
-    insert_features(features)
+    if save:
+        genes = read_fasta(genes, compressed=True)
+        proteins = read_fasta(proteins, compressed=True)
+        contigs = get_contigs(contigs, sample)
+        features = read_gff(gff, sample, contigs, genes, proteins,
+                            preload=preload)
+        insert_features(features)
 
 
 @transaction.atomic
-def insert_blast_results(files, gff, sample, compressed=True, force=False):
+def insert_blast_results(files, gff, sample, compressed=True, force=False,
+                         skip=False):
     """Insert blast results for predicted genes into the database."""
+    save = True
     if force:
         print("\tForce used, emptying Gene blast related results.")
         BlastResults.objects.filter(sample=sample).delete()
+    elif skip:
+        try:
+            BlastResults.objects.get(sample=sample)
+        except BlastResults.MultipleObjectsReturned:
+            print("\tSkip reloading existing Gene Blast.")
+            save = False
+        except BlastResults.DoesNotExist:
+            pass
 
-    features = get_features(sample)
-    id_map = get_id_mappings(gff)
-    hits = []
-    program = None
-    for file in files:
-        json_data = read_json(file, compressed=compressed)
-        for entry in json_data['BlastOutput2']:
-            hit = entry['report']['results']['search']
-            if len(hit['hits']):
-                if not program:
-                    program = get_program_id(
-                        entry['report']['program'],
-                        entry['report']['version'],
-                        'database:{0}'.format(
-                            entry['report']['search_target']['db']
+    if save:
+        features = get_features(sample)
+        id_map = get_id_mappings(gff)
+        hits = []
+        program = None
+        for file in files:
+            json_data = read_json(file, compressed=compressed)
+            for entry in json_data['BlastOutput2']:
+                hit = entry['report']['results']['search']
+                if len(hit['hits']):
+                    if not program:
+                        program = get_program_id(
+                            entry['report']['program'],
+                            entry['report']['version'],
+                            'database:{0}'.format(
+                                entry['report']['search_target']['db']
+                            )
                         )
-                    )
-                prokka_id = id_map[hit['query_title']]
-                feature = features[prokka_id]
+                    prokka_id = id_map[hit['query_title']]
+                    feature = features[prokka_id]
 
-                # Only storing the top hit
-                hsp = hit['hits'][0]['hsps'][0]
+                    # Only storing the top hit
+                    hsp = hit['hits'][0]['hsps'][0]
 
-                # Includes mismatches and gaps
-                mismatch = hsp['align_len'] - hsp['identity']
+                    # Includes mismatches and gaps
+                    mismatch = hsp['align_len'] - hsp['identity']
 
-                # Hamming distance
-                hd = mismatch
-                if hit['query_len'] > hsp['align_len']:
-                    # Include those bases that weren't aligned
-                    hd = hit['query_len'] - hsp['align_len'] + mismatch
+                    # Hamming distance
+                    hd = mismatch
+                    if hit['query_len'] > hsp['align_len']:
+                        # Include those bases that weren't aligned
+                        hd = hit['query_len'] - hsp['align_len'] + mismatch
 
-                hits.append(BlastResults(
-                    sample=sample,
-                    feature=feature,
-                    program=program,
+                    hits.append(BlastResults(
+                        sample=sample,
+                        feature=feature,
+                        program=program,
 
-                    bitscore=int(hsp['bit_score']),
-                    evalue=hsp['evalue'],
-                    identity=hsp['identity'],
-                    mismatch=mismatch,
-                    gaps=hsp['gaps'],
-                    hamming_distance=hd,
-                    query_from=hsp['query_from'],
-                    query_to=hsp['query_to'],
-                    query_len=hit['query_len'],
-                    hit_from=hsp['hit_from'],
-                    hit_to=hsp['hit_to'],
-                    align_len=hsp['align_len'],
+                        bitscore=int(hsp['bit_score']),
+                        evalue=hsp['evalue'],
+                        identity=hsp['identity'],
+                        mismatch=mismatch,
+                        gaps=hsp['gaps'],
+                        hamming_distance=hd,
+                        query_from=hsp['query_from'],
+                        query_to=hsp['query_to'],
+                        query_len=hit['query_len'],
+                        hit_from=hsp['hit_from'],
+                        hit_to=hsp['hit_to'],
+                        align_len=hsp['align_len'],
 
-                    qseq=hsp['qseq'],
-                    hseq=hsp['hseq'],
-                    midline=hsp['midline']
-                ))
+                        qseq=hsp['qseq'],
+                        hseq=hsp['hseq'],
+                        midline=hsp['midline']
+                    ))
 
-    try:
-        BlastResults.objects.bulk_create(hits, batch_size=5000)
-        print('\tGene BlastResults saved.')
-    except IntegrityError as e:
-        raise CommandError('{0} Gene BlastResults Error: {1}'.format(
-            sample.sample_tag, e
-        ))
+        try:
+            BlastResults.objects.bulk_create(hits, batch_size=5000)
+            print('\tGene BlastResults saved.')
+        except IntegrityError as e:
+            raise CommandError('{0} Gene BlastResults Error: {1}'.format(
+                sample.sample_tag, e
+            ))
 
-
-"""
-    bitscore = models.PositiveSmallIntegerField()
-    evalue = models.DecimalField(max_digits=7, decimal_places=2)
-    identity = models.PositiveSmallIntegerField()
-    mismatch = models.PositiveSmallIntegerField()
-    gaps = models.PositiveSmallIntegerField()
-    hamming_distance = models.PositiveSmallIntegerField()
-    query_from = models.PositiveSmallIntegerField()
-    query_to = models.PositiveSmallIntegerField()
-    hit_from = models.PositiveIntegerField()
-    hit_to = models.PositiveIntegerField()
-    align_len = models.PositiveSmallIntegerField()
-
-    qseq = models.TextField()
-    hseq = models.TextField()
-    midline = models.TextField()"""
 
 def get_features(sample):
     """Return a dict of features indexed by prokka id."""

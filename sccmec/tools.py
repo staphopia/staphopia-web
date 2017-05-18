@@ -20,148 +20,174 @@ from sample.tools import get_program_id
 
 @timeit
 @transaction.atomic
-def insert_sccmec_coverage(coverage, sample, force=False):
+def insert_sccmec_coverage(coverage, sample, force=False, skip=False):
     """Insert per-base coverage for each SCCmec cassette into the database."""
+    save = True
     if force:
         print("\tForce used, emptying SCCmec Coverage related results.")
         Coverage.objects.filter(sample=sample).delete()
-
-    sccmec = __read_coverage(coverage)
-    for mec_type, stats in sccmec.items():
-        np_array = numpy.array(stats['coverage'])
-
-        cassette = Cassette.objects.get(header=mec_type)
-        total = float(stats['total']) / cassette.length
-
-        # mecA related
-        start = cassette.meca_start - 1
-        stop = cassette.meca_stop - 1
-        meca_total = 0
-        meca = sccmec[cassette.header]['coverage'][start:stop]
-        for pos in meca:
-            if int(pos):
-                meca_total += 1
-
+    elif skip:
         try:
-            meca_total = float(meca_total) / cassette.meca_length
-            meca_array = numpy.array(meca)
-        except:
-            meca_total = 0.00
-            meca_array = None
+            Coverage.objects.get(sample=sample)
+        except Coverage.MultipleObjectsReturned:
+            print("\tSkip reloading existing SCCmec Coverage.")
+            save = False
+        except Coverage.DoesNotExist:
+            pass
 
-        try:
-            coverage = Coverage.objects.create(
-                sample=sample,
-                cassette=cassette,
-                total=float('{0:.2f}'.format(total)),
-                minimum=min(stats['coverage']),
-                median=numpy.median(np_array),
-                mean=float('{0:.2f}'.format(numpy.mean(np_array))),
-                maximum=max(stats['coverage']),
-                # mecA
-                meca_total=float('{0:.2f}'.format(meca_total)),
-                meca_minimum=min(meca) if meca else 0,
-                meca_median=numpy.median(meca_array) if meca else 0,
-                meca_mean=float(
-                    '{0:.2f}'.format(numpy.mean(meca_array))
-                ) if meca else 0.0,
-                meca_maximum=max(meca) if meca else 0,
-                per_base_coverage=json.dumps(stats['per_base_coverage'],
-                                             sort_keys=True)
-            )
-        except IntegrityError as e:
-            raise CommandError('{0} SCCmec Coverage Error: {1}'.format(
-                sample.sample_tag, e)
-            )
+    if save:
+        sccmec = __read_coverage(coverage)
+        for mec_type, stats in sccmec.items():
+            np_array = numpy.array(stats['coverage'])
 
-        print('\tSCCmec cassette {0} coverage stats saved.'.format(mec_type))
+            cassette = Cassette.objects.get(header=mec_type)
+            total = float(stats['total']) / cassette.length
+
+            # mecA related
+            start = cassette.meca_start - 1
+            stop = cassette.meca_stop - 1
+            meca_total = 0
+            meca = sccmec[cassette.header]['coverage'][start:stop]
+            for pos in meca:
+                if int(pos):
+                    meca_total += 1
+
+            try:
+                meca_total = float(meca_total) / cassette.meca_length
+                meca_array = numpy.array(meca)
+            except:
+                meca_total = 0.00
+                meca_array = None
+
+            try:
+                coverage = Coverage.objects.create(
+                    sample=sample,
+                    cassette=cassette,
+                    total=float('{0:.2f}'.format(total)),
+                    minimum=min(stats['coverage']),
+                    median=numpy.median(np_array),
+                    mean=float('{0:.2f}'.format(numpy.mean(np_array))),
+                    maximum=max(stats['coverage']),
+                    # mecA
+                    meca_total=float('{0:.2f}'.format(meca_total)),
+                    meca_minimum=min(meca) if meca else 0,
+                    meca_median=numpy.median(meca_array) if meca else 0,
+                    meca_mean=float(
+                        '{0:.2f}'.format(numpy.mean(meca_array))
+                    ) if meca else 0.0,
+                    meca_maximum=max(meca) if meca else 0,
+                    per_base_coverage=json.dumps(stats['per_base_coverage'],
+                                                 sort_keys=True)
+                )
+            except IntegrityError as e:
+                raise CommandError('{0} SCCmec Coverage Error: {1}'.format(
+                    sample.sample_tag, e)
+                )
+
+            print('\tSCCmec cassette {0} coverage stats saved.'.format(
+                mec_type
+            ))
 
 
 @timeit
 @transaction.atomic
 def insert_sccmec_blast(blast, sample, is_primers=True, is_subtype=False,
-                        force=True):
+                        force=True, skip=False):
     """."""
     obj = None
+    name = ""
     if is_primers:
         obj = Primers
+        name = "Primers"
     elif is_subtype:
         obj = Subtypes
+        name = "Subtypes"
     else:
         obj = Proteins
+        name = "Proteins"
 
     hits = []
 
+    save = True
     if force:
         print("\tForce used, emptying SCCmec blast related results.")
         obj.objects.filter(sample=sample).delete()
+    elif skip:
+        try:
+            obj.objects.get(sample=sample)
+        except obj.MultipleObjectsReturned:
+            print("\tSkip reloading existing SCCmec {0}.".format(name))
+            save = False
+        except obj.DoesNotExist:
+            pass
 
-    json_data = read_json(blast)
-    program = None
-    for entry in json_data['BlastOutput2']:
-        hit = entry['report']['results']['search']
+    if save:
+        json_data = read_json(blast)
+        program = None
+        for entry in json_data['BlastOutput2']:
+            hit = entry['report']['results']['search']
 
-        # Get contig id
-        if len(hit['hits']):
-            # Get program, query and contig id
-            if not program:
-                program = get_program_id(
-                    entry['report']['program'],
-                    entry['report']['version'],
-                    'database:{0}'.format(
-                        entry['report']['search_target']['db']
+            # Get contig id
+            if len(hit['hits']):
+                # Get program, query and contig id
+                if not program:
+                    program = get_program_id(
+                        entry['report']['program'],
+                        entry['report']['version'],
+                        'database:{0}'.format(
+                            entry['report']['search_target']['db']
+                        )
                     )
-                )
-            query = get_blast_query(hit['query_title'], hit['query_len'])
-            contig = get_contig(sample,
-                                hit['hits'][0]['description'][0]['title'])
+                query = get_blast_query(hit['query_title'], hit['query_len'])
+                contig = get_contig(sample,
+                                    hit['hits'][0]['description'][0]['title'])
 
-            # Only storing the top hit
-            hsp = hit['hits'][0]['hsps'][0]
+                # Only storing the top hit
+                hsp = hit['hits'][0]['hsps'][0]
 
-            # Includes mismatches and gaps
-            mismatch = hsp['align_len'] - hsp['identity']
+                # Includes mismatches and gaps
+                mismatch = hsp['align_len'] - hsp['identity']
 
-            # Hamming distance
-            hd = mismatch
-            if hit['query_len'] > hsp['align_len']:
-                # Include those bases that weren't aligned
-                hd = hit['query_len'] - hsp['align_len'] + mismatch
+                # Hamming distance
+                hd = mismatch
+                if hit['query_len'] > hsp['align_len']:
+                    # Include those bases that weren't aligned
+                    hd = hit['query_len'] - hsp['align_len'] + mismatch
 
-            hits.append(obj(
-                sample=sample,
-                contig=contig,
-                program=program,
-                query=query,
+                hits.append(obj(
+                    sample=sample,
+                    contig=contig,
+                    program=program,
+                    query=query,
 
-                bitscore=int(hsp['bit_score']),
-                evalue=hsp['evalue'],
-                identity=hsp['identity'],
-                mismatch=mismatch,
-                gaps=hsp['gaps'],
-                hamming_distance=hd,
-                query_from=hsp['query_from'],
-                query_to=hsp['query_to'],
-                hit_from=hsp['hit_from'],
-                hit_to=hsp['hit_to'],
-                align_len=hsp['align_len'],
+                    bitscore=int(hsp['bit_score']),
+                    evalue=hsp['evalue'],
+                    identity=hsp['identity'],
+                    mismatch=mismatch,
+                    gaps=hsp['gaps'],
+                    hamming_distance=hd,
+                    query_from=hsp['query_from'],
+                    query_to=hsp['query_to'],
+                    hit_from=hsp['hit_from'],
+                    hit_to=hsp['hit_to'],
+                    align_len=hsp['align_len'],
 
-                qseq=hsp['qseq'],
-                hseq=hsp['hseq'],
-                midline=hsp['midline']
+                    qseq=hsp['qseq'],
+                    hseq=hsp['hseq'],
+                    midline=hsp['midline']
+                ))
+
+        try:
+            obj.objects.bulk_create(hits, batch_size=5000)
+            print('\tSCCmec {0} blast results saved.'.format(
+                'Primers' if is_primers else 'Proteins'
             ))
-
-    try:
-        obj.objects.bulk_create(hits, batch_size=5000)
-        print('\tSCCmec {0} blast results saved.'.format(
-            'Primers' if is_primers else 'Proteins'
-        ))
-    except IntegrityError as e:
-        raise CommandError('{0} SCCmec {1} Error: {2}'.format(
-            sample.sample_tag,
-            'Primers' if is_primers else 'Proteins',
-            e
-        ))
+        except IntegrityError as e:
+            raise CommandError('{0} SCCmec {1} Error: {2}'.format(
+                sample.sample_tag,
+                'Primers' if is_primers else 'Proteins',
+                e
+            ))
 
 
 def __read_coverage(coverage):

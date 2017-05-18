@@ -29,14 +29,47 @@ from variant.models import (
 
 
 @timeit
-def insert_variant_results(input, sample, force=False):
+def insert_variant_results(input, sample, force=False, skip=False):
     """Insert VCF formatted variants."""
+    save = True
     v = Variants(input, sample)
     if force:
         print("\tForce used, emptying Variant related results.")
         v.delete_objects()
+    elif skip:
+        snp = True
+        indel = True
+        count = True
+        try:
+            ToSNP.objects.get(sample=sample)
+        except ToSNP.MultipleObjectsReturned:
+            pass
+        except ToSNP.DoesNotExist:
+            snp = False
 
-    v.insert_variants()
+        try:
+            ToIndel.objects.get(sample=sample)
+        except ToIndel.MultipleObjectsReturned:
+            pass
+        except ToIndel.DoesNotExist:
+            indel = False
+
+        try:
+            Counts.objects.get(sample=sample)
+        except Counts.MultipleObjectsReturned:
+            pass
+        except Counts.DoesNotExist:
+            count = False
+
+        if snp and indel and count:
+            print("\tSkip reloading existing Variants.")
+            save = False
+        else:
+            print("\tVariant load is incomplete, reloading...")
+            v.delete_objects()
+
+    if save:
+        v.insert_variants()
 
 
 class Variants(object):

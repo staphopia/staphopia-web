@@ -429,10 +429,14 @@ def get_samples(sample_id=None, sample_ids=None):
 def get_samples_by_tag(tag_id):
     """Return samples associated with a tag."""
     sql = """SELECT t.sample_id, s.user_id, s.sample_tag,
-                    s.is_paired, s.is_public, s.is_published
+                    s.is_paired, s.is_public, s.is_published,
+                    m.st_original, m.st_stripped,
+                    m.is_exact AS st_is_exact_match
              FROM sample_totag AS t
              LEFT JOIN sample_sample AS s
              ON t.sample_id=s.id
+             LEFT JOIN mlst_srst2 as m
+             ON m.sample_id=s.id
              WHERE t.tag_id={0}
              ORDER BY s.sample_tag ASC;""".format(tag_id)
     return query_database(sql)

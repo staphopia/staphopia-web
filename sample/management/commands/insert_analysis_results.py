@@ -47,6 +47,8 @@ class Command(BaseCommand):
                             help='Sample is published.')
         parser.add_argument('--runtime', action='store_true',
                             help='Insert runtimes as well.')
+        parser.add_argument('--skip_existing', action='store_true',
+                            help='Skip module if its already in the database.')
         parser.add_argument('--force', action='store_true',
                             help='Force updates for existing entries.')
         parser.add_argument('--preload', action='store_true',
@@ -77,7 +79,9 @@ class Command(BaseCommand):
             print("Found existing sample: {0} ({1})".format(
                 sample.sample_tag, sample.md5sum
             ))
-            if not opts['force']:
+            if opts['skip_existing']:
+                print("\tSkip reloading existing data.")
+            elif not opts['force']:
                 raise CommandError(
                     'Sample exists, please use --force to use it.'
                 )
@@ -124,53 +128,59 @@ class Command(BaseCommand):
         # Insert analysis results
         print("Inserting Sequence Stats...")
         insert_fastq_stats(files['stats_filter'], sample, is_original=False,
-                           force=opts['force'])
+                           force=opts['force'], skip=opts['skip_existing'])
         insert_fastq_stats(files['stats_original'], sample, is_original=True,
-                           force=opts['force'])
+                           force=opts['force'], skip=opts['skip_existing'])
 
         print("Inserting Assembly Stats...")
         insert_assembly_stats(files['contigs'], sample, is_scaffolds=False,
-                              force=opts['force'])
+                              force=opts['force'], skip=opts['skip_existing'])
         insert_assembly_stats(files['scaffolds'], sample, is_scaffolds=True,
-                              force=opts['force'])
-        insert_assembly(files['assembly'], sample, force=opts['force'])
+                              force=opts['force'], skip=opts['skip_existing'])
+        insert_assembly(files['assembly'], sample, force=opts['force'],
+                        skip=opts['skip_existing'])
 
         if files['plasmid']:
             print("Inserting Plasmid Assembly Stats...")
             insert_assembly_stats(files['plasmid-contigs'], sample,
                                   is_scaffolds=False, force=opts['force'],
-                                  is_plasmids=True)
+                                  is_plasmids=True, skip=opts['skip_existing'])
             insert_assembly_stats(files['plasmid-scaffolds'], sample,
                                   is_scaffolds=True, force=opts['force'],
-                                  is_plasmids=True)
+                                  is_plasmids=True, skip=opts['skip_existing'])
             insert_assembly(files['plasmid-assembly'], sample,
-                            is_plasmids=True, force=opts['force'])
+                            is_plasmids=True, force=opts['force'],
+                            skip=opts['skip_existing'])
         else:
             print("No Plasmid Assembly Stats To Insert...")
 
         print("Inserting MLST Results...")
-        insert_mlst_blast(files['mlst_blast'], sample, force=opts['force'])
-        insert_mlst_srst2(files['mlst_srst2'], sample, force=opts['force'])
+        insert_mlst_blast(files['mlst_blast'], sample, force=opts['force'],
+                          skip=opts['skip_existing'])
+        insert_mlst_srst2(files['mlst_srst2'], sample, force=opts['force'],
+                          skip=opts['skip_existing'])
 
         print("Inserting SCCmec Coverage Stats...")
         insert_sccmec_coverage(files['sccmec_coverage'], sample,
-                               force=opts['force'])
+                               force=opts['force'], skip=opts['skip_existing'])
         insert_sccmec_blast(files['sccmec_primers'], sample, is_primers=True,
-                            force=opts['force'])
+                            force=opts['force'], skip=opts['skip_existing'])
         insert_sccmec_blast(files['sccmec_proteins'], sample, is_primers=False,
-                            force=opts['force'])
+                            force=opts['force'], skip=opts['skip_existing'])
         insert_sccmec_blast(files['sccmec_subtypes'], sample, is_primers=False,
-                            is_subtype=True, force=opts['force'])
+                            is_subtype=True, force=opts['force'],
+                            skip=opts['skip_existing'])
 
-        #print("Inserting Variants...")
-        insert_variant_results(files['variants'], sample, force=opts['force'])
+        print("Inserting Variants...")
+        insert_variant_results(files['variants'], sample, force=opts['force'],
+                               skip=opts['skip_existing'])
 
         print("Inserting Gene Annotations...")
         insert_gene_annotations(
             files['annotation_genes'], files['annotation_proteins'],
             files['annotation_contigs'], files['annotation_gff'],
             sample, compressed=True, force=opts['force'],
-            preload=opts['preload']
+            preload=opts['preload'], skip=opts['skip_existing']
         )
 
         blastp = [
@@ -180,7 +190,7 @@ class Command(BaseCommand):
         ]
         insert_blast_results(
             blastp, files['annotation_gff'], sample, compressed=True,
-            force=opts['force']
+            force=opts['force'], skip=opts['skip_existing']
         )
 
         print(json.dumps({
