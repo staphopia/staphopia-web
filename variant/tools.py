@@ -32,11 +32,7 @@ from variant.models import (
 def insert_variant_results(input, sample, force=False, skip=False):
     """Insert VCF formatted variants."""
     save = True
-    v = Variants(input, sample)
-    if force:
-        print("\tForce used, emptying Variant related results.")
-        v.delete_objects()
-    elif skip:
+    if skip:
         snp = True
         indel = True
         count = True
@@ -66,9 +62,13 @@ def insert_variant_results(input, sample, force=False, skip=False):
             save = False
         else:
             print("\tVariant load is incomplete, reloading...")
-            v.delete_objects()
+            force = True
 
     if save:
+        v = Variants(input, sample)
+        if force:
+            print("\tForce used, emptying Variant related results.")
+            v.delete_objects()
         v.insert_variants()
 
 

@@ -64,7 +64,11 @@ def insert_assembly(assembly, sample, is_plasmids=False, force=False,
     elif skip:
         try:
             Contigs.objects.get(sample=sample, is_plasmids=is_plasmids)
+            # Single contig/plasmid
+            print("\tSkip reloading existing Assembly Contigs.")
+            save = False
         except Contigs.MultipleObjectsReturned:
+            # Multiple contigs
             print("\tSkip reloading existing Assembly Contigs.")
             save = False
         except Contigs.DoesNotExist:
