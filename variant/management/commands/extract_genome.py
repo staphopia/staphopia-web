@@ -28,6 +28,8 @@ class Command(BaseCommand):
                             help=('Location to Jellyfish counts.'))
         parser.add_argument('--printall', action='store_true',
                             help='Prints everything variants and non.')
+        parser.add_argument('--snpsonly', action='store_true',
+                            help='Prints only the SNPs.')
 
     def handle(self, *args, **opts):
         """Insert results to database."""
@@ -46,8 +48,10 @@ class Command(BaseCommand):
             ))
 
         self.variants = {}
+        self.sample_id = sample.pk
         self.process_variants(self.get_snps(sample.pk))
-        self.process_variants(self.get_indels(sample.pk), is_snp=False)
+        if not opts['snpsonly']:
+            self.process_variants(self.get_indels(sample.pk), is_snp=False)
         self.get_alternate_genome(reference.sequence)
         self.last_position = len(self.alternate_genome.keys())
 
@@ -58,54 +62,83 @@ class Command(BaseCommand):
                 kmers = self.build_kmer(position, opts['jellyfish'])
                 self.alternate_genome[position]['kmers'] = kmers
                 for kmer in kmers:
-                    self.kmers[kmer] = "NOT_FOUND"
+                    if kmer == "SNP/InDel Overlap":
+                        self.kmers[kmer] = "NOT_FOUND"
+                    else:
+                        self.kmers[kmer] = "NOT_FOUND"
+                        self.kmers[self.reverse_complement(kmer)] = "NOT_FOUND"
 
         # verify kmers against jellyfish counts
         self.verify_kmers(opts['jellyfish'])
 
         # Print the results
-        cols = ['position', 'reference', 'alternate', 'is_variant',
-                'is_snp', 'is_insertion', 'coverage', 'genotype_quality',
-                'qual_by_depth', 'raw_quality', 'variant_kmer',
-                'jellyfish_counts']
+        cols = ['sample_id', 'position', 'reference', 'alternate',
+                'is_variant', 'is_snp', 'is_insertion', 'is_variant_cluster',
+                'coverage', 'genotype_quality', 'qual_by_depth', 'raw_quality',
+                'variant_kmer', 'jf_counts', 'total_jf_count',
+                'has_zero_count']
         print("\t".join(cols))
         for position, base in sorted(self.alternate_genome.items()):
             if base['is_variant']:
-                counts = []
-                for kmer in self.alternate_genome[position]['kmers']:
-                    counts.append(self.kmers[kmer])
+                counts, total, has_zero_count = self.process_kmers(position)
 
-                print('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}'.format(
+                print(('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t'
+                       '{10}\t{11}\t{12}\t{13}\t{14}\t{15}').format(
+                    self.sample_id,
                     position,
                     base['reference_base'],
                     base['alternate_base'],
                     base['is_variant'],
                     base['is_snp'],
                     base['is_insertion'],
+                    base['is_variant_cluster'],
                     base['confidence']['DP'],
                     base['confidence']['GQ'],
                     base['confidence']['QD'],
                     base['confidence']['quality'],
                     ",".join(self.alternate_genome[position]['kmers']),
                     ",".join(counts),
+                    total,
+                    has_zero_count
                 ))
             elif opts['printall']:
-                counts = []
-                for kmer in self.alternate_genome[position]['kmers']:
-                    counts.append(self.kmers[kmer])
-                print('{0}\t{1}\t{2}\t{3}\tFalse\tFalse\t-\t-\t-\t-\t{4}\t{5}'.format(
+                counts, total, has_zero_count = self.process_kmers(position)
+
+                print(('{0}\t{1}\t{2}\t{3}\t{4}\tFalse\tFalse\tFalse\t-\t-\t'
+                       '-\t-\t{5}\t{6}\t{7}\t{8}').format(
+                    self.sample_id,
                     position,
                     base['reference_base'],
                     base['alternate_base'],
                     base['is_variant'],
                     ",".join(self.alternate_genome[position]['kmers']),
-                    ",".join(counts)
+                    ",".join(counts),
+                    total,
+                    has_zero_count
                 ))
+
+    def process_kmers(self, position):
+        """Assess the counts for each kmer."""
+        counts = []
+        total = 0
+        has_zero_count = False
+        for kmer in self.alternate_genome[position]['kmers']:
+            counts.append(str(self.kmers[kmer]))
+            if self.kmers[kmer] != "NOT_FOUND":
+                total += self.kmers[kmer]
+                if self.kmers[kmer] == 0:
+                    has_zero_count = True
+
+        return [counts, total, has_zero_count]
 
     def build_kmer(self, position, jf, length=15):
         """Build kmer with variant at center."""
-        start = self.build_start_seqeunce(position - 1, length)
-        end = self.build_end_sequence(position + 1, length)
+        start, start_cluster = self.build_start_seqeunce(position - 1, length)
+        end, end_cluster = self.build_end_sequence(position + 1, length)
+
+        if start_cluster or end_cluster:
+            self.alternate_genome[position]['is_variant_cluster'] = True
+
         if self.alternate_genome[position]['alternate_base'] == "-":
             return ['SNP/InDel Overlap']
         kmer = '{0}{1}{2}'.format(
@@ -140,9 +173,6 @@ class Command(BaseCommand):
                     pass
                 else:
                     temp.write('>{0}\n{0}\n'.format(kmer))
-                    temp.write('>{0}\n{0}\n'.format(
-                        self.reverse_complement(kmer)
-                    ))
 
             temp.flush()
             jf_output = jf_query(jf, temp.name)
@@ -151,10 +181,9 @@ class Command(BaseCommand):
             if not line:
                 continue
             kmer, count = line.rstrip().split(' ')
-            if kmer not in self.kmers:
-                self.kmers[self.reverse_complement(kmer)] = count
-            else:
-                self.kmers[kmer] = count
+            count = int(count)
+            self.kmers[self.reverse_complement(kmer)] = count
+            self.kmers[kmer] = count
 
     def reverse_complement(self, seq):
         """Reverse complement a DNA sequence."""
@@ -178,11 +207,15 @@ class Command(BaseCommand):
 
     def build_start_seqeunce(self, position, length):
         seq = []
+        is_variant_cluster = False
         if position == 0:
             position = self.last_position
 
         while len("".join(seq)) < length:
             base = self.alternate_genome[position]['alternate_base']
+            if self.alternate_genome[position]['is_variant']:
+                is_variant_cluster = True
+
             if base != '-':
                 seq.append(base)
             position -= 1
@@ -191,15 +224,19 @@ class Command(BaseCommand):
                 position = self.last_position
 
         seq.reverse()
-        return "".join(seq)
+        return ["".join(seq), is_variant_cluster]
 
     def build_end_sequence(self, position, length):
         seq = []
+        is_variant_cluster = False
         if position > self.last_position:
             position = 1
 
         while len("".join(seq)) < length:
             base = self.alternate_genome[position]['alternate_base']
+            if self.alternate_genome[position]['is_variant']:
+                is_variant_cluster = True
+
             if base != '-':
                 seq.append(base)
             position += 1
@@ -207,7 +244,7 @@ class Command(BaseCommand):
             if position > self.last_position:
                 position = 1
 
-        return "".join(seq)
+        return ["".join(seq), is_variant_cluster]
 
     def get_alternate_genome(self, sequence, log=None):
         "Produce an alternate genome"
@@ -270,6 +307,7 @@ class Command(BaseCommand):
                 'is_variant': is_variant,
                 'is_snp': is_snp,
                 'is_insertion': is_insertion,
+                'is_variant_cluster': False,
                 'confidence': confidence,
                 'kmers': "",
                 'counts': "",

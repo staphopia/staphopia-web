@@ -594,6 +594,17 @@ def get_snps_by_samples(sample_ids):
     return query_database(sql)
 
 
+def get_variant_counts_by_samples(sample_ids):
+    """Return snps associated with a sample."""
+    sql = """SELECT sample_id, snp, indel, (snp + indel) as total
+             FROM variant_counts
+             WHERE sample_id IN ({0});""".format(
+        ','.join([str(i) for i in sample_ids])
+    )
+
+    return query_database(sql)
+
+
 def get_srst2_by_samples(sample_ids):
     """Return sequence type associated with a sample."""
     sql = """SELECT sample_id, st_original, st_stripped, is_exact,

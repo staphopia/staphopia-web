@@ -7,7 +7,8 @@ from variant.models import (
     Comment,
     Feature,
     Filter,
-    Reference
+    Reference,
+    Counts
 )
 
 
@@ -46,3 +47,8 @@ class FeatureSerializer(serializers.ModelSerializer):
 class ReferenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reference
+
+
+class CountsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Counts

@@ -4,7 +4,12 @@ from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
-from api.utils import format_results, get_ids_in_bulk, get_snps_by_samples
+from api.utils import (
+    format_results,
+    get_ids_in_bulk,
+    get_snps_by_samples,
+    get_variant_counts_by_samples
+)
 from api.validators import validate_positive_integer, validate_list_of_ids
 
 from variant.models import (
@@ -16,7 +21,8 @@ from variant.models import (
     Comment,
     Feature,
     Filter,
-    Reference
+    Reference,
+    Counts
 )
 from api.serializers.variants import (
     SNPSerializer,
@@ -25,7 +31,8 @@ from api.serializers.variants import (
     CommentSerializer,
     FilterSerializer,
     FeatureSerializer,
-    ReferenceSerializer
+    ReferenceSerializer,
+    CountsSerializer
 )
 
 
@@ -188,3 +195,25 @@ class ReferenceViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Reference.objects.all()
     serializer_class = ReferenceSerializer
+
+
+class CountsViewSet(CustomReadOnlyModelViewSet):
+    """A simple ViewSet for listing or retrieving Variant Counts."""
+
+    queryset = Counts.objects.all()
+    serializer_class = CountsSerializer
+
+    @list_route(methods=['post'])
+    def bulk_by_sample(self, request):
+        """Given a list of Sample IDs, return SNP and InDel Counts."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            else:
+                return self.formatted_response(get_variant_counts_by_samples(
+                    request.data['ids'],
+                ))

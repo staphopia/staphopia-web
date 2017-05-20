@@ -44,7 +44,8 @@ from api.viewsets.variants import (
     CommentViewSet,
     FeatureViewSet,
     FilterViewSet,
-    ReferenceViewSet
+    ReferenceViewSet,
+    CountsViewSet
 )
 
 # Routers provide an easy way of automatically determining the URL conf.
@@ -97,3 +98,4 @@ router.register(r'variant/comment', CommentViewSet)
 router.register(r'variant/feature', FeatureViewSet)
 router.register(r'variant/filter', FilterViewSet)
 router.register(r'variant/reference', ReferenceViewSet)
+router.register(r'variant/count', CountsViewSet)
