@@ -49,6 +49,7 @@ class Command(BaseCommand):
 
         self.variants = {}
         self.sample_id = sample.pk
+        self.sample_tag = sample.sample_tag
         self.process_variants(self.get_snps(sample.pk))
         if not opts['snpsonly']:
             self.process_variants(self.get_indels(sample.pk), is_snp=False)
@@ -253,6 +254,8 @@ class Command(BaseCommand):
         deleted_bases = []
         deletion_is_next = False
         is_deletion = False
+        deletion_overlap = False
+        deletion = ""
         for base in sequence:
             reference_base = base
             alternate_base = base
@@ -271,33 +274,44 @@ class Command(BaseCommand):
                     is_snp = True
                     if base != reference_base:
                         self.raise_reference_match_error(
-                            position, base, reference_base
+                            position, base, reference_base,
+                            variant_type='SNP'
                         )
                 elif len(reference_base) > 1:
                     # Deletion
                     if base != reference_base[0]:
                         self.raise_reference_match_error(
-                            position, base, reference_base
+                            position, base, reference_base,
+                            variant_type='Deletion'
                         )
-                    deletion_is_next = True
+                    if not is_deletion:
+                        deletion_is_next = True
+                    else:
+                        # Overlapping deletions, reset it and delete alt_base
+                        is_deletion = False
+                        alternate_base = '-'
                     deleted_bases = reference_base[1:]
+                    deletion = reference_base
                 else:
                     # Insertion
                     is_insertion = True
                     if base != alternate_base[0]:
                         self.raise_reference_match_error(
-                            position, base, alternate_base
+                            position, base, alternate_base,
+                            variant_type='Insert'
                         )
 
             if is_deletion:
                 if base != deleted_bases[0]:
                     self.raise_reference_match_error(
-                        position, base, deleted_bases[0]
+                        position, base, deleted_bases[0], variant_type='Deletion2'
                     )
                 else:
                     alternate_base = '-'
                     if len(deleted_bases) == 1:
                         is_deletion = False
+                        deleted_bases = []
+                        deletion_overlap = False
                     else:
                         deleted_bases = deleted_bases[1:]
 
@@ -318,15 +332,29 @@ class Command(BaseCommand):
                 deletion_is_next = False
             position += 1
 
-    def raise_reference_match_error(self, position, ref, sample):
-        raise CommandError(
-           ('Reference bases do not match at position {0}'
-            '. REF: {1} ... Sample: {2}').format(
-                position,
-                ref,
-                sample
+    def raise_reference_match_error(self, position, ref, sample,
+                                    variant_type=None):
+        if variant_type:
+            raise CommandError(
+                   ('{3} ({4}): Reference bases do not match at position {0}'
+                    '. REF: {1} ... Sample: {2}').format(
+                        position,
+                        ref,
+                        sample,
+                        self.sample_tag,
+                        variant_type
+                    )
+                )
+        else:
+            raise CommandError(
+               ('{3}: Reference bases do not match at position {0}'
+                '. REF: {1} ... Sample: {2}').format(
+                    position,
+                    ref,
+                    sample,
+                    self.sample_tag
+                )
             )
-        )
 
     def build_reference(self, sequence):
         self.sequence = {}
