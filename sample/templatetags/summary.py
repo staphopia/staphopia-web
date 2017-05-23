@@ -52,7 +52,7 @@ def get_meta_data(context, sample_id):
                       e.biosample_center_name, e.biosample_first_public,
                       e.biosample_scientific_name, e.biosample_tax_id
                FROM sample_sample AS s
-               LEFT JOIN sample_enametadata AS e
+               LEFT JOIN sample_metadata AS e
                ON s.id=e.sample_id
                WHERE s.id={0}""".format(sample_id)
          )[0]

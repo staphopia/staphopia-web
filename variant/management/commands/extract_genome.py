@@ -10,7 +10,7 @@ from api.utils import (
 
 from sample.models import Sample
 from staphopia.utils import jf_query
-from variant.models import Reference
+from variant.models import Reference, SNP
 
 
 class Command(BaseCommand):
@@ -31,6 +31,7 @@ class Command(BaseCommand):
         parser.add_argument('--snpsonly', action='store_true',
                             help='Prints only the SNPs.')
 
+
     def handle(self, *args, **opts):
         """Insert results to database."""
         try:
@@ -46,6 +47,16 @@ class Command(BaseCommand):
             raise CommandError('Sample {0} Does Not Exist'.format(
                 opts['sample_tag']
             ))
+
+        # Get genic positions
+        self.is_genic = {}
+        self.annotation_id = {}
+        for i in range(len(reference.sequence)):
+            self.is_genic[i + 1] = False
+            self.annotation_id[i + 1] = 0
+        for position, annotation_id in SNP.objects.filter(is_genic=True).values_list('reference_position', 'annotation_id').distinct():
+            self.is_genic[position] = True
+            self.annotation_id[position] = annotation_id
 
         self.variants = {}
         self.sample_id = sample.pk
@@ -75,16 +86,15 @@ class Command(BaseCommand):
         # Print the results
         cols = ['sample_id', 'position', 'reference', 'alternate',
                 'is_variant', 'is_snp', 'is_insertion', 'is_variant_cluster',
-                'coverage', 'genotype_quality', 'qual_by_depth', 'raw_quality',
-                'variant_kmer', 'jf_counts', 'total_jf_count',
-                'has_zero_count']
+                'is_genic', 'annotation_id', 'coverage', 'genotype_quality',
+                'qual_by_depth', 'raw_quality', 'variant_kmer', 'jf_counts',
+                'total_jf_count','has_zero_count']
         print("\t".join(cols))
         for position, base in sorted(self.alternate_genome.items()):
             if base['is_variant']:
                 counts, total, has_zero_count = self.process_kmers(position)
-
                 print(('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t'
-                       '{10}\t{11}\t{12}\t{13}\t{14}\t{15}').format(
+                       '{10}\t{11}\t{12}\t{13}\t{14}\t{15}\t{16}\t{17}').format(
                     self.sample_id,
                     position,
                     base['reference_base'],
@@ -93,6 +103,8 @@ class Command(BaseCommand):
                     base['is_snp'],
                     base['is_insertion'],
                     base['is_variant_cluster'],
+                    self.is_genic[position],
+                    self.annotation_id[position],
                     base['confidence']['DP'],
                     base['confidence']['GQ'],
                     base['confidence']['QD'],
@@ -105,13 +117,14 @@ class Command(BaseCommand):
             elif opts['printall']:
                 counts, total, has_zero_count = self.process_kmers(position)
 
-                print(('{0}\t{1}\t{2}\t{3}\t{4}\tFalse\tFalse\tFalse\t-\t-\t'
-                       '-\t-\t{5}\t{6}\t{7}\t{8}').format(
+                print(('{0}\t{1}\t{2}\t{3}\t{4}\t0\tFalse\tFalse\tFalse\t{5}\t'
+                       '\t-\t-\t-\t{6}\t{7}\t{8}\t{9}').format(
                     self.sample_id,
                     position,
                     base['reference_base'],
                     base['alternate_base'],
                     base['is_variant'],
+                    self.is_genic[position],
                     ",".join(self.alternate_genome[position]['kmers']),
                     ",".join(counts),
                     total,
