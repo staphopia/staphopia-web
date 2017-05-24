@@ -33,7 +33,6 @@ class Command(BaseCommand):
         parser.add_argument('--nokmers', action='store_true',
                             help='Skip printing kmers.')
 
-
     def handle(self, *args, **opts):
         """Insert results to database."""
         try:
@@ -56,7 +55,12 @@ class Command(BaseCommand):
         for i in range(len(reference.sequence)):
             self.is_genic[i + 1] = False
             self.annotation_id[i + 1] = 0
-        for position, annotation_id in SNP.objects.filter(is_genic=True).values_list('reference_position', 'annotation_id').distinct():
+
+        obj = SNP.objects.filter(is_genic=True).values_list(
+            'reference_position',
+            'annotation_id'
+        ).distinct()
+        for position, annotation_id in obj:
             self.is_genic[position] = True
             self.annotation_id[position] = annotation_id
 
@@ -73,7 +77,7 @@ class Command(BaseCommand):
         self.kmers = {}
         for position, base in sorted(self.alternate_genome.items()):
             if base['is_variant'] or opts['printall']:
-                kmers = self.build_kmer(position, opts['jellyfish'])
+                kmers = self.build_kmer(position)
                 self.alternate_genome[position]['kmers'] = kmers
                 for kmer in kmers:
                     if kmer == "SNP/InDel Overlap":
@@ -90,7 +94,7 @@ class Command(BaseCommand):
                 'is_variant', 'is_snp', 'is_insertion', 'is_variant_cluster',
                 'is_genic', 'annotation_id', 'coverage', 'genotype_quality',
                 'qual_by_depth', 'raw_quality', 'variant_kmer', 'jf_counts',
-                'total_jf_count','has_zero_count']
+                'total_jf_count', 'has_zero_count']
         print("\t".join(cols))
         for position, base in sorted(self.alternate_genome.items()):
             if base['is_variant']:
@@ -99,7 +103,8 @@ class Command(BaseCommand):
                 if opts['nokmers']:
                     kmers = "-"
                 print(('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t'
-                       '{10}\t{11}\t{12}\t{13}\t{14}\t{15}\t{16}\t{17}').format(
+                       '{10}\t{11}\t{12}\t{13}\t{14}\t{15}\t{16}\t'
+                       '{17}').format(
                     self.sample_id,
                     position,
                     base['reference_base'],
@@ -124,14 +129,15 @@ class Command(BaseCommand):
                 kmers = ",".join(self.alternate_genome[position]['kmers'])
                 if opts['nokmers']:
                     kmers = "-"
-                print(('{0}\t{1}\t{2}\t{3}\t{4}\t0\tFalse\tFalse\tFalse\t{5}\t'
-                       '\t-\t-\t-\t{6}\t{7}\t{8}\t{9}').format(
+                print(('{0}\t{1}\t{2}\t{3}\t{4}\tFalse\tFalse\tFalse\t{5}\t'
+                       '{6}\t-\t-\t-\t-\t{7}\t{8}\t{9}\t{10}').format(
                     self.sample_id,
                     position,
                     base['reference_base'],
                     base['alternate_base'],
                     base['is_variant'],
                     self.is_genic[position],
+                    self.annotation_id[position],
                     kmers,
                     ",".join(counts),
                     total,
@@ -152,7 +158,7 @@ class Command(BaseCommand):
 
         return [counts, total, has_zero_count]
 
-    def build_kmer(self, position, jf, length=15):
+    def build_kmer(self, position, length=15):
         """Build kmer with variant at center."""
         start, start_cluster = self.build_start_seqeunce(position - 1, length)
         end, end_cluster = self.build_end_sequence(position + 1, length)
@@ -274,8 +280,6 @@ class Command(BaseCommand):
         deleted_bases = []
         deletion_is_next = False
         is_deletion = False
-        deletion_overlap = False
-        deletion = ""
         for base in sequence:
             reference_base = base
             alternate_base = base
@@ -311,7 +315,6 @@ class Command(BaseCommand):
                         is_deletion = False
                         alternate_base = '-'
                     deleted_bases = reference_base[1:]
-                    deletion = reference_base
                 else:
                     # Insertion
                     is_insertion = True
@@ -324,14 +327,14 @@ class Command(BaseCommand):
             if is_deletion:
                 if base != deleted_bases[0]:
                     self.raise_reference_match_error(
-                        position, base, deleted_bases[0], variant_type='Deletion2'
+                        position, base, deleted_bases[0],
+                        variant_type='Deletion2'
                     )
                 else:
                     alternate_base = '-'
                     if len(deleted_bases) == 1:
                         is_deletion = False
                         deleted_bases = []
-                        deletion_overlap = False
                     else:
                         deleted_bases = deleted_bases[1:]
 
