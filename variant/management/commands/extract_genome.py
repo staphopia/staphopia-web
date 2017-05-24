@@ -30,6 +30,8 @@ class Command(BaseCommand):
                             help='Prints everything variants and non.')
         parser.add_argument('--snpsonly', action='store_true',
                             help='Prints only the SNPs.')
+        parser.add_argument('--nokmers', action='store_true',
+                            help='Skip printing kmers.')
 
 
     def handle(self, *args, **opts):
@@ -93,6 +95,9 @@ class Command(BaseCommand):
         for position, base in sorted(self.alternate_genome.items()):
             if base['is_variant']:
                 counts, total, has_zero_count = self.process_kmers(position)
+                kmers = ",".join(self.alternate_genome[position]['kmers'])
+                if opts['nokmers']:
+                    kmers = "-"
                 print(('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t'
                        '{10}\t{11}\t{12}\t{13}\t{14}\t{15}\t{16}\t{17}').format(
                     self.sample_id,
@@ -109,14 +114,16 @@ class Command(BaseCommand):
                     base['confidence']['GQ'],
                     base['confidence']['QD'],
                     base['confidence']['quality'],
-                    ",".join(self.alternate_genome[position]['kmers']),
+                    kmers,
                     ",".join(counts),
                     total,
                     has_zero_count
                 ))
             elif opts['printall']:
                 counts, total, has_zero_count = self.process_kmers(position)
-
+                kmers = ",".join(self.alternate_genome[position]['kmers'])
+                if opts['nokmers']:
+                    kmers = "-"
                 print(('{0}\t{1}\t{2}\t{3}\t{4}\t0\tFalse\tFalse\tFalse\t{5}\t'
                        '\t-\t-\t-\t{6}\t{7}\t{8}\t{9}').format(
                     self.sample_id,
@@ -125,7 +132,7 @@ class Command(BaseCommand):
                     base['alternate_base'],
                     base['is_variant'],
                     self.is_genic[position],
-                    ",".join(self.alternate_genome[position]['kmers']),
+                    kmers,
                     ",".join(counts),
                     total,
                     has_zero_count
