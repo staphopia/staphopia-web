@@ -4,9 +4,8 @@ from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
-from api.utils import (
-    format_results,
-    get_ids_in_bulk,
+from api.utils import format_results, get_ids_in_bulk
+from api.queries.variants import (
     get_snps_by_samples,
     get_variant_counts_by_samples
 )

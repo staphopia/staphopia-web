@@ -3,12 +3,12 @@ from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
-from api.utils import (
+from api.utils import format_results
+from api.queries.genes import (
     get_gene_features_by_product,
     get_genes_by_samples,
     get_gene_feature,
     get_gene_features,
-    format_results,
     get_clusters_by_samples,
     get_cluster_counts_by_samples
 )

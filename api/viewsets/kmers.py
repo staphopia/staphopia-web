@@ -1,12 +1,10 @@
 """Viewsets related to Kmer tables."""
-import time
-
-from rest_framework.decorators import detail_route, list_route
+from rest_framework.decorators import list_route
 from rest_framework.response import Response
 
 from api.constants import KMER_TEST_SEQUENCE
 from api.pagination import CustomReadOnlyModelViewSet
-from api.utils import get_kmer_by_sequence, get_kmer_by_partition
+from api.queries.kmers import get_kmer_by_sequence, get_kmer_by_partition
 from api.validators import validate_list_of_ids
 from kmer.models import Total
 from api.serializers.kmers import KmerTotalSerializer
@@ -22,7 +20,6 @@ class KmerViewSet(CustomReadOnlyModelViewSet):
     def by_partition(self, request):
         """Given a parition, Kmers, samples IDs, return counts."""
         if request.method == 'POST':
-            start = time.time()
             validator = validate_list_of_ids(request.data,
                                              max_query=50000)
             if validator['has_errors']:

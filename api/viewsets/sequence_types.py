@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
 from api.serializers.sequence_types import BlastSerializer, Srst2Serializer
-from api.utils import get_srst2_by_samples
+from api.queries.sequence_types import get_srst2_by_samples
 from api.validators import validate_list_of_ids
 
 from mlst.models import Srst2, Blast

@@ -1,6 +1,3 @@
-from django.contrib.auth.models import User
-# from django.db.models import Q
-
 from rest_framework import status, viewsets
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
@@ -13,28 +10,26 @@ from api.serializers.samples import (
     ResistanceSerializer
 )
 from api.serializers.assemblies import AssemblyStatSerializer, ContigSerializer
-from api.serializers.sccmecs import (
-    SCCmecCoverageSerializer,
-    SCCmecPrimerSerializer,
-    SCCmecProteinSerializer
-)
+from api.serializers.sccmecs import SCCmecProteinSerializer
 from api.serializers.sequence_types import BlastSerializer, Srst2Serializer
 from api.serializers.sequences import SequenceStatSerializer
 
-from api.utils import (
-    get_genes_by_sample,
-    get_indels_by_sample,
+from api.queries.samples import (
     get_resistance_by_samples,
     get_samples,
     get_samples_by_tag,
-    get_sccmec_primers_by_sample,
-    get_sccmec_coverage_by_sample,
-    get_sccmec_subtypes_by_sample,
-    get_snps_by_sample,
     get_tags_by_sample,
     get_public_samples,
-    get_unique_st_samples
 )
+
+from api.queries.genes import get_genes_by_sample
+from api.queries.sequence_types import get_unique_st_samples
+from api.queries.sccmecs import (
+    get_sccmec_primers_by_sample,
+    get_sccmec_coverage_by_sample,
+    get_sccmec_subtypes_by_sample
+)
+from api.queries.variants import get_indels_by_sample, get_snps_by_sample
 
 from api.validators import validate_positive_integer, validate_list_of_ids
 
@@ -42,7 +37,7 @@ from sample.models import Publication, Sample, Tag, Resistance
 from assembly.models import Stats, Contigs
 from mlst.models import Srst2, Blast
 from sequence.models import Stat
-from sccmec.models import Coverage, Primers, Proteins
+from sccmec.models import Proteins
 
 
 class SampleViewSet(CustomReadOnlyModelViewSet):
@@ -77,8 +72,6 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 queryset = get_samples(sample_ids=ids)
         else:
             queryset = get_samples()
-
-
         '''
         if not request.user.is_superuser:
             queryset = Sample.objects.filter(
@@ -317,6 +310,6 @@ class ResistanceViewSet(CustomReadOnlyModelViewSet):
                 query = None
                 if 'resistance_id' in request.GET:
                     query = request.GET['resistance_id']
-                return self.formatted_response(get_resitance_by_samples(
+                return self.formatted_response(get_resistance_by_samples(
                     request.data['ids'], resistance_id=query
                 ))
