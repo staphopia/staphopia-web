@@ -208,6 +208,7 @@ class Annotation(models.Model):
     product = models.TextField()
     note = models.TextField()
     is_pseudo = models.PositiveSmallIntegerField()
+    strand = models.SmallIntegerField(default=0)
 
     def fixed_note(self):
         """Display note with appropriate replacements in admin view."""
