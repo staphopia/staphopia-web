@@ -3,7 +3,7 @@ from itertools import islice
 import tempfile
 from django.core.management.base import BaseCommand, CommandError
 
-from api.utils import (
+from api.queries.variants import (
     get_annotated_snps_by_sample,
     get_annotated_indels_by_sample
 )

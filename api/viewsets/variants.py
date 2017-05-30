@@ -7,7 +7,8 @@ from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import format_results, get_ids_in_bulk
 from api.queries.variants import (
     get_snps_by_samples,
-    get_variant_counts_by_samples
+    get_variant_counts_by_samples,
+    get_representative_sequence
 )
 from api.validators import validate_positive_integer, validate_list_of_ids
 
@@ -145,7 +146,7 @@ class InDelViewSet(viewsets.ReadOnlyModelViewSet):
                 ))
 
 
-class AnnotationViewSet(viewsets.ReadOnlyModelViewSet):
+class AnnotationViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving SNP."""
 
     queryset = Annotation.objects.all()
@@ -166,6 +167,42 @@ class AnnotationViewSet(viewsets.ReadOnlyModelViewSet):
                     'variant_annotation',
                     request.data['ids']
                 ))
+
+    @list_route(methods=['post'])
+    def generate_variant_sequence(self, request):
+        """Return a list of samples with a given snp."""
+        import time
+        start = time.time()
+        if request.method == 'POST':
+            sample_ids = request.data['ids']
+            annotation_ids = request.data['extra']['annotation_ids']
+            validator = validate_list_of_ids(request.data)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            elif validator['make_list']:
+                sample_ids = [sample_ids]
+
+            validator = validate_list_of_ids(request.data['extra'],
+                                             field='annotation_ids')
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            elif validator['make_list']:
+                annotation_ids = [annotation_ids]
+
+            results = get_representative_sequence(
+                sample_ids,
+                annotation_ids,
+                save_reference=request.data['extra']['save_reference']
+            )
+            time = '{0}ms'.format(int((time.time() - start) * 1000.0))
+
+            return self.formatted_response(results, time=time)
 
 
 class CommentViewSet(viewsets.ReadOnlyModelViewSet):

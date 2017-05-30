@@ -133,3 +133,12 @@ class REMatcher(object):
     def group(self, i):
         """Retuen a list of the regex matches."""
         return self.rematch.group(i)
+
+
+def reverse_complement(seq):
+    """Reverse complement a DNA sequence."""
+    complement = {
+        'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G',
+        'a': 't', 't': 'a', 'g': 'c', 'c': 'g'
+    }
+    return ''.join([complement[b] for b in seq[::-1]])
