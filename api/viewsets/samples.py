@@ -20,6 +20,7 @@ from api.queries.samples import (
     get_samples_by_tag,
     get_tags_by_sample,
     get_public_samples,
+    get_metadata_by_sample
 )
 
 from api.queries.genes import get_genes_by_sample
@@ -169,6 +170,10 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     @detail_route(methods=['get'])
     def indels(self, request, pk=None):
         return self.formatted_response(get_indels_by_sample(pk))
+
+    @detail_route(methods=['get'])
+    def metadata(self, request, pk=None):
+        return self.formatted_response(get_metadata_by_sample(pk))
 
     @detail_route(methods=['get'])
     def qc(self, request, pk=None):

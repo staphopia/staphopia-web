@@ -95,3 +95,10 @@ def get_tags_by_sample(sample_id):
              ON s.tag_id=t.id
              WHERE s.sample_id={0};""".format(sample_id)
     return query_database(sql)
+
+
+def get_metadata_by_sample(sample_id):
+    """Return metadata associated with a sample."""
+    sql = """SELECT * FROM sample_metadata
+             WHERE sample_id={0};""".format(sample_id)
+    return query_database(sql)
