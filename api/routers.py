@@ -36,6 +36,7 @@ from api.viewsets.sequences import SequenceStatViewSet
 from api.viewsets.sequence_types import MlstBlastViewSet, MlstSrst2ViewSet
 
 from api.viewsets.top import TopViewSet
+from api.viewsets.info import InfoViewSet
 
 from api.viewsets.variants import (
     SNPViewSet,
@@ -73,6 +74,10 @@ router.register(r'gene/product', GeneProductViewSet)
 router.register(r'gene/inference', GeneInferenceViewSet)
 router.register(r'gene/note', GeneNoteViewSet)
 router.register(r'gene/blast', GeneBlastViewSet)
+
+# Information related views
+router.register(r'info', InfoViewSet, base_name='info')
+router.register(r'top', TopViewSet, base_name='top')
 
 # Kmer related tables
 router.register(r'kmer', KmerViewSet)

@@ -12,6 +12,8 @@ class TopViewSet(viewsets.ReadOnlyModelViewSet):
     to see  top 20 sequence types use top/20/sequence_types/
     """
 
+    queryset = ''
+
     def list(self, request):
         """
         Stored metadata information for a given sample.
