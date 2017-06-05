@@ -1,15 +1,17 @@
 """ENA related models."""
 from django.db import models
 
-from sample.models import Sample, Publication
+from sample.models import Publication
 
 
-class ToSample(models.Model):
+class Status(models.Model):
     """Keep track of processed genomes."""
 
-    experiment_accession = models.OneToOneField('Experiment',
-                                             db_column='experiment_accession',
-                                             on_delete=models.CASCADE)
+    experiment_accession = models.OneToOneField(
+        'Experiment',
+        db_column='experiment_accession',
+        on_delete=models.CASCADE
+    )
     server = models.TextField()
     path = models.TextField()
     status = models.TextField()

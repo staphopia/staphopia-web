@@ -6,7 +6,7 @@ except ImportError:
 
 from django.core.management.base import BaseCommand
 
-from ena.models import Experiment, Run, ToSample, ToPublication
+from ena.models import Experiment, Run, Status, ToPublication
 
 
 class Command(BaseCommand):
@@ -56,11 +56,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Get unproccessed samples."""
         # ENA to Sample
-        ena_to_sample = ToSample.objects.values_list(
+        ena_to_sample = Status.objects.values_list(
             'experiment_accession', flat=True
         ).order_by('experiment_accession')
 
-        # Get Experiments not in ToSample
+        # Get Experiments not in Status
         ena_entries = None
         if options['experiment']:
             ena_entries = Experiment.objects.exclude(

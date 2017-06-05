@@ -16,6 +16,8 @@ class CustomReadOnlyModelViewSet(mixins.RetrieveModelMixin,
             return Response(format_results(data, time=time))
         else:
             data = {
+                "count": 0,
+                "results": [],
                 "message": "Query did not return any hits."
             }
             return Response(data, status=status.HTTP_404_NOT_FOUND)

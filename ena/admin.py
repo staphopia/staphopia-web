@@ -1,14 +1,14 @@
 from django.contrib import admin
 
 from ena.models import (
-    ToSample,
+    Status,
     Study,
     Experiment,
     Run
 )
 
 
-@admin.register(ToSample)
+@admin.register(Status)
 class ToSampleAdmin(admin.ModelAdmin):
     list_display = (
         'experiment_accession', 'server', 'status'

@@ -6,7 +6,7 @@
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
-from ena.models import Experiment, ToSample
+from ena.models import Experiment, Status
 
 
 class Command(BaseCommand):
@@ -29,12 +29,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # ENA to Sample
         if options['delete']:
-            ToSample.objects.filter(
+            Status.objects.filter(
                 experiment_accession=options['experiment']
             ).delete()
         elif options['get']:
             try:
-                to_sample = ToSample.objects.get(
+                to_sample = Status.objects.get(
                     experiment_accession=options['experiment']
                 )
                 print('{0}\t{1}\t{2}\t{3}'.format(
@@ -43,7 +43,7 @@ class Command(BaseCommand):
                     to_sample.path,
                     to_sample.status
                 ))
-            except ToSample.DoesNotExist:
+            except Status.DoesNotExist:
                 print('{0} does not exist.'.format(options['experiment']))
         else:
             try:
@@ -52,14 +52,14 @@ class Command(BaseCommand):
                 )
                 if options['server'] and options['path']:
                     try:
-                        ena_to_sample, c = ToSample.objects.update_or_create(
+                        ena_to_sample, c = Status.objects.update_or_create(
                             experiment_accession=experiment,
                             server=options['server'],
                             status=options['status'],
                             path=options['path'],
                         )
                     except IntegrityError:
-                        ToSample.objects.filter(
+                        Status.objects.filter(
                             experiment_accession=experiment
                         ).update(
                             server=options['server'],
@@ -68,12 +68,12 @@ class Command(BaseCommand):
                         )
                 else:
                     try:
-                        ena_to_sample, c = ToSample.objects.update_or_create(
+                        ena_to_sample, c = Status.objects.update_or_create(
                             experiment_accession=experiment,
                             status=options['status'],
                         )
                     except IntegrityError:
-                        ToSample.objects.filter(
+                        Status.objects.filter(
                             experiment_accession=experiment
                         ).update(
                             status=options['status'],
