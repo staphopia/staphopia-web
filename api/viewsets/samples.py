@@ -19,7 +19,7 @@ from api.queries.samples import (
     get_samples_by_tag,
     get_tags_by_sample,
     get_public_samples,
-    get_metadata_by_sample
+    get_sample_metadata
 )
 
 from api.queries.genes import get_genes_by_sample
@@ -172,7 +172,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def metadata(self, request, pk=None):
-        return self.formatted_response(get_metadata_by_sample(pk))
+        return self.formatted_response(get_sample_metadata(pk))
 
     @detail_route(methods=['get'])
     def qc(self, request, pk=None):
@@ -322,4 +322,35 @@ class ResistanceViewSet(CustomReadOnlyModelViewSet):
                     query = request.GET['resistance_id']
                 return self.formatted_response(get_resistance_by_samples(
                     request.data['ids'], resistance_id=query
+                ))
+
+
+class MetaDataViewSet(CustomReadOnlyModelViewSet):
+    """Metadata related viewset."""
+
+    queryset = ''
+
+    def list(self, request):
+        """
+        Stored metadata information for a given sample.
+        """
+        urls = {
+            'msg': 'Must use bulk_by_sample to get metadata information',
+        }
+
+        return Response(urls)
+
+    @list_route(methods=['post'])
+    def bulk_by_sample(self, request):
+        """Given a list of Sample IDs, return metadata for each Sample."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                return self.formatted_response(get_sample_metadata(
+                    request.data['ids'], single=False
                 ))

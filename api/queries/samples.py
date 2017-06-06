@@ -97,8 +97,37 @@ def get_tags_by_sample(sample_id):
     return query_database(sql)
 
 
-def get_metadata_by_sample(sample_id):
+def get_sample_metadata(sample_id, single=True):
     """Return metadata associated with a sample."""
-    sql = """SELECT * FROM sample_metadata
-             WHERE sample_id={0};""".format(sample_id)
+    cols = [
+        'sample_id', 'contains_ena_metadata', 'study_accession', 'study_title',
+        'study_alias', 'secondary_study_accession', 'sample_accession',
+        'secondary_sample_accession', 'submission_accession',
+        'experiment_accession', 'experiment_title', 'experiment_alias',
+        'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model',
+        'library_layout', 'library_strategy', 'library_selection',
+        'center_name', 'center_link', 'first_public', 'cell_line',
+        'collected_by', 'collection_date', 'country', 'description',
+        'environmental_sample', 'biosample_first_public', 'germline',
+        'isolate', 'isolation_source', 'location', 'serotype', 'serovar',
+        'sex', 'submitted_sex', 'strain', 'sub_species', 'tissue_type',
+        'biosample_tax_id', 'biosample_scientific_name', 'sample_alias',
+        'checklist', 'biosample_center_name', 'environment_biome',
+        'environment_feature', 'environment_material', 'project_name', 'host',
+        'host_tax_id', 'host_status', 'host_sex', 'submitted_host_sex',
+        'host_body_site', 'investigation_type', 'sequencing_method',
+        'broker_name'
+    ]
+    sql = None
+    if single:
+        sql = """SELECT {0} FROM sample_metadata
+                 WHERE sample_id={1};""".format(','.join(cols), sample_id)
+    else:
+        sql = """SELECT {0} FROM sample_metadata
+                 WHERE sample_id IN ({1})
+                 ORDER BY sample_id;""".format(
+            ','.join(cols),
+            ','.join([str(i) for i in sample_id])
+        )
+
     return query_database(sql)

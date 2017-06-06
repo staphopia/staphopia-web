@@ -22,7 +22,8 @@ from api.viewsets.samples import (
     PublicationViewSet,
     SampleViewSet,
     TagViewSet,
-    ResistanceViewSet
+    ResistanceViewSet,
+    MetaDataViewSet
 )
 
 from api.viewsets.sccmecs import (
@@ -57,6 +58,7 @@ router.register(r'sample', SampleViewSet)
 router.register(r'tag', TagViewSet)
 router.register(r'publication', PublicationViewSet)
 router.register(r'resistance', ResistanceViewSet)
+router.register(r'metadata', MetaDataViewSet, base_name='metadata')
 
 # Assembly related table
 router.register(r'assembly/stat', AssemblyViewSet)
