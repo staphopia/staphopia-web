@@ -12,7 +12,6 @@ from api.serializers.samples import (
 from api.serializers.assemblies import AssemblyStatSerializer, ContigSerializer
 from api.serializers.sccmecs import SCCmecProteinSerializer
 from api.serializers.sequence_types import BlastSerializer, Srst2Serializer
-from api.serializers.sequences import SequenceStatSerializer
 
 from api.queries.samples import (
     get_resistance_by_samples,
@@ -24,6 +23,7 @@ from api.queries.samples import (
 )
 
 from api.queries.genes import get_genes_by_sample
+from api.queries.sequences import get_sequencing_stats
 from api.queries.sequence_types import get_unique_st_samples
 from api.queries.sccmecs import (
     get_sccmec_primers_by_sample,
@@ -37,7 +37,6 @@ from api.validators import validate_positive_integer, validate_list_of_ids
 from sample.models import Publication, Sample, Tag, Resistance
 from assembly.models import Stats, Contigs
 from mlst.models import Srst2, Blast
-from sequence.models import Stat
 from sccmec.models import Proteins
 
 
@@ -177,9 +176,15 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def qc(self, request, pk=None):
-        hits = Stat.objects.filter(sample_id=pk)
-        serializer = SequenceStatSerializer(hits, many=True)
-        return self.formatted_response(serializer.data)
+        is_original = 'TRUE' if 'original' in request.GET else 'FALSE'
+        qual_per_base = True if 'bases' in request.GET else False
+        read_lengths = True if 'lengths' in request.GET else False
+        return self.formatted_response(get_sequencing_stats(
+            [pk],
+            is_original=is_original,
+            qual_per_base=qual_per_base,
+            read_lengths=read_lengths
+        ))
 
     @detail_route(methods=['get'])
     def sccmec_coverages(self, request, pk=None):

@@ -3,7 +3,7 @@ from api.utils import query_database
 
 
 def get_unique_st_samples():
-    """Return list of punlic ENA sampels with a unique ST."""
+    """Return list of punlic ENA samples with a unique ST."""
     return query_database('SELECT * FROM unique_mlst_samples;')
 
 
