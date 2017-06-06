@@ -1,10 +1,10 @@
-"""API utilities for MLST related viewsets."""
+"""API utilities for Sequencing related viewsets."""
 from api.utils import query_database
 
 
 def get_sequencing_stats(sample_ids, is_original='FALSE', qual_per_base=False,
                          read_lengths=False):
-    """Return list of punlic ENA sampels with a unique ST."""
+    """Return sequencing stats for a list of sampel ids."""
     cols = ['sample_id', 'is_original', 'rank', 'total_bp', 'coverage',
             'read_total', 'read_min', 'read_mean', 'read_std', 'read_median',
             'read_max', 'read_25th', 'read_75th', 'qual_mean', 'qual_std',

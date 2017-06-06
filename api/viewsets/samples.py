@@ -9,10 +9,11 @@ from api.serializers.samples import (
     TagSerializer,
     ResistanceSerializer
 )
-from api.serializers.assemblies import AssemblyStatSerializer, ContigSerializer
+from api.serializers.assemblies import ContigSerializer
 from api.serializers.sccmecs import SCCmecProteinSerializer
 from api.serializers.sequence_types import BlastSerializer, Srst2Serializer
 
+from api.queries.assemblies import get_assembly_stats
 from api.queries.samples import (
     get_resistance_by_samples,
     get_samples,
@@ -35,7 +36,7 @@ from api.queries.variants import get_indels_by_sample, get_snps_by_sample
 from api.validators import validate_positive_integer, validate_list_of_ids
 
 from sample.models import Publication, Sample, Tag, Resistance
-from assembly.models import Stats, Contigs
+from assembly.models import Contigs
 from mlst.models import Srst2, Blast
 from sccmec.models import Proteins
 
@@ -107,9 +108,13 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def assembly(self, request, pk=None):
-        hits = Stats.objects.filter(sample_id=pk)
-        serializer = AssemblyStatSerializer(hits, many=True)
-        return self.formatted_response(serializer.data)
+        scaffolds = 'TRUE' if 'scaffolds' in request.GET else 'FALSE'
+        plasmids = 'TRUE' if 'plasmids' in request.GET else 'FALSE'
+        return self.formatted_response(get_assembly_stats(
+            [pk],
+            is_scaffolds=scaffolds,
+            is_plasmids=plasmids
+        ))
 
     @detail_route(methods=['get'])
     def contigs(self, request, pk=None):
