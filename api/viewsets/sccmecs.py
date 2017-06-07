@@ -1,12 +1,17 @@
 from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.decorators import list_route
 
+from api.pagination import CustomReadOnlyModelViewSet
+from api.queries.sccmecs import get_sccmec_primers_by_sample
 from api.serializers.sccmecs import (
     SCCmecCassetteSerializer,
     SCCmecCoverageSerializer,
-    SCCmecPrimerSerializer,
     SCCmecProteinSerializer
 )
-from sccmec.models import Cassette, Coverage, Primers, Proteins
+from api.validators import validate_list_of_ids
+
+from sccmec.models import Cassette, Coverage, Proteins
 
 
 class SCCmecCassetteViewSet(viewsets.ReadOnlyModelViewSet):
@@ -23,11 +28,37 @@ class SCCmecCoverageViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SCCmecCoverageSerializer
 
 
-class SCCmecPrimerViewSet(viewsets.ReadOnlyModelViewSet):
+class SCCmecPrimerViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving SCCmec primer hits."""
 
-    queryset = Primers.objects.all()
-    serializer_class = SCCmecPrimerSerializer
+    queryset = ''
+
+    def list(self, request):
+        """
+        Stored SCCmec primer hit information for a given sample.
+        """
+        urls = {
+            'msg': 'Must use bulk_by_sample to get SCCmec Primer hits',
+        }
+
+        return Response(urls)
+
+    @list_route(methods=['post'])
+    def bulk_by_sample(self, request):
+        """Given a list of Sample IDs, return SCCmec Primer for each Sample."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                return self.formatted_response(get_sccmec_primers_by_sample(
+                    request.data['ids'],
+                    exact_hits=True if 'exact_hits' in request.GET else False,
+                    predict=True if 'predict' in request.GET else False
+                ))
 
 
 class SCCmecProteinViewSet(viewsets.ReadOnlyModelViewSet):
@@ -35,3 +66,37 @@ class SCCmecProteinViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Proteins.objects.all()
     serializer_class = SCCmecProteinSerializer
+
+
+class SCCmecSubtypeViewSet(CustomReadOnlyModelViewSet):
+    """A simple ViewSet for listing or retrieving SCCmec Subtype hits."""
+
+    queryset = ''
+
+    def list(self, request):
+        """
+        Stored SCCmec Subtype hit information for a given sample.
+        """
+        urls = {
+            'msg': 'Must use bulk_by_sample to get SCCmec Subtype hits',
+        }
+
+        return Response(urls)
+
+    @list_route(methods=['post'])
+    def bulk_by_sample(self, request):
+        """Given a list of Sample IDs, return SCCmec subtype hits Sample."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                return self.formatted_response(get_sccmec_primers_by_sample(
+                    request.data['ids'],
+                    is_subtypes=True,
+                    exact_hits=True if 'exact_hits' in request.GET else False,
+                    predict=True if 'predict' in request.GET else False
+                ))

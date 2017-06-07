@@ -30,7 +30,8 @@ from api.viewsets.sccmecs import (
     SCCmecCassetteViewSet,
     SCCmecCoverageViewSet,
     SCCmecPrimerViewSet,
-    SCCmecProteinViewSet
+    SCCmecProteinViewSet,
+    SCCmecSubtypeViewSet
 )
 
 from api.viewsets.sequences import SequenceStatViewSet
@@ -91,8 +92,9 @@ router.register(r'mlst/srst2', MlstSrst2ViewSet)
 # SCCmec related tables
 router.register(r'sccmec/cassette', SCCmecCassetteViewSet)
 router.register(r'sccmec/coverage', SCCmecCoverageViewSet)
-router.register(r'sccmec/primer', SCCmecPrimerViewSet)
+router.register(r'sccmec/primer', SCCmecPrimerViewSet, base_name='primer')
 router.register(r'sccmec/protein', SCCmecProteinViewSet)
+router.register(r'sccmec/subtype', SCCmecSubtypeViewSet, base_name='subtype')
 
 # Seqeunce quality related table
 router.register(r'sequence-quality', SequenceStatViewSet)

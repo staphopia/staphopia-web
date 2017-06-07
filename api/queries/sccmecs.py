@@ -4,64 +4,30 @@ from sccmec.tools import predict_type_by_primers, predict_subtype_by_primers
 from api.utils import query_database
 
 
-def get_sccmec_primers_by_sample(sample_id, exact_hits=False, predict=False):
+def get_sccmec_primers_by_sample(sample_id, is_subtypes=False,
+                                 exact_hits=False, predict=False):
     """Return SCCmec primer hits asscociated with a sample_id."""
-    sql = None
-    if exact_hits or predict:
-        sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
-                        p.identity, p.mismatch, p.gaps, p.hamming_distance,
-                        p.query_from, p.query_to, p.hit_from, p.hit_to,
-                        p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
-                        p.program_id
-                 FROM sccmec_primers AS p
-                 LEFT JOIN staphopia_blastquery AS s
-                 ON p.query_id=s.id
-                 WHERE p.sample_id={0} AND
-                       p.hamming_distance=0;""".format(sample_id)
-    else:
-        sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
-                        p.identity, p.mismatch, p.gaps, p.hamming_distance,
-                        p.query_from, p.query_to, p.hit_from, p.hit_to,
-                        p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
-                        p.program_id
-                 FROM sccmec_primers AS p
-                 LEFT JOIN staphopia_blastquery AS s
-                 ON p.query_id=s.id
-                 WHERE p.sample_id={0};""".format(sample_id)
+    sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
+                    p.identity, p.mismatch, p.gaps, p.hamming_distance,
+                    p.query_from, p.query_to, p.hit_from, p.hit_to,
+                    p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
+                    p.program_id
+             FROM {0} AS p
+             LEFT JOIN staphopia_blastquery AS s
+             ON p.query_id=s.id
+             WHERE p.sample_id IN ({1}) AND
+                   p.hamming_distance{2}0
+             ORDER BY sample_id;""" .format(
+        'sccmec_subtypes' if is_subtypes else 'sccmec_primers',
+        ','.join(sample_id),
+        '=' if exact_hits or predict else '>='
+    )
 
     if predict:
-        return predict_type_by_primers(query_database(sql), sample_id)
-    else:
-        return query_database(sql)
-
-
-def get_sccmec_subtypes_by_sample(sample_id, exact_hits=False, predict=False):
-    """Return SCCmec primer hits asscociated with a sample_id."""
-    sql = None
-    if exact_hits or predict:
-        sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
-                        p.identity, p.mismatch, p.gaps, p.hamming_distance,
-                        p.query_from, p.query_to, p.hit_from, p.hit_to,
-                        p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
-                        p.program_id
-                 FROM sccmec_subtypes AS p
-                 LEFT JOIN staphopia_blastquery AS s
-                 ON p.query_id=s.id
-                 WHERE p.sample_id={0} AND
-                       p.hamming_distance=0;""".format(sample_id)
-    else:
-        sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
-                        p.identity, p.mismatch, p.gaps, p.hamming_distance,
-                        p.query_from, p.query_to, p.hit_from, p.hit_to,
-                        p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
-                        p.program_id
-                 FROM sccmec_subtypes AS p
-                 LEFT JOIN staphopia_blastquery AS s
-                 ON p.query_id=s.id
-                 WHERE p.sample_id={0};""".format(sample_id)
-
-    if predict:
-        return predict_subtype_by_primers(query_database(sql), sample_id)
+        if is_subtypes:
+            return predict_subtype_by_primers(query_database(sql))
+        else:
+            return predict_type_by_primers(query_database(sql))
     else:
         return query_database(sql)
 

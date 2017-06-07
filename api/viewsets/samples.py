@@ -28,8 +28,7 @@ from api.queries.sequences import get_sequencing_stats
 from api.queries.sequence_types import get_unique_st_samples
 from api.queries.sccmecs import (
     get_sccmec_primers_by_sample,
-    get_sccmec_coverage_by_sample,
-    get_sccmec_subtypes_by_sample
+    get_sccmec_coverage_by_sample
 )
 from api.queries.variants import get_indels_by_sample, get_snps_by_sample
 
@@ -197,6 +196,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def sccmec_primers(self, request, pk=None):
+        pk = [pk]
         if 'exact_hits' in request.GET:
             return self.formatted_response(
                 get_sccmec_primers_by_sample(pk, exact_hits=True)
@@ -210,16 +210,21 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def sccmec_subtypes(self, request, pk=None):
+        pk = [pk]
         if 'exact_hits' in request.GET:
             return self.formatted_response(
-                get_sccmec_subtypes_by_sample(pk, exact_hits=True)
+                get_sccmec_primers_by_sample(pk, is_subtypes=True,
+                                             exact_hits=True)
             )
         elif 'predict' in request.GET:
             return self.formatted_response(
-                get_sccmec_subtypes_by_sample(pk, predict=True)
+                get_sccmec_primers_by_sample(pk, is_subtypes=True,
+                                             predict=True)
             )
         else:
-            return self.formatted_response(get_sccmec_subtypes_by_sample(pk))
+            return self.formatted_response(get_sccmec_primers_by_sample(
+                pk, is_subtypes=True
+            ))
 
     @detail_route(methods=['get'])
     def sccmec_proteins(self, request, pk=None):
