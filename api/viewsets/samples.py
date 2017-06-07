@@ -9,7 +9,7 @@ from api.serializers.samples import (
     TagSerializer,
     ResistanceSerializer
 )
-from api.serializers.assemblies import ContigSerializer
+from api.serializers.assemblies import ContigFullSerializer
 from api.serializers.sccmecs import SCCmecProteinSerializer
 from api.serializers.sequence_types import BlastSerializer, Srst2Serializer
 
@@ -118,7 +118,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     @detail_route(methods=['get'])
     def contigs(self, request, pk=None):
         hits = Contigs.objects.filter(sample_id=pk)
-        serializer = ContigSerializer(hits, many=True)
+        serializer = ContigFullSerializer(hits, many=True)
         return self.formatted_response(serializer.data)
 
     @detail_route(methods=['get'])
