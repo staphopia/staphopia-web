@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import format_results, get_ids_in_bulk
 from api.queries.variants import (
-    get_snps_by_samples,
+    get_indels_by_sample,
+    get_snps_by_sample,
     get_variant_counts_by_samples,
     get_representative_sequence
 )
@@ -86,19 +87,19 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
     def bulk_by_sample(self, request):
         """Given a list of SNP IDs, return table info for each SNP."""
         if request.method == 'POST':
-            validator = validate_list_of_ids(request.data, max_query=500)
+            validator = validate_list_of_ids(request.data, max_query=10)
             if validator['has_errors']:
                 return Response({
                             "message": validator['message'],
                             "data": request.data
                         })
             else:
-                return self.formatted_response(get_snps_by_samples(
+                return self.formatted_response(get_snps_by_sample(
                     request.data['ids'],
                 ))
 
 
-class InDelViewSet(viewsets.ReadOnlyModelViewSet):
+class InDelViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving InDel."""
 
     queryset = Indel.objects.all()
@@ -139,10 +140,8 @@ class InDelViewSet(viewsets.ReadOnlyModelViewSet):
                             "data": request.data
                         })
             else:
-                return Response(get_ids_in_bulk(
-                    'variant_toindel',
-                    request.data['ids'],
-                    id_col='sample_id'
+                return self.formatted_response(get_indels_by_sample(
+                    request.data['ids']
                 ))
 
 

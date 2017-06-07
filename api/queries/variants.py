@@ -14,10 +14,88 @@ def get_indels_by_sample(sample_id):
              FROM variant_toindel AS v
              LEFT JOIN variant_indel as i
              ON v.indel_id=i.id
-             WHERE sample_id={0};""".format(
-        sample_id
+             WHERE sample_id IN ({0})
+             ORDER BY sample_id ASC, indel_id ASC;""".format(
+        ','.join(sample_id)
     )
-    return query_database(sql)
+    results = []
+    for row in query_database(sql):
+        confidence = row['confidence']
+        results.append(OrderedDict([
+            ('sample_id', row['sample_id']),
+            ('indel_id', row['indel_id']),
+            ('annotation_id', row['annotation_id']),
+            ('reference_position', row['reference_position']),
+            ('reference_base', row['reference_base']),
+            ('alternate_base', row['alternate_base']),
+            ('is_deletion', row['is_deletion']),
+            ('feature_id', row['feature_id']),
+            ('reference_id', row['reference_id']),
+            ('AC', confidence['AC']),
+            ('GT', confidence['GT']),
+            ('AD', confidence['AD']),
+            ('GQ', confidence['GQ']),
+            ('AF', confidence['AF']),
+            ('MQ', confidence['MQ']),
+            ('PL', confidence['PL']),
+            ('DP', confidence['DP']),
+            ('QD', confidence['QD']),
+            ('quality', confidence['quality']),
+            ('filters_id', row['filters_id']),
+        ]))
+    return results
+
+
+def get_snps_by_sample(sample_id):
+    """Return snps associated with a sample."""
+    sql = """SELECT v.sample_id, v.snp_id, s.annotation_id,
+                    s.reference_position, s.reference_base, s.alternate_base,
+                    s.reference_codon, s.alternate_codon,
+                    s.reference_amino_acid, s.alternate_amino_acid,
+                    s.amino_acid_change, s.is_synonymous, s.is_transition,
+                    s.is_genic, v.confidence, s.feature_id,
+                    s.reference_id, v.filters_id
+             FROM variant_tosnp AS v
+             LEFT JOIN variant_snp as s
+             ON v.snp_id=s.id
+             WHERE v.sample_id IN ({0})
+             ORDER BY v.sample_id ASC, v.snp_id ASC;""".format(
+        ','.join([str(i) for i in sample_id])
+    )
+
+    results = []
+    for row in query_database(sql):
+        confidence = row['confidence']
+        results.append(OrderedDict([
+            ('sample_id', row['sample_id']),
+            ('snp_id', row['snp_id']),
+            ('annotation_id', row['annotation_id']),
+            ('reference_position', row['reference_position']),
+            ('reference_base', row['reference_base']),
+            ('alternate_base', row['alternate_base']),
+            ('reference_codon', row['reference_codon']),
+            ('alternate_codon', row['alternate_codon']),
+            ('reference_amino_acid', row['reference_amino_acid']),
+            ('alternate_amino_acid', row['alternate_amino_acid']),
+            ('amino_acid_change', row['amino_acid_change']),
+            ('is_synonymous', row['is_synonymous']),
+            ('is_transition', row['is_transition']),
+            ('is_genic', row['is_genic']),
+            ('AC', confidence['AC']),
+            ('GT', confidence['GT']),
+            ('AD', confidence['AD']),
+            ('GQ', confidence['GQ']),
+            ('AF', confidence['AF']),
+            ('MQ', confidence['MQ']),
+            ('PL', confidence['PL']),
+            ('DP', confidence['DP']),
+            ('QD', confidence['QD']),
+            ('quality', confidence['quality']),
+            ('feature_id', row['feature_id']),
+            ('reference_id', row['reference_id']),
+            ('filters_id', row['filters_id']),
+        ]))
+    return results
 
 
 def get_annotated_indels_by_sample(sample_id):
@@ -29,28 +107,6 @@ def get_annotated_indels_by_sample(sample_id):
              ON t.indel_id=s.id
              WHERE sample_id={0}
              ORDER BY s.reference_position;""".format(
-        sample_id
-    )
-    return query_database(sql)
-
-
-def get_reference_genome_sequence(reference_id):
-    """Return snps associated with a sample."""
-    sql = """SELECT position, base
-             FROM variant_referencegenome
-             WHERE reference_id={0}
-             ORDER BY position;""".format(
-        reference_id
-    )
-    return query_database(sql)
-
-
-def get_snps_by_sample(sample_id):
-    """Return snps associated with a sample."""
-    sql = """SELECT sample_id, snp_id, filters_id, comment_id
-             FROM variant_tosnp
-             WHERE sample_id={0}
-             ORDER BY snp_id;""".format(
         sample_id
     )
     return query_database(sql)
@@ -70,15 +126,14 @@ def get_annotated_snps_by_sample(sample_id):
     return query_database(sql)
 
 
-def get_snps_by_samples(sample_ids):
+def get_reference_genome_sequence(reference_id):
     """Return snps associated with a sample."""
-    sql = """SELECT sample_id, snp_id, filters_id, comment_id
-             FROM variant_tosnp
-             WHERE sample_id IN ({0})
-             ORDER BY snp_id;""".format(
-        ','.join([str(i) for i in sample_ids])
+    sql = """SELECT position, base
+             FROM variant_referencegenome
+             WHERE reference_id={0}
+             ORDER BY position;""".format(
+        reference_id
     )
-
     return query_database(sql)
 
 

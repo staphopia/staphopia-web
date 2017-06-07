@@ -172,7 +172,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def indels(self, request, pk=None):
-        return self.formatted_response(get_indels_by_sample(pk))
+        return self.formatted_response(get_indels_by_sample([pk]))
 
     @detail_route(methods=['get'])
     def metadata(self, request, pk=None):
@@ -238,7 +238,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
         if validator['has_errors']:
             return Response(validator, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
-            return self.formatted_response(get_snps_by_sample(pk))
+            return self.formatted_response(get_snps_by_sample([pk]))
 
     @detail_route(methods=['get'])
     def st_blast(self, request, pk=None):
