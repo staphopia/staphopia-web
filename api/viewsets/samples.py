@@ -52,7 +52,9 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
         if validator['has_errors']:
             return Response(validator)
         else:
-            return self.paginate(get_samples(sample_id=pk), is_serialized=True)
+            return self.paginate(
+                get_samples(request.user.pk, sample_id=pk), is_serialized=True
+            )
 
     def list(self, request):
         if 'st' in request.GET:
@@ -69,15 +71,10 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                     ids = Srst2.objects.filter(
                         st_stripped=request.GET['st']
                     ).values_list('sample_id', flat=True)
-                queryset = get_samples(sample_ids=ids)
+                queryset = get_samples(request.user.pk, sample_ids=ids)
         else:
-            queryset = get_samples()
-        '''
-        if not request.user.is_superuser:
-            queryset = Sample.objects.filter(
-                Q(is_public=True) | Q(user_id=request.user.pk)
-            )
-        '''
+            queryset = get_samples(request.user.pk)
+
         return self.paginate(queryset, is_serialized=True)
 
     @list_route(methods=['get'])
