@@ -2,7 +2,7 @@
 from django.db import transaction
 from django.core.management.base import BaseCommand, CommandError
 
-from sample.models import ToTag, Tag, ToResistance, ToPublication, ToMetaData
+from sample.models import ToTag, Tag, ToResistance, ToPublication
 
 from assembly.models import Stats, Contigs
 from gene.models import Features, BlastResults
@@ -10,7 +10,7 @@ from kmer.models import Total
 from mlst.models import Blast, Srst2
 from sccmec.models import Coverage, Primers, Proteins
 from sequence.models import Stat
-from variant.models import ToIndel, ToSNP, Confidence, Counts
+from variant.models import ToIndel, ToSNP, Counts
 
 
 class Command(BaseCommand):
@@ -35,10 +35,10 @@ class Command(BaseCommand):
 
         analysis_models = [
             Stats, Contigs, Features, BlastResults, Total, Blast, Srst2,
-            Coverage, Primers, Proteins, Stat, ToIndel, ToSNP, Confidence,
+            Coverage, Primers, Proteins, Stat, ToIndel, ToSNP,
             Counts
         ]
-        sample_models = [ToTag, ToResistance, ToPublication, ToMetaData]
+        sample_models = [ToTag, ToResistance, ToPublication]
 
         hits = ToTag.objects.filter(tag=tag)
         for hit in hits:

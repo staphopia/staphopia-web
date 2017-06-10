@@ -56,6 +56,9 @@ class Tag(models.Model):
     tag = models.TextField(db_index=True)
     comment = models.TextField(blank=True)
 
+    class Meta:
+        unique_together = ('user', 'tag')
+
 
 class ToTag(models.Model):
     """Link samples to tags."""
