@@ -56,6 +56,7 @@ class SCCmecPrimerViewSet(CustomReadOnlyModelViewSet):
             else:
                 return self.formatted_response(get_sccmec_primers_by_sample(
                     request.data['ids'],
+                    request.user.pk,
                     exact_hits=True if 'exact_hits' in request.GET else False,
                     predict=True if 'predict' in request.GET else False
                 ))
@@ -96,6 +97,7 @@ class SCCmecSubtypeViewSet(CustomReadOnlyModelViewSet):
             else:
                 return self.formatted_response(get_sccmec_primers_by_sample(
                     request.data['ids'],
+                    request.user.pk,
                     is_subtypes=True,
                     exact_hits=True if 'exact_hits' in request.GET else False,
                     predict=True if 'predict' in request.GET else False

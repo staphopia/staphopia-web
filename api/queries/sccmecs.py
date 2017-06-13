@@ -4,43 +4,73 @@ from sccmec.tools import predict_type_by_primers, predict_subtype_by_primers
 from api.utils import query_database
 
 
-def get_sccmec_primers_by_sample(sample_id, is_subtypes=False,
+def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
                                  exact_hits=False, predict=False):
     """Return SCCmec primer hits asscociated with a sample_id."""
-    sql = """SELECT p.sample_id, s.title, s.length, p.bitscore, p.evalue,
+    sql = """SELECT p.sample_id, b.title, b.length, p.bitscore, p.evalue,
                     p.identity, p.mismatch, p.gaps, p.hamming_distance,
                     p.query_from, p.query_to, p.hit_from, p.hit_to,
                     p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
                     p.program_id
              FROM {0} AS p
-             LEFT JOIN staphopia_blastquery AS s
-             ON p.query_id=s.id
-             WHERE p.sample_id IN ({1}) AND
-                   p.hamming_distance{2}0
+             LEFT JOIN staphopia_blastquery AS b
+             ON p.query_id=b.id
+             LEFT JOIN sample_sample AS s
+             ON p.sample_id=s.id
+             WHERE p.sample_id IN ({1}) AND (s.is_public=TRUE OR s.user_id={2})
+                   AND p.hamming_distance{3}0
              ORDER BY sample_id;""" .format(
         'sccmec_subtypes' if is_subtypes else 'sccmec_primers',
-        ','.join(sample_id),
+        ','.join([str(i) for i in sample_id]),
+        user_id,
         '=' if exact_hits or predict else '>='
     )
 
     if predict:
         if is_subtypes:
-            return predict_subtype_by_primers(query_database(sql))
+            return predict_subtype_by_primers(sample_id, query_database(sql))
         else:
-            return predict_type_by_primers(query_database(sql))
+            return predict_type_by_primers(sample_id, query_database(sql))
     else:
         return query_database(sql)
 
 
-def get_sccmec_coverage_by_sample(sample_id):
-    """Return SCCmec primer hits asscociated with a sample_id."""
-    sql = """SELECT cas.name, cov.total, cov.minimum, cov.mean, cov.median,
-                    cov.maximum, cov.meca_total, cov.meca_minimum,
+def get_sccmec_proteins_by_sample(sample_id, user_id):
+    """Return SCCmec protein hits asscociated with a sample_id."""
+    sql = """SELECT p.sample_id, b.title, b.length, p.bitscore, p.evalue,
+                    p.identity, p.mismatch, p.gaps, p.hamming_distance,
+                    p.query_from, p.query_to, p.hit_from, p.hit_to,
+                    p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
+                    p.program_id
+             FROM sccmec_proteins AS p
+             LEFT JOIN staphopia_blastquery AS b
+             ON p.query_id=b.id
+             LEFT JOIN sample_sample AS s
+             ON p.sample_id=s.id
+             WHERE p.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
+             ORDER BY sample_id;""" .format(
+        ','.join([str(i) for i in sample_id]),
+        user_id,
+    )
+
+    return query_database(sql)
+
+
+def get_sccmec_coverage_by_sample(sample_id, user_id):
+    """Return SCCmec coverages asscociated with a sample_id."""
+    sql = """SELECT cov.sample_id, cas.name, cov.total, cov.minimum, cov.mean,
+                    cov.median, cov.maximum, cov.meca_total, cov.meca_minimum,
                     cov.meca_mean, cov.meca_median, cov.meca_maximum,
-                    cov.cassette_id, cov.sample_id
+                    cov.cassette_id
              FROM sccmec_coverage AS cov
              LEFT JOIN sccmec_cassette AS cas
              ON cov.cassette_id=cas.id
-             WHERE cov.sample_id={0}
-             ORDER BY cov.total DESC;""".format(sample_id)
+             LEFT JOIN sample_sample AS s
+             ON cov.sample_id=s.id
+             WHERE cov.sample_id IN ({0})
+                   AND (s.is_public=TRUE OR s.user_id={1})
+             ORDER BY cov.total DESC;""".format(
+        ','.join([str(i) for i in sample_id]),
+        user_id
+    )
     return query_database(sql)

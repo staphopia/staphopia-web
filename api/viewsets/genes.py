@@ -6,7 +6,7 @@ from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import format_results
 from api.queries.genes import (
     get_gene_features_by_product,
-    get_genes_by_samples,
+    get_genes_by_sample,
     get_gene_feature,
     get_gene_features,
     get_clusters_by_samples,
@@ -104,8 +104,9 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                         return Response(cluster)
                     else:
                         return self.paginate(
-                            get_genes_by_samples(
+                            get_genes_by_sample(
                                 request.data['ids'],
+                                request.user.pk,
                                 product_id=request.GET['product_id'],
                                 cluster_id=request.GET['cluster_id']
                             ),
@@ -119,8 +120,9 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                         return Response(validator)
                     else:
                         return self.paginate(
-                            get_genes_by_samples(
+                            get_genes_by_sample(
                                 request.data['ids'],
+                                request.user.pk,
                                 product_id=request.GET['product_id']
                             ),
                             page_size=100, is_serialized=True
@@ -133,15 +135,19 @@ class GeneFeatureViewSet(CustomReadOnlyModelViewSet):
                         return Response(validator)
                     else:
                         return self.paginate(
-                            get_genes_by_samples(
+                            get_genes_by_sample(
                                 request.data['ids'],
+                                request.user.pk,
                                 cluster_id=request.GET['cluster_id']
                             ),
                             page_size=100, is_serialized=True
                         )
                 else:
                     return self.paginate(
-                        get_genes_by_samples(request.data['ids']),
+                        get_genes_by_sample(
+                            request.data['ids'],
+                            request.user.pk
+                        ),
                         page_size=100, is_serialized=True
                     )
 

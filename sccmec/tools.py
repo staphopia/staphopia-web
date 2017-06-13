@@ -213,12 +213,12 @@ def __read_coverage(coverage):
     return sccmec
 
 
-def predict_type_by_primers(blast_results):
+def predict_type_by_primers(sample_id, blast_results):
     sample_hits = OrderedDict()
-    for hit in blast_results:
-        if hit['sample_id'] not in sample_hits:
-            sample_hits[hit['sample_id']] = []
+    for sample in sorted(sample_id):
+        sample_hits[int(sample)] = []
 
+    for hit in blast_results:
         sample_hits[hit['sample_id']].append(hit)
 
     predictions = []
@@ -292,12 +292,12 @@ def predict_type_by_primers(blast_results):
     return predictions
 
 
-def predict_subtype_by_primers(blast_results):
+def predict_subtype_by_primers(sample_id, blast_results):
     sample_hits = OrderedDict()
-    for hit in blast_results:
-        if hit['sample_id'] not in sample_hits:
-            sample_hits[hit['sample_id']] = []
+    for sample in sorted(sample_id):
+        sample_hits[int(sample)] = []
 
+    for hit in blast_results:
         sample_hits[hit['sample_id']].append(hit)
 
     predictions = []

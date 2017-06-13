@@ -32,7 +32,7 @@ class MlstBlastViewSet(CustomReadOnlyModelViewSet):
                         })
             else:
                 return self.formatted_response(get_blast_sequence_type(
-                    request.data['ids'],
+                    request.data['ids'], request.user.pk
                 ))
 
 
@@ -55,5 +55,5 @@ class MlstSrst2ViewSet(CustomReadOnlyModelViewSet):
                         })
             else:
                 return self.formatted_response(get_srst2_sequence_type(
-                    request.data['ids'],
+                    request.data['ids'], request.user.pk
                 ))

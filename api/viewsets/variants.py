@@ -96,6 +96,7 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
             else:
                 return self.formatted_response(get_snps_by_sample(
                     request.data['ids'],
+                    request.user.pk
                 ))
 
 
@@ -141,7 +142,8 @@ class InDelViewSet(CustomReadOnlyModelViewSet):
                         })
             else:
                 return self.formatted_response(get_indels_by_sample(
-                    request.data['ids']
+                    request.data['ids'],
+                    request.user.pk
                 ))
 
 

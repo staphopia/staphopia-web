@@ -2,7 +2,8 @@
 from api.utils import query_database
 
 
-def get_assembly_stats(sample_ids, is_scaffolds='FALSE', is_plasmids='FALSE'):
+def get_assembly_stats(sample_id, user_id, is_scaffolds='FALSE',
+                       is_plasmids='FALSE'):
     """Return assembly stats for a set of sample ids."""
     cols = [
         'sample_id', 'is_scaffolds', 'is_plasmids', 'total_contig',
@@ -18,12 +19,34 @@ def get_assembly_stats(sample_ids, is_scaffolds='FALSE', is_plasmids='FALSE'):
     ]
 
     sql = """SELECT {0}
-             FROM assembly_stats
-             WHERE sample_id IN ({1}) AND is_scaffolds={2} AND is_plasmids={3}
+             FROM assembly_stats AS a
+             LEFT JOIN sample_sample as s
+             ON s.id=a.sample_id
+             WHERE sample_id IN ({1}) AND (s.is_public=TRUE OR user_id={2})
+                   AND is_scaffolds={3} AND is_plasmids={4}
              ORDER BY sample_id;""".format(
         ','.join(cols),
-        ','.join([str(i) for i in sample_ids]),
+        ','.join([str(i) for i in sample_id]),
+        user_id,
         is_scaffolds,
+        is_plasmids
+    )
+
+    return query_database(sql)
+
+
+def get_assembled_contigs(sample_id, user_id, is_plasmids='FALSE'):
+    """Return assembled contigs for a set of sample ids."""
+    sql = """SELECT c.sample_id, c.name, LENGTH(c.sequence) as length,
+                    c.is_plasmids, c.sequence
+             FROM assembly_contigs AS c
+             LEFT JOIN sample_sample as s
+             ON s.id=c.sample_id
+             WHERE c.sample_id IN ({0}) AND (s.is_public=TRUE OR user_id={1})
+                   AND is_plasmids={2}
+             ORDER BY sample_id ASC;""".format(
+        ','.join([str(i) for i in sample_id]),
+        user_id,
         is_plasmids
     )
 

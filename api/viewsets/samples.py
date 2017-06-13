@@ -9,11 +9,8 @@ from api.serializers.samples import (
     TagSerializer,
     ResistanceSerializer
 )
-from api.serializers.assemblies import ContigFullSerializer
-from api.serializers.sccmecs import SCCmecProteinSerializer
-from api.serializers.sequence_types import BlastSerializer, Srst2Serializer
 
-from api.queries.assemblies import get_assembly_stats
+from api.queries.assemblies import get_assembly_stats, get_assembled_contigs
 from api.queries.samples import (
     get_resistance_by_samples,
     get_samples,
@@ -25,19 +22,23 @@ from api.queries.samples import (
 
 from api.queries.genes import get_genes_by_sample
 from api.queries.sequences import get_sequencing_stats
-from api.queries.sequence_types import get_unique_st_samples
+from api.queries.sequence_types import (
+    get_unique_st_samples,
+    get_blast_sequence_type,
+    get_srst2_sequence_type
+)
+
 from api.queries.sccmecs import (
     get_sccmec_primers_by_sample,
-    get_sccmec_coverage_by_sample
+    get_sccmec_coverage_by_sample,
+    get_sccmec_proteins_by_sample
 )
 from api.queries.variants import get_indels_by_sample, get_snps_by_sample
 
 from api.validators import validate_positive_integer, validate_list_of_ids
 
 from sample.models import Publication, Sample, Tag, Resistance
-from assembly.models import Contigs
-from mlst.models import Srst2, Blast
-from sccmec.models import Proteins
+from mlst.models import Srst2
 
 
 class SampleViewSet(CustomReadOnlyModelViewSet):
@@ -100,76 +101,70 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):
-        return self.formatted_response(get_tags_by_sample(pk))
+        return self.formatted_response(get_tags_by_sample(pk, request.user.pk))
 
     @detail_route(methods=['get'])
     def assembly(self, request, pk=None):
-        scaffolds = 'TRUE' if 'scaffolds' in request.GET else 'FALSE'
-        plasmids = 'TRUE' if 'plasmids' in request.GET else 'FALSE'
         return self.formatted_response(get_assembly_stats(
             [pk],
-            is_scaffolds=scaffolds,
-            is_plasmids=plasmids
+            request.user.pk,
+            is_scaffolds='TRUE' if 'scaffolds' in request.GET else 'FALSE',
+            is_plasmids='TRUE' if 'plasmids' in request.GET else 'FALSE'
         ))
 
     @detail_route(methods=['get'])
     def contigs(self, request, pk=None):
-        hits = Contigs.objects.filter(sample_id=pk)
-        serializer = ContigFullSerializer(hits, many=True)
-        return self.formatted_response(serializer.data)
+        return self.formatted_response(get_assembled_contigs(
+            [pk],
+            request.user.pk,
+            is_plasmids='TRUE' if 'plasmids' in request.GET else 'FALSE'
+        ))
 
     @detail_route(methods=['get'])
     def genes(self, request, pk=None):
-        if 'product_id' in request.GET and 'cluster_id' in request.GET:
+        product = None
+        cluster = None
+        if 'product_id' in request.GET:
             product = validate_positive_integer(request.GET['product_id'])
-            cluster = validate_positive_integer(request.GET['cluster_id'])
             if product['has_errors']:
                 return Response(product)
-            elif cluster['has_errors']:
+            else:
+                product = request.GET['product_id']
+
+        if 'cluster_id' in request.GET:
+            cluster = validate_positive_integer(request.GET['cluster_id'])
+            if cluster['has_errors']:
                 return Response(cluster)
             else:
-                return self.paginate(
-                    get_genes_by_sample(
-                        pk,
-                        product_id=request.GET['product_id'],
-                        cluster_id=request.GET['cluster_id']
-                    ),
-                    page_size=250,
-                    is_serialized=True
-                )
-        elif 'product_id' in request.GET:
-            validator = validate_positive_integer(request.GET['product_id'])
-            if validator['has_errors']:
-                return Response(validator)
-            else:
-                return self.paginate(
-                    get_genes_by_sample(
-                        pk, product_id=request.GET['product_id']
-                    ),
-                    page_size=250,
-                    is_serialized=True
-                )
-        elif 'cluster_id' in request.GET:
-            validator = validate_positive_integer(request.GET['cluster_id'])
-            if validator['has_errors']:
-                return Response(validator)
-            else:
-                return self.paginate(
-                    get_genes_by_sample(
-                        pk, cluster_id=request.GET['cluster_id']
-                    ),
-                    page_size=250,
-                    is_serialized=True
-                )
-        else:
-            return self.paginate(
-                get_genes_by_sample(pk), page_size=250,
-                is_serialized=True
-            )
+                cluster = request.GET['cluster_id']
+
+        return self.paginate(
+            get_genes_by_sample(
+                [pk],
+                request.user.pk,
+                product_id=product,
+                cluster_id=cluster
+            ),
+            page_size=250,
+            is_serialized=True
+        )
 
     @detail_route(methods=['get'])
     def indels(self, request, pk=None):
-        return self.formatted_response(get_indels_by_sample([pk]))
+        validator = validate_positive_integer(pk)
+        if validator['has_errors']:
+            return Response(validator, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            if 'paginate' in request.GET:
+                return self.paginate(
+                    get_indels_by_sample([pk], request.user.pk),
+                    page_size=100,
+                    is_serialized=True
+                )
+            else:
+                return self.formatted_response(
+                    get_indels_by_sample([pk], request.user.pk)
+                )
 
     @detail_route(methods=['get'])
     def metadata(self, request, pk=None):
@@ -177,57 +172,46 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def qc(self, request, pk=None):
-        is_original = 'TRUE' if 'original' in request.GET else 'FALSE'
-        qual_per_base = True if 'bases' in request.GET else False
-        read_lengths = True if 'lengths' in request.GET else False
         return self.formatted_response(get_sequencing_stats(
             [pk],
-            is_original=is_original,
-            qual_per_base=qual_per_base,
-            read_lengths=read_lengths
+            request.user.pk,
+            is_original='TRUE' if 'original' in request.GET else 'FALSE',
+            qual_per_base=True if 'bases' in request.GET else False,
+            read_lengths=True if 'lengths' in request.GET else False
         ))
 
     @detail_route(methods=['get'])
     def sccmec_coverages(self, request, pk=None):
-        return self.formatted_response(get_sccmec_coverage_by_sample(pk))
+        return self.formatted_response(get_sccmec_coverage_by_sample(
+            [pk],
+            request.user.pk
+        ))
 
     @detail_route(methods=['get'])
     def sccmec_primers(self, request, pk=None):
-        pk = [pk]
-        if 'exact_hits' in request.GET:
-            return self.formatted_response(
-                get_sccmec_primers_by_sample(pk, exact_hits=True)
-            )
-        elif 'predict' in request.GET:
-            return self.formatted_response(
-                get_sccmec_primers_by_sample(pk, predict=True)
-            )
-        else:
-            return self.formatted_response(get_sccmec_primers_by_sample(pk))
+        return self.formatted_response(get_sccmec_primers_by_sample(
+            [pk],
+            request.user.pk,
+            exact_hits=True if 'exact_hits' in request.GET else False,
+            predict=True if 'predict' in request.GET else False
+        ))
 
     @detail_route(methods=['get'])
     def sccmec_subtypes(self, request, pk=None):
-        pk = [pk]
-        if 'exact_hits' in request.GET:
-            return self.formatted_response(
-                get_sccmec_primers_by_sample(pk, is_subtypes=True,
-                                             exact_hits=True)
-            )
-        elif 'predict' in request.GET:
-            return self.formatted_response(
-                get_sccmec_primers_by_sample(pk, is_subtypes=True,
-                                             predict=True)
-            )
-        else:
-            return self.formatted_response(get_sccmec_primers_by_sample(
-                pk, is_subtypes=True
-            ))
+        return self.formatted_response(get_sccmec_primers_by_sample(
+            [pk],
+            request.user.pk,
+            is_subtypes=True,
+            exact_hits=True if 'exact_hits' in request.GET else False,
+            predict=True if 'predict' in request.GET else False
+        ))
 
     @detail_route(methods=['get'])
     def sccmec_proteins(self, request, pk=None):
-        hits = Proteins.objects.filter(sample_id=pk)
-        serializer = SCCmecProteinSerializer(hits, many=True)
-        return self.formatted_response(serializer.data)
+        return self.formatted_response(get_sccmec_proteins_by_sample(
+            [pk],
+            request.user.pk
+        ))
 
     @detail_route(methods=['get'])
     def snps(self, request, pk=None):
@@ -235,19 +219,28 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
         if validator['has_errors']:
             return Response(validator, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
-            return self.formatted_response(get_snps_by_sample([pk]))
+            if 'paginate' in request.GET:
+                return self.paginate(
+                    get_snps_by_sample([pk], request.user.pk),
+                    page_size=100,
+                    is_serialized=True
+                )
+            else:
+                return self.formatted_response(
+                    get_snps_by_sample([pk], request.user.pk)
+                )
 
     @detail_route(methods=['get'])
     def st_blast(self, request, pk=None):
-        hits = Blast.objects.filter(sample_id=pk)
-        serializer = BlastSerializer(hits, many=True)
-        return self.formatted_response(serializer.data)
+        return self.formatted_response(get_blast_sequence_type(
+            [pk], request.user.pk
+        ))
 
     @detail_route(methods=['get'])
     def st_srst2(self, request, pk=None):
-        hits = Srst2.objects.filter(sample_id=pk)
-        serializer = Srst2Serializer(hits, many=True)
-        return self.formatted_response(serializer.data)
+        return self.formatted_response(get_srst2_sequence_type(
+            [pk], request.user.pk
+        ))
 
 
 class TagViewSet(CustomReadOnlyModelViewSet):

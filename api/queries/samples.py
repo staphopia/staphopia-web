@@ -12,7 +12,8 @@ def get_samples(user_id, sample_id=None, sample_ids=None):
                  FROM sample_sample as s
                  LEFT JOIN mlst_srst2 as m
                  ON s.id = m.sample_id
-                 WHERE s.id={0} AND (s.is_public=TRUE OR user_id={1})""".format(
+                 WHERE s.id={0}
+                       AND (s.is_public=TRUE OR s.user_id={1})""".format(
             sample_id,
             user_id
         )
@@ -23,7 +24,7 @@ def get_samples(user_id, sample_id=None, sample_ids=None):
                  FROM sample_sample as s
                  LEFT JOIN mlst_srst2 as m
                  ON s.id = m.sample_id
-                 WHERE s.id IN ({0}) AND (s.is_public=TRUE OR user_id={1})
+                 WHERE s.id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
                  ORDER BY s.id""".format(
             ','.join([str(i) for i in sample_ids]),
             user_id
@@ -93,13 +94,19 @@ def get_resistance_by_samples(sample_ids, resistance_id=None):
     return query_database(sql)
 
 
-def get_tags_by_sample(sample_id):
+def get_tags_by_sample(sample_id, user_id):
     """Return tags associated with a sample."""
     sql = """SELECT s.sample_id, s.tag_id, t.tag, t.comment
              FROM sample_totag AS s
              LEFT JOIN sample_tag AS t
              ON s.tag_id=t.id
-             WHERE s.sample_id={0};""".format(sample_id)
+             LEFT JOIN sample_sample AS a
+             ON s.sample_id=a.id
+             WHERE s.sample_id={0}
+                   AND (a.is_public=TRUE OR a.user_id={1});""".format(
+        sample_id,
+        user_id
+    )
     return query_database(sql)
 
 

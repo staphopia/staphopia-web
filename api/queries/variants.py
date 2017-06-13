@@ -5,18 +5,21 @@ from api.utils import query_database
 from staphopia.utils import reverse_complement
 
 
-def get_indels_by_sample(sample_id):
+def get_indels_by_sample(sample_id, user_id):
     """Return indels associated with a sample."""
-    sql = """SELECT v.indel_id, i.reference_position, i.reference_base,
-                    i.alternate_base, i.is_deletion, v.confidence,
-                    i.annotation_id, i.feature_id, i.reference_id,
-                    v.filters_id, v.sample_id
+    sql = """SELECT v.sample_id, v.indel_id, i.reference_position,
+                    i.reference_base, i.alternate_base, i.is_deletion,
+                    v.confidence, i.annotation_id, i.feature_id,
+                    i.reference_id, v.filters_id
              FROM variant_toindel AS v
              LEFT JOIN variant_indel as i
              ON v.indel_id=i.id
-             WHERE sample_id IN ({0})
-             ORDER BY sample_id ASC, indel_id ASC;""".format(
-        ','.join(sample_id)
+             LEFT JOIN sample_sample AS s
+             ON v.sample_id=s.id
+             WHERE v.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
+             ORDER BY v.sample_id ASC, v.indel_id ASC;""".format(
+        ','.join([str(i) for i in sample_id]),
+        user_id
     )
     results = []
     for row in query_database(sql):
@@ -46,7 +49,7 @@ def get_indels_by_sample(sample_id):
     return results
 
 
-def get_snps_by_sample(sample_id):
+def get_snps_by_sample(sample_id, user_id):
     """Return snps associated with a sample."""
     sql = """SELECT v.sample_id, v.snp_id, s.annotation_id,
                     s.reference_position, s.reference_base, s.alternate_base,
@@ -56,11 +59,14 @@ def get_snps_by_sample(sample_id):
                     s.is_genic, v.confidence, s.feature_id,
                     s.reference_id, v.filters_id
              FROM variant_tosnp AS v
-             LEFT JOIN variant_snp as s
+             LEFT JOIN variant_snp AS s
              ON v.snp_id=s.id
-             WHERE v.sample_id IN ({0})
+             LEFT JOIN sample_sample AS a
+             ON v.sample_id=a.id
+             WHERE v.sample_id IN ({0}) AND (a.is_public=TRUE OR a.user_id={1})
              ORDER BY v.sample_id ASC, v.snp_id ASC;""".format(
-        ','.join([str(i) for i in sample_id])
+        ','.join([str(i) for i in sample_id]),
+        user_id
     )
 
     results = []
