@@ -73,6 +73,8 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                         st_stripped=request.GET['st']
                     ).values_list('sample_id', flat=True)
                 queryset = get_samples(request.user.pk, sample_ids=ids)
+        elif 'user_only' in request.GET:
+            queryset = get_samples(request.user.pk, user_only=True)
         else:
             queryset = get_samples(request.user.pk)
 

@@ -4,14 +4,28 @@ from collections import OrderedDict
 from django.db import connection
 
 
-def format_results(results, time=None):
+def format_results(results, time=None, limit=None):
     """Format query results to be similar to Django Rest Framework output."""
+    message = "success"
+    if limit:
+        message = 'Limited results to {0} of {1}.'.format(
+            limit, len(results)
+        )
+        results = results[0:limit]
+
     if time:
         return OrderedDict((
-            ("took", time), ("count", len(results)), ("results", results)
+            ("took", time),
+
+            ("count", len(results)),
+            ("results", results)
         ))
     else:
-        return OrderedDict((("count", len(results)), ("results", results)))
+        return OrderedDict((
+            ("message", message),
+            ("count", len(results)),
+            ("results", results)
+        ))
 
 
 def query_database(sql):

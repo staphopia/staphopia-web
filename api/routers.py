@@ -38,7 +38,7 @@ from api.viewsets.sequences import SequenceStatViewSet
 from api.viewsets.sequence_types import MlstBlastViewSet, MlstSrst2ViewSet
 
 from api.viewsets.top import TopViewSet
-from api.viewsets.info import InfoViewSet
+from api.viewsets.info import InfoViewSet, StatusViewSet
 
 from api.viewsets.variants import (
     SNPViewSet,
@@ -50,6 +50,9 @@ from api.viewsets.variants import (
     ReferenceViewSet,
     CountsViewSet
 )
+
+# Test Related
+from api.tests import TestsViewSet
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
@@ -99,6 +102,8 @@ router.register(r'sccmec/subtype', SCCmecSubtypeViewSet, base_name='subtype')
 # Seqeunce quality related table
 router.register(r'sequence-quality', SequenceStatViewSet)
 
+router.register(r'status', StatusViewSet, base_name='status')
+
 # Variant Related Tables
 router.register(r'variant/snp', SNPViewSet)
 router.register(r'variant/indel', InDelViewSet)
@@ -108,3 +113,6 @@ router.register(r'variant/feature', FeatureViewSet)
 router.register(r'variant/filter', FilterViewSet)
 router.register(r'variant/reference', ReferenceViewSet)
 router.register(r'variant/count', CountsViewSet)
+
+# Test Related Tables
+router.register(r'tests', TestsViewSet, base_name='tests')

@@ -2,10 +2,18 @@
 from api.utils import query_database
 
 
-def get_samples(user_id, sample_id=None, sample_ids=None):
+def get_samples(user_id, sample_id=None, sample_ids=None, user_only=False):
     """Return samples."""
     sql = None
-    if sample_id:
+    if user_only:
+        sql = """SELECT s.id AS sample_id, s.is_paired, s.is_public,
+                        s.is_published, s.sample_tag, m.st_original,
+                        m.st_stripped, m.is_exact AS st_is_exact_match
+                 FROM sample_sample as s
+                 LEFT JOIN mlst_srst2 as m
+                 ON s.id = m.sample_id
+                 WHERE s.user_id={0}""".format(user_id)
+    elif sample_id:
         sql = """SELECT s.id AS sample_id, s.is_paired, s.is_public,
                         s.is_published, s.sample_tag, m.st_original,
                         m.st_stripped, m.is_exact AS st_is_exact_match

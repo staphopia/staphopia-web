@@ -11,9 +11,10 @@ class CustomReadOnlyModelViewSet(mixins.RetrieveModelMixin,
     """
     A viewset that provides default `list()` and `retrieve()` actions.
     """
-    def formatted_response(self, data, time=None, return_empty=False):
+    def formatted_response(self, data, time=None, return_empty=False,
+                           status=status.HTTP_200_OK, limit=None):
         if len(data) or return_empty:
-            return Response(format_results(data, time=time))
+            return Response(format_results(data, time=time, limit=limit), status=status)
         else:
             data = {
                 "count": 0,

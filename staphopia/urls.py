@@ -10,6 +10,8 @@ from django_email_changer.views import (
     ActivationEmailSentSuccessView,
     CreateUserEmailModificationRequest,
 )
+from organizations.backends import invitation_backend
+
 # Staphopia
 from staphopia.settings.common import *
 
@@ -63,6 +65,10 @@ urlpatterns = [
     url(r'^accounts/logout/$', 'django.contrib.auth.views.logout',
         {'next_page': '/'}),
     url('^accounts/', include('registration.urls')),
+
+    # django-organizations
+    url(r'^groups/', include('organizations.urls')),
+    url(r'^invitations/', include(invitation_backend().get_urls())),
 
     # Charts
     # url(r'^chart-data/sequencing-centers/$',

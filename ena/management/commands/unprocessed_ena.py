@@ -118,11 +118,15 @@ class Command(BaseCommand):
                 )
                 if ena_runs.count() > 0:
                     to_process[e.experiment_accession] = {}
+                    is_miseq = False
+                    if e.instrument_model.endswith('MiSeq'):
+                        is_miseq = True
                     for r in ena_runs:
                         to_process[e.experiment_accession][r.run_accession] = {
                             'is_paired': r.is_paired,
                             'technology': e.instrument_platform,
                             'coverage': e.coverage,
+                            'is_miseq': is_miseq,
                             'fastq_ftp': r.fastq_ftp.split(';'),
                             'fastq_aspera': r.fastq_aspera.split(';'),
                             'fastq_md5': r.fastq_md5.split(';')

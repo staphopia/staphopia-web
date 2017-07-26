@@ -23,3 +23,4 @@ lxml==3.6.0
 elasticsearch==2.3.0
 urllib3==1.15.1
 django-haystack==2.4.1
+django-organizations==0.9.1

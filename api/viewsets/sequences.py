@@ -32,6 +32,7 @@ class SequenceStatViewSet(CustomReadOnlyModelViewSet):
                 read_lengths = True if 'lengths' in request.GET else False
                 return self.formatted_response(get_sequencing_stats(
                     request.data['ids'],
+                    request.user.pk,
                     is_original=is_original,
                     qual_per_base=qual_per_base,
                     read_lengths=read_lengths

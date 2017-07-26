@@ -35,6 +35,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'organizations',
 
     'crispy_forms',
     'django_extensions',
@@ -68,6 +69,7 @@ EMAIL_CHANGE_NOTIFICATION_SUBJECT = ('[Email Update] - Please verify '
 EMAIL_CHANGE_NOTIFICATION_FROM = ("Staphopia's Friendly Robot "
                                   "<usa300@staphopia.com>")
 
+ORGS_SLUGFIELD = 'django_extensions.db.fields.AutoSlugField'
 ADMINS = [
     ('Robert Petit', 'rpetit@emory.edu')
 ]
@@ -96,6 +98,7 @@ REST_FRAMEWORK = {
         'user': '100000000000/day'
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'PAGE_SIZE': 100
 }
 MAX_IDS_PER_QUERY = 5000

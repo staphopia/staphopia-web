@@ -34,6 +34,7 @@ class AssemblyViewSet(CustomReadOnlyModelViewSet):
                 plasmids = 'TRUE' if 'plasmids' in request.GET else 'FALSE'
                 return self.formatted_response(get_assembly_stats(
                     request.data['ids'],
+                    request.user.pk,
                     is_scaffolds=scaffolds,
                     is_plasmids=plasmids
                 ))

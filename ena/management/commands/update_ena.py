@@ -41,9 +41,12 @@ class Command(BaseCommand):
 
             if not options['debug']:
                 # Insert results to the database
-                self.studies_created = self.insert(self.ena_studies, Study)
-                self.exps_created = self.insert(self.ena_exps, Experiment)
-                self.runs_created = self.insert(self.ena_runs, Run)
+                self.studies_created = self.insert(self.ena_studies, Study,
+                                                   table='study')
+                self.exps_created = self.insert(self.ena_exps, Experiment,
+                                                table='experiment')
+                self.runs_created = self.insert(self.ena_runs, Run,
+                                                table='run')
             else:
                 print("Debug option given, skipping database insert.")
 
@@ -240,6 +243,7 @@ class Command(BaseCommand):
                     total_created += 1
             except Error as e:
                 raise CommandError(e)
+
         return total_created
 
     def print_stats(self):

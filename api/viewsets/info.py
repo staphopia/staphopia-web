@@ -1,3 +1,4 @@
+from rest_framework import status
 from rest_framework.decorators import list_route
 from rest_framework.response import Response
 
@@ -6,6 +7,35 @@ from api.queries.info import (
     get_sequencing_stats_by_year,
     get_assembly_stats_by_year
 )
+
+
+class StatusViewSet(CustomReadOnlyModelViewSet):
+    """
+    Provide a simple "database is working" status.
+    """
+    def list(self, request):
+        """
+        Determine if database is up.
+        """
+        from django.db import connections
+        from django.db.utils import OperationalError
+        db = connections['default']
+        connected = True
+        try:
+            db.cursor()
+        except OperationalError:
+            connected = False
+
+        if connected:
+            return Response(
+                {"status": 'OK'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"status": 'FAIL'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
 
 
 class InfoViewSet(CustomReadOnlyModelViewSet):

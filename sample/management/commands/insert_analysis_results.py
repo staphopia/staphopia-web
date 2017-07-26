@@ -72,6 +72,9 @@ class Command(BaseCommand):
                 opts['user']
             ))
 
+        if user.username == 'test':
+            fq_md5sum = ''.join(['test_', fq_md5sum[0:27]])
+
         # Test if results already inserted
         sample = None
         try:
