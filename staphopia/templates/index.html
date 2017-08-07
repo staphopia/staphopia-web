@@ -7,6 +7,7 @@
             <div class="col-xs-12 col-md-12">
                 <div class="row">
                     <div class="col-md-12">
+                        <h2>Welcome To Staphopia</h2>
                         <h3>About Staphopia</h3>
                         <p class="indent">
                             Staphopia is a database of information about the
@@ -17,7 +18,10 @@
                             settings. In the past 3-4 years whole genome shotgun
                             sequencing of clinical isolates has become common,
                             as technology improvements have reduced the cost
-                            of producing genetic data.
+                            of producing genetic data. The introduction of
+                            'bench top' instruments, such as the
+                            <a href="http://www.illumina.com/systems/miseq.html" target="_blank" title="Illumina MiSeq">Illumina MiSeq</a>,
+                            has accelerated this trend.
                         </p>
                     </div>
                 </div>
@@ -31,41 +35,91 @@
                     </div>
                     <div class="col-md-6">
                         <p class="indent">
-                            The introduction of 'bench top' instruments, such as the
-                            <a href="http://www.illumina.com/systems/miseq.html" target="_blank" title="Illumina MiSeq">Illumina MiSeq</a>,
-                            has accelerated this trend. Staphopia aims to
-                            provide rapid analysis of whole-genome data with
-                            the aim of producing useful <em>S. aureus</em>
-                            specific results, such as genotype, antibiotic
-                            resistance and virulence gene profiles. Staphopia
-                            was designed to be used by people not expert in
-                            genomics.
+                            As of August 2017 there were 44,000 publicly
+                            available <em>S. aureus</em> sequencing projects
+                            in NCBI’s SRA database. Using these publicly
+                            available datasets, Staphopia aims to provide not
+                            only rapid analysis of these whole-genome datasets
+                            but also useful <em>S. aureus</em> specific
+                            results, such as genotype, antibiotic resistance
+                            and virulence gene profiles.
                         </p>
                         <p class="indent">
-                            We are currently developing the beta version of the website.
-                            In later updates we will allow users to submit their own data
-                            to our pipeline as well as a number of additional features.
-                            The main genomes page (currently displaying the results of
-                            analysis of more than 24,000 publicly available <em>S. aureus</em>
-                            projects downloaded from the NCBI SRA website) allows users to
-                            search the genomes based on attributes such as sequence type.
+                            Staphopia was designed to be used by those without
+                            expertise in genomics. Users can create an account
+                            to access a basic summary of results for each
+                            public sample through this site. Another option,
+                            is to access our web API with the use of our R
+                            package.
                         </p>
                         <p class="indent">
-                            Clicking on a genome entry brings up an individual page,
-                            allowing the user to explore the attributes
-                            predicted by our pipeline.
+                            For those interested in processing their own data,
+                            we have made both the Staphopia analysis pipeline
+                            and web application publicly available on GitHub
+                            (see links below). We have also created a Docker
+                            image to simplify the installation process both
+                            locally and in the cloud. Although Staphopia is
+                            specific to <em>S. aureus</em>, much of the pipeline
+                            can be used a template for other organism-specific
+                            databases.
                         </p>
-
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-12">
+                        <h3>Staphopia Resources</h3>
+                        <p>
+                            <h4>GitHub</h4>
+                            <dl class="dl-horizontal">
+                              <dt>
+                                <a href="https://www.github.com/staphopia/staphopia-ap"
+                                   target="_blank" title="Staphopia Analysis Pipeline on GitHub">
+                                    Staphopia-AP
+                                </a>
+                              </dt>
+                              <dd>Staphopia's analysis pipeline</dd>
+                              <dt>
+                                 <a href="https://www.github.com/staphopia/staphopia-r"
+                                    target="_blank" title="Staphopia-R Package on GitHub">
+                                        Staphopia-R
+                                 </a>
+                              </dt>
+                              <dd>An R package to query Staphopia's API</dd>
+                              <dt>
+                                 <a href="https://www.github.com/staphopia/staphopia-web"
+                                    target="_blank" title="Staphopia-Web on GitHub">
+                                        Staphopia-Web
+                                 </a>
+                              </dt>
+                              <dd>Staphopia's Django powered web application</dd>
+                              <dt>
+                                 <a href="https://www.github.com/staphopia/staphopia-docker"
+                                    target="_blank" title="Staphopia-Docker on GitHub">
+                                        Staphopia-Docker
+                                 </a>
+                              </dt>
+                              <dd>A Docker configuration for Staphopia</dd>
+                            </dl>
+                        </p>
+                        <p>
+                            <h4>Documentation</h4>
+                            <dl class="dl-horizontal">
+                              <dt>
+                                <a href="/docs/api/"
+                                   target="_blank" title="Staphopia API Documentation">
+                                    API Documentation
+                                </a>
+                              </dt>
+                              <dd>Learn more about Staphopia's web API.</dd>
+                            </dl>
+                        </p>
+                        <h3>Acknowledgements</h3>
                         <p class="indent">
                             Staphopia was created by Robert Petit and Tim Read at Emory
                             University School of Medicine in Atlanta Georgia, USA.  We would
                             like to thank Colleen Kraft, Tauqeer Alam, Santiago Castillo, Nikolay Braykov,
-                            Signe White, Michelle Su, King Jordan and Jim Heitner
+                            Signe White, Michelle Su, Michael Frisch, Jim Hogan, King Jordan and Jim Heitner
                             for help in putting together Staphopia. We acknowledge (and are
                             grateful) for data from these sources:
                             <a href="http://www.ncbi.nlm.nih.gov/sra" target="_blank">NCBI SRA</a>,
@@ -84,6 +138,7 @@
                             of Staphopia, we encourage you to
                             <a href="/contact/">contact us</a>.
                         </p>
+                        <h3>Funding</h3>
                         <p class="indent">
                             Funding for this study from Emory University, Amazon AWS in Education Grant Program, and NIH grants AI091827 and AI121860.
                         </p>

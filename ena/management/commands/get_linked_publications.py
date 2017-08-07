@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 """Find links between SRA and Pubmed."""
 from __future__ import print_function
-import urllib2
+import requests
 import time
 import sys
 
@@ -92,12 +92,12 @@ class Command(BaseCommand):
 
     def cook_soup(self, url):
         """Query NCBI."""
-        request = urllib2.Request(url)
         xml = None
         while not xml:
             try:
-                xml = urllib2.urlopen(request).read()
-            except urllib2.URLError:
+                r = requests.get(url, timeout=60)
+                xml = r.text
+            except (requests.ConnectionError, requests.exceptions.Timeout):
                 continue
         return BeautifulSoup(xml, 'lxml')
 

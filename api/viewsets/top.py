@@ -4,8 +4,10 @@ from rest_framework import viewsets
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 
+from api.pagination import CustomReadOnlyModelViewSet
+from api.utils import query_database
 
-class TopViewSet(viewsets.ReadOnlyModelViewSet):
+class TopViewSet(CustomReadOnlyModelViewSet):
     """
     View top X sequencing centers and sequence types. To see more (or less)
     than 10 change the number between top/XXX/sequencing_center/. For example
@@ -34,17 +36,10 @@ class TopViewSet(viewsets.ReadOnlyModelViewSet):
         Stored metadata information for a given sample.
         """
         total = pk
-        cursor = connection.cursor()
-        q = """SELECT sequencing_center, count
-               FROM top_sequencing_centers({0})""".format(total)
-        cursor.execute(q)
+        sql = """SELECT sequencing_center, count
+                 FROM top_sequencing_centers({0})""".format(total)
 
-        desc = cursor.description
-        result = [
-            dict(zip([col[0] for col in desc], row))
-            for row in cursor.fetchall()
-        ]
-        return Response(result)
+        return self.formatted_response(query_database(sql))
 
     @detail_route(methods=['get'])
     def sequence_types(self, request, pk=10):
@@ -52,14 +47,7 @@ class TopViewSet(viewsets.ReadOnlyModelViewSet):
         Stored metadata information for a given sample.
         """
         total = pk
-        cursor = connection.cursor()
-        q = """SELECT sequence_type, count
-               FROM top_sequence_types({0})""".format(total)
-        cursor.execute(q)
+        sql = """SELECT sequence_type, count
+                 FROM top_sequence_types({0})""".format(total)
 
-        desc = cursor.description
-        result = [
-            dict(zip([col[0] for col in desc], row))
-            for row in cursor.fetchall()
-        ]
-        return Response(result)
+        return self.formatted_response(query_database(sql))
