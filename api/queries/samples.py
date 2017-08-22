@@ -12,7 +12,8 @@ def get_samples(user_id, sample_id=None, sample_ids=None, user_only=False):
                  FROM sample_sample as s
                  LEFT JOIN mlst_srst2 as m
                  ON s.id = m.sample_id
-                 WHERE s.user_id={0}""".format(user_id)
+                 WHERE s.user_id={0}
+                 ORDER BY s.id DESC""".format(user_id)
     elif sample_id:
         sql = """SELECT s.id AS sample_id, s.is_paired, s.is_public,
                         s.is_published, s.sample_tag, m.st_original,
