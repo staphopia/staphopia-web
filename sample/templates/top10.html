@@ -4,16 +4,17 @@
 {% block container %}
 
 <div class="row" style="padding-top: 3em;">
-    <div>
+    <div class="col">
       <!-- Nav tabs -->
       <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active">
-            <a href="#sequencing-centers" aria-controls="sequencing-centers" role="tab" data-toggle="tab">
+        <li role="presentation" class="nav-item">
+            <a class="nav-link active" href="#sequencing-centers"
+               role="tab" data-toggle="tab">
                 Top 10 Sequencing Contributors
             </a>
         </li>
-        <li role="presentation">
-            <a href="#mlst" aria-controls="mlst" role="tab" data-toggle="tab">
+        <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#mlst" role="tab" data-toggle="tab">
                 Top 10 Sequenced MLSTs
             </a>
         </li>
@@ -33,7 +34,7 @@
     </div>
 </div>
 
-<div id="hidden-table" style="position: absolute; left: -9999em;">
+<div id="hidden-table" style="display: none;">
 {% top10_sequencing_centers %}
 {% top10_sequence_types %}
 </div>
