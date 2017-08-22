@@ -1,14 +1,10 @@
 from django.core.mail import EmailMessage
-from django.shortcuts import render_to_response
-from django.template import RequestContext
-from django.http import Http404
+from django.http import HttpResponse
+from django.shortcuts import render
 from django.shortcuts import redirect
-from django.views.generic import TemplateView
 from django.views.generic.edit import ProcessFormView
 from django.views.generic.edit import FormMixin
 from django.views.generic.base import TemplateResponseMixin
-from django.views.generic.detail import SingleObjectMixin
-from django.utils.text import ugettext_lazy as _
 from registration.backends import get_backend
 
 
@@ -16,12 +12,11 @@ from staphopia.forms import ContactForm, RegistrationFormWithName
 
 
 def index(request):
-    return render_to_response('index.html', {}, RequestContext(request))
+    return render(request, 'index.html')
 
 
 def account_settings(request):
-    return render_to_response('settings/settings.html', {},
-                              RequestContext(request))
+    return render(request, 'settings/settings.html')
 
     def get(self, request, *args, **kwargs):
         form_class = self.get_form_class()
@@ -30,7 +25,8 @@ def account_settings(request):
         supplement_form = self.get_supplement_form(supplement_form_class)
         context = self.get_context_data(
                 form=form, supplement_form=supplement_form)
-        return self.render_to_response(context)
+        return self.render(context)
+
 
 def contact(request):
     email_sent = False
@@ -54,12 +50,8 @@ def contact(request):
                 email_sent = False
 
     form = ContactForm()
+    return render(request, 'contact.html', {'form': form, 'email': email_sent})
 
-    return render_to_response(
-        'contact.html',
-        {'form': form, 'email': email_sent},
-        context_instance=RequestContext(request)
-    )
 
 class RegistrationView(FormMixin, TemplateResponseMixin, ProcessFormView):
     """A complex view for registration
@@ -129,7 +121,7 @@ class RegistrationView(FormMixin, TemplateResponseMixin, ProcessFormView):
             form=form,
             supplement_form=supplement_form
         )
-        return self.render_to_response(context)
+        return render(self.request, self.template_name, context)
 
     def get(self, request, *args, **kwargs):
         form_class = self.get_form_class()
@@ -138,7 +130,7 @@ class RegistrationView(FormMixin, TemplateResponseMixin, ProcessFormView):
         supplement_form = self.get_supplement_form(supplement_form_class)
         context = self.get_context_data(
                 form=form, supplement_form=supplement_form)
-        return self.render_to_response(context)
+        return render(self.request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()

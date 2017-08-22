@@ -4,7 +4,7 @@
 
 {% block container %}
     {% if user.is_authenticated %}
-    <div class="row">
+    <div class="row justify-content-center">
         <div>
             <div class="fix-top-margin alert alert-info" role="alert">
                 <strong>You are already signed in as {{ user.username }}!</strong>
@@ -12,25 +12,26 @@
                 If you would like to log in as another user, please
                 <a href="/accounts/logout/">Sign Out</a>.
                 </p>
+            </div>
         </div>
     </div>
     {% else %}
-    <div class="row">
-        <div>
-            <h3>Sign in to Staphopia</h3>
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <h3 class="text-center">Sign in to Staphopia</h3>
             <hr />
         </div>
     </div>
-    <div class="row">
-        <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
             {% if form.errors %}
                 <div class="alert alert-warning" role="alert">
                 <strong>Whoops! Try Again!</strong>
                 {% if form.username.errors or form.password.errors %}
-                    <p class="indent">Both Username and Password are required.</p>
+                    <p>Incorrect username or password.</p>
                 {% else %}
                     {% for field,error in form.errors.items %}
-                        <p class="indent">{{ error|join:"" }}</p>
+                        <p>{{ error|join:"" }}</p>
                     {% endfor %}
                 {% endif %}
                 </div>
@@ -39,46 +40,43 @@
             <form class="form-horizontal" role="form" method="post" action="?next={{ next|default:"/" }}">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label class="col-sm-2 col-md-2 control-label" for="id_username">Username </label>
-                    <div class="col-sm-6 col-md-5">
+                    <label class="control-label" for="id_username">Username </label>
+                    <div class="">
                         <input id="id_username" maxlength="254" name="username" type="text" class="form-control input-md">
                     </div>
                     {% if form.username.errors %}
-                    <div class="col-sm-4 col-md-4">
+                    <div class="">
                         <span class="error">*{{ form.username.errors|join:", " }}</span>
                     </div>
                     {% endif %}
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-2 col-md-2 control-label" for="id_password">Password </label>
+                    <label class="control-label" for="id_password">Password </label>
 
-                    <div class="col-sm-6 col-md-5">
+                    <div class="">
                         <input id="id_password" name="password" type="password" class="form-control input-md">
                     </div>
                     {% if form.password.errors %}
-                    <div class="col-sm-4 col-md-4">
+                    <div class="">
                         <span class="error">*{{ form.password.errors|join:", " }}</span>
                     </div>
                     {% endif %}
                 </div>
                 <div class="form-group">
-                  <label class="col-sm-2 col-md-2 control-label" for="submit"></label>
-                  <div class="col-sm-2 col-md-2">
-                    <button id="submit" name="submit" class="btn btn-primary">Sign In</button>
-                  </div>
+                  <label class="control-label" for="submit"></label>
+                  <button id="submit" name="submit" class="btn btn-primary float-right">Sign In</button>
                 </div>
             </form>
-
         </div>
     </div>
-    <div class="row">
-        <div class="col-sm-5 col-sm-offset-3 col-md-4 col-md-offset-4">
+    <div class="row justify-content-center">
+        <div class="col-sm-5 col-md-4 ">
             Forget password? <a href="/accounts/password/reset/">Reset password here</a>
         </div>
     </div>
-    <div class="row">
-        <div class="col-sm-5 col-sm-offset-3 col-md-4 col-md-offset-4">
-            Not registered? <a href="/accounts/register/">Sign up here</a>
+    <div class="row justify-content-center">
+        <div class="col-sm-5 col-md-4">
+            New to Staphopia? <a href="/accounts/register/">Sign up here</a>
         </div>
     </div>
     {% endif %}

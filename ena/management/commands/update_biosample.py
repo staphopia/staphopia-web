@@ -197,7 +197,7 @@ class Command(BaseCommand):
                 obj, created = ena_obj.objects.update_or_create(
                     accession=row['accession'],
                     secondary_sample_accession=row['secondary_sample_accession'],
-                    defaults=row, **data
+                    defaults=data
                 )
                 if created:
                     total_created += 1
@@ -221,7 +221,7 @@ class Command(BaseCommand):
         for key, val in self.counts.items():
             field_counts.append("{0}\t{1}\n".format(key, val))
         labrat = "Staphopia's Friendly Robot <usa300@staphopia.com>"
-        subject = '[Staphopia ENA Update] - ENA BioSample info has been updated.'
+        subject = '[Staphopia ENA Update] - BioSample info has been updated.'
         message = (
             "Project information from ENA has been updated.\n\n"
             "New ENA BioSample Additions (total in parentheses)\n"

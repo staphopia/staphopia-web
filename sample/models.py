@@ -1,6 +1,8 @@
 """Models associated with Sample."""
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 
 
 class Sample(models.Model):
@@ -12,7 +14,12 @@ class Sample(models.Model):
     is_public = models.BooleanField(default=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
     md5sum = models.CharField(default='', max_length=32, unique=True)
+    document = SearchVectorField(null=True)
 
+    class Meta:
+        indexes = [
+            GinIndex(fields=['document'])
+        ]
 
 class ToResistance(models.Model):
     """Antibiotic resistance tests conducted on a Sample."""
@@ -85,6 +92,22 @@ class Publication(models.Model):
     keywords = models.TextField()
 
 
+class SearchHistory(models.Model):
+    """Capture search queries (anonymously) to aid in refining searches."""
+    query = models.TextField()
+    count = models.PositiveIntegerField()
+
+
+class MetaDataHistory(models.Model):
+    """Capture user changes to metadata fields."""
+    sample = models.OneToOneField('Sample', on_delete=models.CASCADE)
+    user = models.ForeignKey(User)
+    created = models.DateTimeField(auto_now_add=True)
+    field = models.TextField()
+    previous = models.TextField()
+    current = models.TextField()
+
+
 class MetaData(models.Model):
     """Meta data associated with a sample."""
 
@@ -154,14 +177,16 @@ class MetaData(models.Model):
     cell_line = models.TextField(default="")
     collected_by = models.TextField(default="")
     collection_date = models.TextField(default="")
+    location = models.TextField(default="")
     country = models.TextField(default="")
+    region = models.TextField(default="")
     description = models.TextField(default="")
     environmental_sample = models.TextField(default="")
     biosample_first_public = models.TextField(default="")
     germline = models.TextField(default="")
     isolate = models.TextField(default="")
     isolation_source = models.TextField(default="")
-    location = models.TextField(default="")
+    coordinates = models.TextField(default="")
     serotype = models.TextField(default="")
     serovar = models.TextField(default="")
     sex = models.TextField(default="")
@@ -190,79 +215,98 @@ class MetaData(models.Model):
 
 
 class SampleSummary(models.Model):
-    """Unmananged model of a database view."""
-
     id = models.IntegerField(primary_key=True)
-    sample_tag = models.TextField(blank=True)
-    username = models.CharField(max_length=30, blank=True)
-    contact_name = models.TextField(blank=True)
-    contact_email = models.CharField(max_length=75, blank=True)
-    contact_link = models.CharField(max_length=200, blank=True)
-    sequencing_center = models.TextField(blank=True)
-    sequencing_center_link = models.CharField(max_length=200, blank=True)
-    sequencing_date = models.DateField(blank=True, null=True)
-    sequencing_libaray_method = models.TextField(blank=True)
-    sequencing_platform = models.TextField(blank=True)
-    publication_link = models.CharField(max_length=200, blank=True)
-    pubmed_id = models.TextField(blank=True)
-    doi = models.TextField(blank=True)
-    funding_agency = models.TextField(blank=True)
-    funding_agency_link = models.CharField(max_length=200, blank=True)
-    strain = models.TextField(blank=True)
-    isolation_date = models.DateField(blank=True, null=True)
-    isolation_country = models.TextField(blank=True)
-    isolation_city = models.TextField(blank=True)
-    isolation_region = models.TextField(blank=True)
-    host_name = models.TextField(blank=True)
-    host_health = models.TextField(blank=True)
-    host_age = models.SmallIntegerField(blank=True, null=True)
-    host_gender = models.TextField(blank=True)
-    comments = models.TextField(blank=True)
-    vancomycin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                         blank=True, null=True)
-    penicillin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                         blank=True, null=True)
-    oxacillin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                        blank=True, null=True)
-    clindamycin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                          blank=True, null=True)
-    daptomycin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                         blank=True, null=True)
-    levofloxacin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                           blank=True, null=True)
-    linezolid_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                        blank=True, null=True)
-    rifampin_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                       blank=True, null=True)
-    tetracycline_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                           blank=True, null=True)
-    trimethoprim_mic = models.DecimalField(max_digits=6, decimal_places=3,
-                                           blank=True, null=True)
-    source = models.TextField(blank=True)
-    is_public = models.NullBooleanField()
+    sample_id = models.IntegerField(blank=True, null=True)
     is_paired = models.NullBooleanField()
+    is_public = models.NullBooleanField()
     is_published = models.NullBooleanField()
-    rank = models.SmallIntegerField(blank=True, null=True)
+    sample_tag = models.TextField(blank=True, null=True)
+    document = models.TextField(blank=True, null=True)
+    username = models.CharField(max_length=150, blank=True, null=True)
+    contains_ena_metadata = models.NullBooleanField()
+    study_accession = models.TextField(blank=True, null=True)
+    study_title = models.TextField(blank=True, null=True)
+    study_alias = models.TextField(blank=True, null=True)
+    secondary_study_accession = models.TextField(blank=True, null=True)
+    sample_accession = models.TextField(blank=True, null=True)
+    secondary_sample_accession = models.TextField(blank=True, null=True)
+    submission_accession = models.TextField(blank=True, null=True)
+    experiment_accession = models.TextField(blank=True, null=True)
+    experiment_title = models.TextField(blank=True, null=True)
+    experiment_alias = models.TextField(blank=True, null=True)
+    tax_id = models.IntegerField(blank=True, null=True)
+    scientific_name = models.TextField(blank=True, null=True)
+    instrument_platform = models.TextField(blank=True, null=True)
+    instrument_model = models.TextField(blank=True, null=True)
+    library_layout = models.TextField(blank=True, null=True)
+    library_strategy = models.TextField(blank=True, null=True)
+    library_selection = models.TextField(blank=True, null=True)
+    center_name = models.TextField(blank=True, null=True)
+    center_link = models.TextField(blank=True, null=True)
+    cell_line = models.TextField(blank=True, null=True)
+    collected_by = models.TextField(blank=True, null=True)
+    location = models.TextField(blank=True, null=True)
+    country = models.TextField(blank=True, null=True)
+    region = models.TextField(blank=True, null=True)
+    coordinates = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    environmental_sample = models.TextField(blank=True, null=True)
+    biosample_first_public = models.TextField(blank=True, null=True)
+    germline = models.TextField(blank=True, null=True)
+    isolate = models.TextField(blank=True, null=True)
+    isolation_source = models.TextField(blank=True, null=True)
+    serotype = models.TextField(blank=True, null=True)
+    serovar = models.TextField(blank=True, null=True)
+    sex = models.TextField(blank=True, null=True)
+    submitted_sex = models.TextField(blank=True, null=True)
+    strain = models.TextField(blank=True, null=True)
+    sub_species = models.TextField(blank=True, null=True)
+    tissue_type = models.TextField(blank=True, null=True)
+    biosample_scientific_name = models.TextField(blank=True, null=True)
+    sample_alias = models.TextField(blank=True, null=True)
+    checklist = models.TextField(blank=True, null=True)
+    biosample_center_name = models.TextField(blank=True, null=True)
+    environment_biome = models.TextField(blank=True, null=True)
+    environment_feature = models.TextField(blank=True, null=True)
+    environment_material = models.TextField(blank=True, null=True)
+    project_name = models.TextField(blank=True, null=True)
+    host = models.TextField(blank=True, null=True)
+    host_status = models.TextField(blank=True, null=True)
+    host_sex = models.TextField(blank=True, null=True)
+    submitted_host_sex = models.TextField(blank=True, null=True)
+    host_body_site = models.TextField(blank=True, null=True)
+    investigation_type = models.TextField(blank=True, null=True)
+    sequencing_method = models.TextField(blank=True, null=True)
+    broker_name = models.TextField(blank=True, null=True)
+    rank = models.TextField(blank=True, null=True)
     total_bp = models.BigIntegerField(blank=True, null=True)
-    total_reads = models.BigIntegerField(blank=True, null=True)
-    coverage = models.DecimalField(max_digits=7, decimal_places=2,
-                                   blank=True, null=True)
-    min_read_length = models.IntegerField(blank=True, null=True)
-    mean_read_length = models.DecimalField(max_digits=10, decimal_places=3,
-                                           blank=True, null=True)
-    max_read_length = models.IntegerField(blank=True, null=True)
-    q_score = models.DecimalField(max_digits=6, decimal_places=3,
-                                  blank=True, null=True)
-    qual_mean = models.DecimalField(max_digits=6, decimal_places=3,
-                                    blank=True, null=True)
-    qual_std = models.DecimalField(max_digits=6, decimal_places=3,
-                                   blank=True, null=True)
-    qual_25th = models.DecimalField(max_digits=6, decimal_places=3,
-                                    blank=True, null=True)
-    qual_median = models.DecimalField(max_digits=6, decimal_places=3,
-                                      blank=True, null=True)
-    qual_75th = models.DecimalField(max_digits=6, decimal_places=3,
-                                    blank=True, null=True)
+    read_total = models.BigIntegerField(blank=True, null=True)
+    coverage = models.DecimalField(
+        max_digits=7, decimal_places=2, blank=True, null=True
+    )
+    read_min = models.IntegerField(blank=True, null=True)
+    read_mean = models.DecimalField(
+        max_digits=11, decimal_places=4, blank=True, null=True
+    )
+    read_median = models.IntegerField(blank=True, null=True)
+    read_std = models.DecimalField(
+        max_digits=11, decimal_places=4, blank=True, null=True
+    )
+    read_max = models.IntegerField(blank=True, null=True)
+    read_25th = models.IntegerField(blank=True, null=True)
+    read_75th = models.IntegerField(blank=True, null=True)
+    q_score = models.DecimalField(
+        max_digits=65535, decimal_places=65535, blank=True, null=True
+    )
+    qual_mean = models.DecimalField(
+        max_digits=7, decimal_places=4, blank=True, null=True
+    )
+    qual_std = models.DecimalField(
+        max_digits=7, decimal_places=4, blank=True, null=True
+    )
+    qual_25th = models.IntegerField(blank=True, null=True)
+    qual_median = models.IntegerField(blank=True, null=True)
+    qual_75th = models.IntegerField(blank=True, null=True)
     total_contig = models.SmallIntegerField(blank=True, null=True)
     total_contig_length = models.IntegerField(blank=True, null=True)
     min_contig_length = models.IntegerField(blank=True, null=True)
@@ -280,37 +324,44 @@ class SampleSummary(models.Model):
     contigs_greater_100k = models.SmallIntegerField(blank=True, null=True)
     contigs_greater_1m = models.SmallIntegerField(blank=True, null=True)
     percent_contigs_greater_1k = models.DecimalField(
-        max_digits=4, decimal_places=2, blank=True, null=True
+        max_digits=5, decimal_places=2, blank=True, null=True
     )
     percent_contigs_greater_10k = models.DecimalField(
-        max_digits=4, decimal_places=2, blank=True, null=True
+        max_digits=5, decimal_places=2, blank=True, null=True
     )
     percent_contigs_greater_100k = models.DecimalField(
-        max_digits=4, decimal_places=2, blank=True, null=True
+        max_digits=5, decimal_places=2, blank=True, null=True
     )
     percent_contigs_greater_1m = models.DecimalField(
-        max_digits=4, decimal_places=2, blank=True, null=True
+        max_digits=5, decimal_places=2, blank=True, null=True
     )
-    contig_percent_a = models.DecimalField(max_digits=4, decimal_places=2,
-                                           blank=True, null=True)
-    contig_percent_t = models.DecimalField(max_digits=4, decimal_places=2,
-                                           blank=True, null=True)
-    contig_percent_g = models.DecimalField(max_digits=4, decimal_places=2,
-                                           blank=True, null=True)
-    contig_percent_c = models.DecimalField(max_digits=4, decimal_places=2,
-                                           blank=True, null=True)
-    contig_percent_n = models.DecimalField(max_digits=4, decimal_places=2,
-                                           blank=True, null=True)
-    contig_non_acgtn = models.DecimalField(max_digits=4, decimal_places=2,
-                                           blank=True, null=True)
+    contig_percent_a = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
+    contig_percent_t = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
+    contig_percent_g = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
+    contig_percent_c = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
+    contig_percent_n = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
+    contig_non_acgtn = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
     num_contig_non_acgtn = models.SmallIntegerField(blank=True, null=True)
-    gc_content = models.DecimalField(max_digits=65535, decimal_places=65535,
-                                     blank=True, null=True)
-    total_snps = models.PositiveIntegerField(blank=True, null=True)
-    total_indels = models.PositiveIntegerField(blank=True, null=True)
-    st_stripped = models.PositiveIntegerField(blank=True)
+    gc_content = models.DecimalField(
+        max_digits=65535, decimal_places=65535, blank=True, null=True
+    )
+    total_snps = models.IntegerField(blank=True, null=True)
+    total_indels = models.IntegerField(blank=True, null=True)
     st_original = models.TextField(blank=True, null=True)
-    is_exact = models.BooleanField(blank=True)
+    st_stripped = models.TextField(blank=True, null=True)
+    is_exact = models.NullBooleanField()
 
     class Meta:
         managed = False
@@ -319,7 +370,6 @@ class SampleSummary(models.Model):
 
 class Pipeline(models.Model):
     """Store pipeline version for history purposes."""
-
     sample = models.OneToOneField('Sample', unique=True,
                                   on_delete=models.CASCADE)
     assembly = models.TextField()

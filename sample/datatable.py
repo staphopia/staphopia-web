@@ -5,90 +5,58 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 
 from staphopia.utils import REMatcher
+from sample.models import SearchHistory
+
+from api.queries.search import basic_search, total_samples, get_filtered_count
 
 
 class DataTable(object):
 
-    def __init__(self, model, cols, searchable):
-        self.objects = model.objects.all()
-        self.total_records = self.objects.count()
-        self.filtered_records = self.objects.count()
+    def __init__(self, cols):
+        self.objects = None
+        self.total_records = total_samples()
+        self.filtered_records = self.total_records
         self.cols = cols
-        self.searchable = searchable
 
-    def filter_table(self, query):
-        self.query = query
-        self.__parse_query()
-        self.__filter_text()
-        self.__filter_patterns()
-        self.filtered_records = self.objects.count()
+    def filter_table(self, query, order_by, direction, limit="", offset=""):
+        if query:
+            self.objects = basic_search(
+                query, cols=self.cols, order_by=order_by, direction=direction,
+                limit=limit, offset=offset
+            )
+            self.filtered_records = get_filtered_count(query)
+            self.log_query(query)
+        else:
+            self.objects = basic_search(
+                query, cols=self.cols, order_by=order_by, direction=direction,
+                all_samples=True, limit=limit, offset=offset)
 
-    def __parse_query(self):
-        self.query_text = []
-        self.patterns = []
-        for q in self.query.split():
-            if '=' in q:
-                self.patterns.append(q)
-            else:
-                self.query_text.append(q)
+    def log_query(self, query):
+        """Store the query for improvement purposes."""
+        try:
+            obj = SearchHistory.objects.get(query=query)
+            obj.count += 1
+            obj.save()
+        except SearchHistory.DoesNotExist:
+            obj = SearchHistory.objects.create(query=query, count=1)
 
-    def __filter_text(self):
-        # Filter out Text searches
-        queries = []
-        for q in self.query_text:
-            if q.startswith('!'):
-                for f in self.searchable:
-                    queries.append(~Q(**{f + '__icontains': q}))
-            else:
-                queries += [
-                    Q(**{f + '__icontains': q}) for f in self.searchable
-                ]
 
-        if queries:
-            qs = reduce(lambda x, y: x | y, queries)
-            self.objects = self.objects.filter(qs)
 
-    def __filter_patterns(self):
-        # Filter out regex patterns
-        queries = []
-        for q in self.patterns:
-            m = REMatcher(q)
-
-            if m.match(r"^st=(?P<st>\d+)$"):
-                queries.append(Q(**{'st_stripped__exact': m.group('st')}))
-            elif m.match(r"^!st=(?P<st>\d+)$"):
-                queries.append(~Q(**{'st_stripped__exact': m.group('st')}))
-
-        if queries:
-            qs = reduce(lambda x, y: x | y, queries)
-            self.objects = self.objects.filter(qs)
-
-    def sort_table(self, order_by, column):
-        order = dict(enumerate(self.cols))
-        direction = {'asc': '', 'desc': '-'}
-        ordering = (
-            direction[order_by] +
-            order[column]
-        )
-        self.objects = self.objects.order_by(ordering)
-
-    def produce_json(self, start, length):
-        self.objects = self.objects[start: (start + length)]
+    def get_json_response(self):
         data = [
-            map(lambda field: getattr(obj, field), self.cols)
+            map(lambda field: obj[field], self.cols)
             for obj in self.objects
         ]
 
         # define response
-        self.json_response = {
+        json_response = {
             'data': data,
             'recordsTotal': self.total_records,
             'recordsFiltered': self.filtered_records,
         }
 
-    def get_json_response(self):
         # serialize to json
         s = StringIO()
-        json.dump(self.json_response, s, cls=DjangoJSONEncoder)
+        json.dump(json_response, s, cls=DjangoJSONEncoder)
         s.seek(0)
         return s.read()

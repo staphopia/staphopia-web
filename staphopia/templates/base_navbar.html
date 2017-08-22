@@ -7,106 +7,49 @@
 {% load settings %}
 
 {% block navbar %}
-    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="/">
-                Staphopia
+<nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark">
+  <a class="navbar-brand" href="#">Staphopia</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <!-- Left Nav Section -->
+    <ul class="navbar-nav mr-auto">
+        <li class="nav-item {% active request home %}"><a class="nav-link" href="/">Home</a></li>
+        {% if user.is_authenticated %}
+        <li class="nav-item {% active request samples %}"><a class="nav-link" href="/sample/">Samples</a></li>
+        {% endif %}
+        <li class="nav-item {% active request top10 %}"><a class="nav-link" href="/top10/">Top 10</a></li>
+        <li class="nav-item {% active request contact %}"><a class="nav-link" href="/contact/">Contact</a></li>
+    </ul>
+    <!-- Right Nav Section -->
+    <ul class="navbar-nav">
+        {% if user.is_authenticated %}
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="http://example.com" id="navbarDropdownMenuLink"
+               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+               {{ user.username }}
             </a>
-        </div>
-        <div class="collapse navbar-collapse">
-            {% if user.is_authenticated %}
-            <!-- Left Nav Section -->
-            <ul class="nav navbar-nav">
-                <li class="{% active request home %}"><a href="/">Home</a></li>
-                <!-- <li class="{% active request samples %}"><a href="/samples/">Samples</a></li> -->
-                <li class="{% active request top10 %}"><a href="/top10/">Top 10</a></li>
-                <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>
-                <li class="{% active request contact %}"><a href="/about/">About Staphopia</a></li>
+            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dLabel">
+                <li><a class="dropdown-item" href="/settings/email/">Account Settings</a></li>
+                <li role="separator" class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/accounts/logout/">Sign Out</a></li>
             </ul>
-            <!-- Right Nav Section -->
-            <ul class="nav navbar-nav navbar-right">
-                <!--
-                <li>
-                    <a data-toggle="tooltip" data-placement="bottom"
-                       title="View Samples" href="/samples/{{ user.username }}/">
-                        <span class="glyphicon glyphicon-user"></span>
-                        {{ user.username }}
-                    </a>
-                </li>
-                -->
-                <li class="dropdown">
-                    <button id="dLabel" type="button" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false"
-                            class="btn btn-default navbar-btn">
-                        <span class="glyphicon glyphicon-user"></span>
-                        {{ user.username }}
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="dLabel">
-                        <li><a href="/settings/email/">Account Settings</a></li>
-                        <li role="separator" class="divider"></li>
-                        <li><a href="/accounts/logout/">Sign Out</a></li>
-                    </ul>
-                </li>
-            </ul>
-            {% else %}
-            <!-- Left Nav Section -->
-            <ul class="nav navbar-nav">
-                <li class="{% active request home %}"><a href="/">Home</a></li>
-                <li class="{% active request top10 %}"><a href="/top10/">Top 10</a></li>
-                <li class="{% active request contact %}"><a href="/contact/">Contact</a></li>
-            </ul>
-            <!-- Right Nav Section -->
-            <ul class="nav navbar-nav navbar-right">
-                <li class="signup">
-                    <a href="/accounts/register/" style="padding: 0 15px !important;">
-                        <button type="button" class="btn btn-default navbar-btn">
-                            Sign Up
-                        </button>
-                    </a>
-                </li>
-                <li class="dropdown">
-                    <button id="dLabel" type="button" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false"
-                            class="btn btn-default navbar-btn">
-                        Log in
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" style="min-width: 250px !important; padding: 10px 10px !important" aria-labelledby="dLabel">
-                        <div class="login">
-                            <div>Already a member?</div>
-                            <form action="/accounts/login/?next={{ next|default:"/" }}" method="post"
-                                  data-component="login_callout" data-element="form">
-                                {% csrf_token %}
-                                <div class="username" style="margin-top: 10px;">
-                                    <input id="id_username" maxlength="254" name="username"
-                                           type="text" class="form-control input-md"
-                                           placeholder="Username">
-                                </div>
-
-                                <div class="password" style="margin-top: 10px;">
-                                    <input id="id_password" name="password" type="password"
-                                           class="form-control input-md" placeholder="Password">
-                                </div>
-
-                                <input type="submit" class="submit btn btn-primary js-submit"
-                                       style="width: 100%; margin-top: 10px;" value="Log in">
-
-                                <div style="text-align: right; margin-top: 10px;">
-                                     <a href="/accounts/password/reset/">Forgot password?</a>
-                                </div>
-                            </form>
-                        </div>
-                    </ul>
-                </li>
-            </ul>
-            {% endif %}
-        </div>
-    </div>
+        </li>
+        {% else %}
+        <li class="nav-item active">
+            <a class="nav-link" href="/accounts/login/">Log In</a>
+        </li>
+        <li class="nav-item active">
+            <span class="navbar-text">
+              or
+            </span>
+        </li>
+        <li class="nav-item active signup">
+            <a class="nav-link" href="/accounts/register/">Get Started</a>
+        </li>
+        {% endif %}
+    </ul>
+  </div>
+</nav>
 {% endblock %}

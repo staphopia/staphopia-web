@@ -2,66 +2,48 @@
 {% load staticfiles %}
 {% load summary %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="//cdn.datatables.net/plug-ins/725b2a2115b/integration/bootstrap/3/dataTables.bootstrap.css">
-{% endblock %}
-
 {% block container %}
-{% get_sequence_quality sample_id as fq %}
-{% get_meta_data sample_id as meta_data %}
-{% get_mlst_data sample_id as mlst %}
-{% get_assembly_stats sample_id as assembly %}
-<div class="row">
-    <div class='col-sm-3 col-md-2'>
-        {% include "sample/left-navbar.html" with rank=fq.1.rank sample_tag=meta_data.sample_tag user=meta_data.username %}
-    </div>
-    <div class='col-sm-9 col-md-10'>
-        <!-- Summary -->
-        {% if meta_data.username == 'ena' %}
-            {% include "sample/ena-info.html" with sample=meta_data %}
-        {% endif %}
-        {% include "sample/meta-data.html" with sample=meta_data %}
-        {% include "sample/phenotype.html" with sample=meta_data %}
-        {% include "sample/sequence.html" with fq=fq %}
-        {% include "sample/assembly.html" with assembly=assembly %}
-        {% include "sample/mlst.html" with mlst=mlst %}
-    </div>
-</div>
+    {% if viewable %}
+        {% get_sequence_quality sample_id as fq %}
+        {% get_meta_data sample_id as metadata %}
+        {% get_mlst_data sample_id as mlst %}
+        {% get_assembly_stats sample_id as assembly %}
+        <div class="row">
+
+            {% include "sample/left-navbar.html" with rank=fq.1.rank sample_tag=meta_data.sample_tag user=meta_data.username %}
+            <main class="col-sm-9 ml-sm-auto col-md-10 pt-3" role="main">
+                <!-- Summary -->
+                {% include "sample/meta-data.html" with sample=metadata.sample ena=metadata.ena sequencing=metadata.sequencing metadata=metadata %}
+                {% include "sample/sequence.html" with original=fq.original processed=fq.processed per_base=fq.per_base %}
+                {% include "sample/assembly.html" with assembly=assembly %}
+                {% include "sample/mlst.html" with srst2_hits=mlst.srst2_hits srst2_stats=mlst.srst2_stats blast=mlst.blast %}
+            </main>
+        </div>
+    {% else %}
+        <div class="row">
+            <main class="col-sm-9 ml-sm-auto col-md-10 pt-3" role="main">
+                This sample is not public or your do not have permission to view it.
+            </main>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block js %}
-    <!--
-    <script type="text/javascript" language="javascript"
-            src="//cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" language="javascript"
-            src="//cdn.datatables.net/plug-ins/725b2a2115b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
-    -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/data.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <script src="{% static "/static/js/staphopia-charts.js" %}"></script>
+    {% if viewable %}
+        <script src="https://code.highcharts.com/highcharts.js"></script>
+        <script src="https://code.highcharts.com/modules/data.js"></script>
+        <script src="https://code.highcharts.com/modules/exporting.js"></script>
+        <script src="{% static "js/staphopia-charts.js" %}"></script>
 
-    <script>
-
-    var current_result = $('#collapseSummary').find('a.active').attr('id')
-
-    $(document).ready(function() {
-        show_panel(current_result);
-        $("div.panel-collapse a").click(function() {
-            $('#' + current_result).removeClass('active');
-            hide_panel(current_result);
-            $(this).addClass('active');
-            current_result = $(this).attr('id');
-            show_panel(current_result);
-            if(current_result == "show-sequence") {
-                // fix dimensions of chart that was in a hidden element
-                var chart = $("#sequence-quality-chart").highcharts();
-                chart.reflow();
-            }
+        <script>
+        var offset = 72;
+        $('#left-navbar li a').click(function(event) {
+            event.preventDefault();
+            $($(this).attr('href'))[0].scrollIntoView();
+            scrollBy(0, -offset);
         });
-    });
-
-    generate_sequence_quality_chart()
-    </script>
+        generate_sequence_quality_chart()
+        </script>
+    {% endif %}
 {% endblock %}
+

@@ -55,3 +55,11 @@ UZH	University of Zurich	http://www.uzh.ch/en.html
 Washington University	Washington University Genome Sequencing Center	http://genome.wustl.edu/
 WUGSC	Washington University Genome Sequencing Center	http://genome.wustl.edu/
 WWU	Western Washington University	https://www.wwu.edu/
+Functional Genomics Genter Zurich	Functional Genomics Center Zurich	http://www.fgcz.ch/
+INRA	French National Institute for Agricultural Research	http://institut.inra.fr/en
+Hvidovre University Hospital	Hvidovre University Hospital	https://www.hvidovrehospital.dk/
+University Medical Center Groningen	University Medical Center Groningen	https://www.umcg.nl/EN/corporate/Paginas/default.aspx
+Lausanne University Hospital	Lausanne University Hospital	https://www.unil.ch/gtf/en/home.html
+PHE	Public Health England	https://www.gov.uk/government/organisations/public-health-england
+RIVM	Dutch National Institute for Public Health and the Environment	http://www.rivm.nl/en
+ANIMAL AND PLANT HEALTH AGENCY	Animal & Plant Health Agency	https://www.gov.uk/government/organisations/animal-and-plant-health-agency

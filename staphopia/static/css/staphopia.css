@@ -4,6 +4,7 @@
 body {
     font-family: 'Roboto Slab', serif;
     font-size: 16px !important;
+    padding-top: 5em;
 }
 /* ------------------------------------
     Shared
@@ -19,12 +20,13 @@ body {
     margin-right: 10px !important;
 }
 
+/*
 .navbar-brand {
     color: white !important;
     background-color: #337ab7 !important;
     font-size: 16px !important;
 }
-
+*/
 button.log {
     margin-left: 15px !important;
 }
@@ -139,4 +141,75 @@ textarea {
 
 div.hide {
     display: none;
+}
+
+/* sample-results */
+/*
+ * Base structure
+ */
+
+/* Move down content because we have a fixed navbar that is 3.5rem tall */
+body {
+  padding-top: 3.5rem;
+}
+
+/*
+ * Typography
+ */
+
+h1 {
+  margin-bottom: 20px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #eee;
+}
+
+/*
+ * Sidebar
+ */
+
+.sidebar {
+  position: fixed;
+  top: 51px;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  overflow-x: hidden;
+  overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+  border-right: 1px solid #eee;
+}
+
+/* Sidebar navigation */
+.sidebar {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar .nav {
+  margin-bottom: 20px;
+}
+
+.sidebar .nav-item {
+  width: 100%;
+}
+
+.sidebar .nav-item + .nav-item {
+  margin-left: 0;
+}
+
+.sidebar .nav-link {
+  border-radius: 0;
+}
+
+/*
+ * Dashboard
+ */
+
+ /* Placeholders */
+.placeholders {
+  padding-bottom: 3rem;
+}
+
+.placeholder img {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
 }

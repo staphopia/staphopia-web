@@ -1,174 +1,55 @@
+{% load humanize %}
 {% load summary %}
-<div id="meta-data_panel" class="panel panel-info hide">
-    <div class="panel-heading">Collected Meta-Data</div>
-    <div class="panel-body">
+
+<h2 id="sample-information">Sample Metadata</h2>
+<p>
+Sample information includes metadata collected from BioSample and BioProject records.
+For those samples with publications, some metadata may have been included from the
+publication.
+</p>
+<h3>{{ metadata.user_id }}</h3>
+<div class="row">
+    <div class="col">
+        <h5>Sample Information</h5>
+        <table class="table table-striped">
+            <tbody>
+            {% for k, v in sample.items %}
+                <tr>
+                    <td>{{k}}</td>
+                    <td>{{v}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="col">
         <div class="row">
-            <div class='col-xs-12 col-md-6'>
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Owner</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.username }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Sample Visibility</li>
-                    <li class="list-group-item col-xs-6">
-                        {% if sample.is_public %}
-                            Public
-                        {% else %}
-                            Private
-                        {% endif %}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">ENA Link</li>
-                    <li class="list-group-item col-xs-6">
-                        {% if sample.username == "ena" %}
-                            <a target="_blank" href="http://www.ebi.ac.uk/ena/data/view/{{ sample.sample_tag}}">
-                                {{ sample.sample_tag }}
-                            </a>
-                        {% else %}
-                            -
-                        {% endif %}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">PubMed Link (PMID)</li>
-                    <li class="list-group-item col-xs-6" style="min-height:65px">
-                        {% if sample.is_published %}
-                            {% get_publications sample.sample_id as pubs %}
-                            {% for pub in pubs %}
-                                {% if forloop.counter > 1 %}
-                                    , <a target="_blank" href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid}}">
-                                        {{ pub.pmid }}
-                                    </a>
-                                {% else %}
-                                    <a target="_blank" href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid}}">
-                                        {{ pub.pmid }}
-                                    </a>
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            Unpublished, or missing publication information.
-                        {% endif %}
-                    </li>
-
-                </ul>
-
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Contact Name</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.contact_name|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Contact Email</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.contact_email|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Contact Link</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.contact_link|default:"-" }}
-                    </li>
-                </ul>
-
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Sequencing First Public</li>
-                    <li class="list-group-item col-xs-6">
-                        {% if sample.first_public == 1900 %}
-                            -
-                        {% else %}
-                            {{ sample.first_public }}
-                        {% endif %}
-                    </li>
-                    <li class="list-group-item col-xs-6 text-right">Sequencing Center</li>
-                    <li class="list-group-item col-xs-6">
-                        {% if sample.center_link %}
-                            <a target="_blank" href="{{ sample.center_link }}">
-                                {{ sample.center_name|default:"-" }}
-                            </a>
-                        {% else %}
-                            {{ sample.center_name|default:"-" }}
-                        {% endif %}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Sequencing Platform</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.instrument_model|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Library Strategy</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.library_strategy|default:"-" }}
-                    </li>
-                </ul>
-            </div>
-            <div class='col-xs-12 col-md-6'>
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Strain</li>
-                    <li class="list-group-item col-xs-6">
-                        {% if sample.tax_id %}
-                            <a target="_blank" href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={{ sample.tax_id }}">
-                                {{ sample.strain|default:"-" }}
-                            </a>
-                        {% else %}
-                            -
-                        {% endif %}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Collection Date</li>
-                    <li class="list-group-item col-xs-6">
-                        {% if sample.isolation_date.year == 1900 %}
-                            -
-                        {% else %}
-                            {{ sample.collection_date|default:"-" }}
-                        {% endif %}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Isolation Source</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.isolation_source|capfirst|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Isolation Country</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.country|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Isolation Region</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.isolation_region|default:"-" }}
-                    </li>
-                </ul>
-
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Host</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.host|capfirst|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Host Gender</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.host_sex|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Host Body Site</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.host_body_site|default:"-" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Host Health</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ sample.host_status|capfirst|default:"-" }}
-                    </li>
-                </ul>
-            </div>
+            <h5>Sequencing Information</h5>
+            <table class="table table-striped">
+                <tbody>
+                {% for k, v in sequencing.items %}
+                    <tr>
+                        <td>{{k}}</td>
+                        <td>{{v}}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <div class="row sample-summary">
-            <ul class="list-group row no-border condensed">
-                <li class="list-group-item col-xs-3 col-xs-offset-1 col-md-2 col-md-offset-1 text-right">Comments</li>
-                <li class="list-group-item col-xs-7 col-md-8">
-                    <textarea rows="9" disabled="">{{ sample.comments|default:"-" }}
-                    </textarea>
-                </li>
-            </ul>
+        {% if ena %}
+        <div class="row">
+            <h5>ENA Links</h5>
+            <table class="table table-striped">
+                <tbody>
+                {% for k, v in ena.items %}
+                    <tr>
+                        <td>{{k}}</td>
+                        <td>{{v}}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
+        {% endif %}
     </div>
 </div>

@@ -3,10 +3,10 @@
 {% block title %}Staphopia - Sign Up{% endblock %}
 
 {% block container %}
-    <div class="row">
-        <div>
-            <h3>Sign up for a Staphopia account</h3>
-            <p class="indent">
+    <div class="row justify-content-center">
+        <div class="col-sm-8 col-md-6">
+            <h3 class="text-center">Sign up for a Staphopia account</h3>
+            <p class="text-justify">
                 To register an account with Staphopia, please fill out the form
                 to the below (all fields are required). Once completed you will
                 receive an email with instructions on how to finish your
@@ -16,16 +16,16 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
+    <div class="row justify-content-center">
+        <div class="col-sm-8 col-md-6">
             {% if form.errors %}
                 <div class="alert alert-warning" role="alert">
                 <strong>Whoops! One or more fields has a problem!</strong>
                     {% for field,error in form.errors.items %}
                         {% if field == "email1" %}
-                            <p class="indent">Email Address: {{ error|join:"" }}</p>
-                        {% elif field == "username" or field == "fisrt_name" or field == "last_name" %}
-                            <p class="indent">{{ field|title }}: {{ error|join:"" }}</p>
+                            <p>Email Address: {{ error|join:"" }}</p>
+                        {% elif field == "username" or field == "first_name" or field == "last_name" %}
+                            <p>{{ field|title }}: {{ error|join:"" }}</p>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -34,42 +34,42 @@
             <form class="form-horizontal" role="form" method="post" action="?next={{ next|default:"/" }}">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label class="col-sm-3 col-md-3 control-label" for="id_first_name">First Name </label>
-                    <div class="col-sm-6 col-md-5">
+                    <label class="control-label" for="id_first_name">First Name </label>
+                    <div class="">
                         <input id="id_first_name" maxlength="50" name="first_name" type="text"
                                class="form-control input-md" title="Your first name.">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-3 col-md-3 control-label" for="id_last_name">Last Name </label>
-                    <div class="col-sm-6 col-md-5">
+                    <label class="control-label" for="id_last_name">Last Name </label>
+                    <div class="">
                         <input id="id_last_name" maxlength="50" name="last_name" type="text"
                                class="form-control input-md" title="Your last name.">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-3 col-md-3 control-label" for="id_username">Username</label>
-                    <div class="col-sm-6 col-md-5">
+                    <label class="control-label" for="id_username">Username</label>
+                    <div class="">
                         <input id="id_username" pattern="^[A-Za-z0-9_]{3,32}$" maxlength="30"
                                name="username" type="text" class="form-control input-md"
                                title="Alpha-Numeric (and underscores). Length between 3 and 30 characters.">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-3 col-md-3 control-label" for="id_email1">Email Address </label>
-                    <div class="col-sm-6 col-md-5">
+                    <label class="control-label" for="id_email1">Email Address </label>
+                    <div class="">
                         <input id="id_email1" name="email1" type="email" class="form-control input-md">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-3 col-md-3 control-label" for="id_email2">Verify Email Address </label>
-                    <div class="col-sm-6 col-md-5">
+                    <label class="control-label" for="id_email2">Verify Email Address </label>
+                    <div class="">
                         <input id="id_email2" name="email2" type="email" class="form-control input-md">
                     </div>
                 </div>
                 <div class="form-group">
-                  <label class="col-sm-3 col-md-3 control-label" for="submit"></label>
-                  <div class="col-sm-2 col-md-2">
+                  <label class="control-label" for="submit"></label>
+                  <div class="">
                     <button id="submit" name="submit" class="btn btn-primary">Register</button>
                   </div>
                 </div>

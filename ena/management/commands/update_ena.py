@@ -224,20 +224,17 @@ class Command(BaseCommand):
                 if table == 'experiment':
                     obj, created = ena_obj.objects.update_or_create(
                         experiment_accession=vals['pk'],
-                        defaults=row,
-                        **row
+                        defaults=row
                     )
                 elif table == 'study':
                     obj, created = ena_obj.objects.update_or_create(
                         study_accession=vals['pk'],
-                        defaults=row,
-                        **row
+                        defaults=row
                     )
                 elif table == 'run':
                     obj, created = ena_obj.objects.update_or_create(
                         run_accession=vals['pk'],
-                        defaults=row,
-                        **row
+                        defaults=row
                     )
                 if created:
                     total_created += 1

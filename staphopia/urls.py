@@ -1,3 +1,4 @@
+from django.contrib.auth.views import logout
 from django.conf.urls import include, url
 from django.views.generic import RedirectView
 from django.contrib import admin
@@ -43,7 +44,7 @@ urlpatterns = [
         name='samples_data'),
     url(r'^sample/(?P<sample_id>[0-9]+)/?$', sample.views.sample,
         name='sample_results'),
-    url(r'^samples/$', sample.views.sample, name='samples'),
+    url(r'^sample/$', sample.views.sample, name='samples'),
 
     # Autofill Genome Submission fields
     url(r'^settings/autofill/', include('autofill.urls'), name='autofill'),
@@ -62,8 +63,7 @@ urlpatterns = [
     # django-registration
     url(r'^accounts/register/$', staphopia.views.RegistrationView.as_view(),
         name='registration_register'),
-    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout',
-        {'next_page': '/'}),
+    url(r'^accounts/logout/$', logout, {'next_page': '/'}),
     url('^accounts/', include('registration.urls')),
 
     # django-organizations

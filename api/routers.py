@@ -34,6 +34,7 @@ from api.viewsets.sccmecs import (
     SCCmecSubtypeViewSet
 )
 
+from api.viewsets.search import SearchViewSet
 from api.viewsets.sequences import SequenceStatViewSet
 from api.viewsets.sequence_types import MlstBlastViewSet, MlstSrst2ViewSet
 
@@ -116,3 +117,4 @@ router.register(r'variant/count', CountsViewSet)
 
 # Test Related Tables
 router.register(r'tests', TestsViewSet, base_name='tests')
+router.register(r'search', SearchViewSet, base_name='search')

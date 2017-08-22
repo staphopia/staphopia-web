@@ -20,6 +20,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Command line arguements."""
+        parser.add_argument('locations',
+                            help=('Tab-delimted text file containing '
+                                  'corrected locations.'))
         parser.add_argument('--empty', action='store_true',
                             help='Empty tables and reset counts.')
         parser.add_argument('--debug', action='store_true',
@@ -33,14 +36,25 @@ class Command(BaseCommand):
             self.empty_table('sample_metadata')
             sys.exit()
 
+        self.locations = {}
+        with open(options['locations'], 'r') as fh:
+            for line in fh:
+                cols = line.rstrip().split('\t')
+                location = cols[0]
+                self.locations[location] = {'country': "unknown/missing",
+                                            'region': "unknown/missing"}
+                if len(cols) >= 2:
+                    self.locations[location]['country'] = cols[1]
+                if len(cols) == 3:
+                    self.locations[location]['region'] = cols[2]
+
         ena_user = User.objects.get(username='ena')
         ena_samples = Sample.objects.filter(user=ena_user)
         count = 0
-        total = ena_samples.count()
         for sample in ena_samples:
             count += 1
             try:
-                experiment = Experiment.objects.get(
+                exp = Experiment.objects.get(
                     experiment_accession=sample.sample_tag
                 )
             except Experiment.DoesNotExist:
@@ -49,124 +63,140 @@ class Command(BaseCommand):
                 )
                 continue
             study = Study.objects.get(
-                study_accession=experiment.study_accession.pk
+                study_accession=exp.study_accession.pk
             )
             run = Run.objects.filter(
                 experiment_accession=sample.sample_tag
             )
 
-            center_name = experiment.center_name
+            center_name = exp.center_name
             center_link = ''
             try:
                 center = CenterNames.objects.get(
-                    ena_name=experiment.center_name
+                    ena_name=exp.center_name
                 )
                 center_name = center.name
                 center_link = center.link
             except CenterNames.DoesNotExist:
-                print("#### {0} center name does not exist. ####".format(
-                    experiment.center_name
-                ))
+                if exp.center_name:
+                    print("#### {0} center name does not exist. ####".format(
+                        exp.center_name
+                    ))
 
             try:
                 bs = BioSample.objects.get(
-                    accession=experiment.sample_accession
+                    accession=exp.sample_accession
                 )
             except BioSample.DoesNotExist:
                 print("BioSample: {0} ({1}) not found... Skipping".format(
-                    experiment.sample_accession,
-                    experiment.experiment_accession
+                    exp.sample_accession,
+                    exp.experiment_accession
                 ))
                 bs = None
 
-            alt_accession = experiment.secondary_sample_accession
+            alt_accession = exp.secondary_sample_accession
             if bs:
+                location = bs.country
+                country = "unknown/missing"
+                region = "unknown/missing"
+                if bs.country in self.locations:
+                    country = self.locations[location]['country']
+                    region = self.locations[location]['region']
+                else:
+                    location = "unknown/missing"
+                secondary_study_accession = study.secondary_study_accession
                 metadata, created = MetaData.objects.update_or_create(
                     sample=sample,
-                    contains_ena_metadata=True,
-                    study_accession=study.study_accession,
-                    study_title=study.study_title,
-                    study_alias=study.study_alias,
-                    secondary_study_accession=study.secondary_study_accession,
-                    sample_accession=experiment.sample_accession,
-                    secondary_sample_accession=alt_accession,
-                    submission_accession=experiment.submission_accession,
-                    experiment_accession=experiment.experiment_accession,
-                    experiment_title=experiment.experiment_title,
-                    experiment_alias=experiment.experiment_alias,
-                    tax_id=experiment.tax_id,
-                    scientific_name=experiment.scientific_name,
-                    instrument_platform=experiment.instrument_platform,
-                    instrument_model=experiment.instrument_model,
-                    library_layout=experiment.library_layout,
-                    library_strategy=experiment.library_strategy,
-                    library_selection=experiment.library_selection,
-                    center_name=center_name,
-                    center_link=center_link,
-                    first_public=run[0].first_public,
+                    defaults={
+                        'contains_ena_metadata': True,
+                        'study_accession': study.study_accession,
+                        'study_title': study.study_title,
+                        'study_alias': study.study_alias,
+                        'secondary_study_accession': secondary_study_accession,
+                        'sample_accession': exp.sample_accession,
+                        'secondary_sample_accession': alt_accession,
+                        'submission_accession': exp.submission_accession,
+                        'experiment_accession': exp.experiment_accession,
+                        'experiment_title': exp.experiment_title,
+                        'experiment_alias': exp.experiment_alias,
+                        'tax_id': exp.tax_id,
+                        'scientific_name': exp.scientific_name,
+                        'instrument_platform': exp.instrument_platform,
+                        'instrument_model': exp.instrument_model,
+                        'library_layout': exp.library_layout,
+                        'library_strategy': exp.library_strategy,
+                        'library_selection': exp.library_selection,
+                        'center_name': center_name,
+                        'center_link': center_link,
+                        'first_public': run[0].first_public,
 
-                    # BioSample fields
-                    cell_line=bs.cell_line,
-                    collected_by=bs.collected_by,
-                    collection_date=bs.collection_date,
-                    country=bs.country,
-                    description=bs.description,
-                    environmental_sample=bs.environmental_sample,
-                    biosample_first_public=bs.first_public,
-                    germline=bs.germline,
-                    isolate=bs.isolate,
-                    isolation_source=bs.isolation_source,
-                    location=bs.location,
-                    serotype=bs.serotype,
-                    serovar=bs.serovar,
-                    sex=bs.sex,
-                    submitted_sex=bs.submitted_sex,
-                    strain=bs.strain,
-                    sub_species=bs.sub_species,
-                    tissue_type=bs.tissue_type,
-                    biosample_tax_id=bs.tax_id,
-                    biosample_scientific_name=bs.scientific_name,
-                    sample_alias=bs.sample_alias,
-                    checklist=bs.checklist,
-                    biosample_center_name=bs.center_name,
-                    environment_biome=bs.environment_biome,
-                    environment_feature=bs.environment_feature,
-                    environment_material=bs.environment_material,
-                    project_name=bs.project_name,
-                    host=bs.host,
-                    host_tax_id=bs.host_tax_id,
-                    host_status=bs.host_status,
-                    host_sex=bs.host_sex,
-                    submitted_host_sex=bs.submitted_host_sex,
-                    host_body_site=bs.host_body_site,
-                    investigation_type=bs.investigation_type,
-                    sequencing_method=bs.sequencing_method,
-                    broker_name=bs.broker_name
+                        # BioSample fields
+                        'cell_line': bs.cell_line,
+                        'collected_by': bs.collected_by,
+                        'collection_date': bs.collection_date,
+                        'location': location,
+                        'country': country,
+                        'region': region,
+                        'description': bs.description,
+                        'environmental_sample': bs.environmental_sample,
+                        'biosample_first_public': bs.first_public,
+                        'germline': bs.germline,
+                        'isolate': bs.isolate,
+                        'isolation_source': bs.isolation_source,
+                        'coordinates': bs.location,
+                        'serotype': bs.serotype,
+                        'serovar': bs.serovar,
+                        'sex': bs.sex,
+                        'submitted_sex': bs.submitted_sex,
+                        'strain': bs.strain,
+                        'sub_species': bs.sub_species,
+                        'tissue_type': bs.tissue_type,
+                        'biosample_tax_id': bs.tax_id,
+                        'biosample_scientific_name': bs.scientific_name,
+                        'sample_alias': bs.sample_alias,
+                        'checklist': bs.checklist,
+                        'biosample_center_name': bs.center_name,
+                        'environment_biome': bs.environment_biome,
+                        'environment_feature': bs.environment_feature,
+                        'environment_material': bs.environment_material,
+                        'project_name': bs.project_name,
+                        'host': bs.host,
+                        'host_tax_id': bs.host_tax_id,
+                        'host_status': bs.host_status,
+                        'host_sex': bs.host_sex,
+                        'submitted_host_sex': bs.submitted_host_sex,
+                        'host_body_site': bs.host_body_site,
+                        'investigation_type': bs.investigation_type,
+                        'sequencing_method': bs.sequencing_method,
+                        'broker_name': bs.broker_name
+                    }
                 )
             else:
                 metadata, created = MetaData.objects.update_or_create(
                     sample=sample,
-                    contains_ena_metadata=True,
-                    study_accession=study.study_accession,
-                    study_title=study.study_title,
-                    study_alias=study.study_alias,
-                    secondary_study_accession=study.secondary_study_accession,
-                    sample_accession=experiment.sample_accession,
-                    secondary_sample_accession=alt_accession,
-                    submission_accession=experiment.submission_accession,
-                    experiment_accession=experiment.experiment_accession,
-                    experiment_title=experiment.experiment_title,
-                    experiment_alias=experiment.experiment_alias,
-                    tax_id=experiment.tax_id,
-                    scientific_name=experiment.scientific_name,
-                    instrument_platform=experiment.instrument_platform,
-                    instrument_model=experiment.instrument_model,
-                    library_layout=experiment.library_layout,
-                    library_strategy=experiment.library_strategy,
-                    library_selection=experiment.library_selection,
-                    center_name=center_name,
-                    center_link=center_link,
-                    first_public=run[0].first_public
+                    defaults={
+                        'contains_ena_metadata': True,
+                        'study_accession': study.study_accession,
+                        'study_title': study.study_title,
+                        'study_alias': study.study_alias,
+                        'secondary_study_accession': secondary_study_accession,
+                        'sample_accession': exp.sample_accession,
+                        'secondary_sample_accession': alt_accession,
+                        'submission_accession': exp.submission_accession,
+                        'experiment_accession': exp.experiment_accession,
+                        'experiment_title': exp.experiment_title,
+                        'experiment_alias': exp.experiment_alias,
+                        'tax_id': exp.tax_id,
+                        'scientific_name': exp.scientific_name,
+                        'instrument_platform': exp.instrument_platform,
+                        'instrument_model': exp.instrument_model,
+                        'library_layout': exp.library_layout,
+                        'library_strategy': exp.library_strategy,
+                        'library_selection': exp.library_selection,
+                        'center_name': center_name,
+                        'center_link': center_link,
+                        'first_public': run[0].first_public
+                    }
                 )
             """if created:
                 print("{0} of {1} ... {2} ({3})".format(

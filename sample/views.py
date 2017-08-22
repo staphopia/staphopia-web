@@ -8,6 +8,8 @@ from sample.datatable import DataTable
 from sample.forms import SampleSubmissionForm
 from sample.models import Sample, SampleSummary
 
+from api.utils import query_database
+
 
 @transaction.atomic
 def submission(request):
@@ -30,21 +32,30 @@ def submission(request):
                 return HttpResponseRedirect('/')
         else:
             form = SampleSubmissionForm(request.user.id)
-        return render_to_response('submission.html',
-                                  {'form': form}, RequestContext(request))
+        return render(request, 'submission.html', context={'form': form})
     else:
         return HttpResponseRedirect('/')
 
 
 def top10(request):
-    return render_to_response('top10.html', {}, RequestContext(request))
+    return render(request, 'top10.html')
 
 
 def sample(request, sample_id=None):
     if sample_id:
-        return render_to_response('sample/results.html',
-                                  {'sample_id': sample_id},
-                                  RequestContext(request))
+        user_id = request.user.pk if request.user.pk else 0
+        row = query_database(
+            """
+            SELECT count(id)
+            FROM sample_sample
+            WHERE id={0} AND (is_public=TRUE OR user_id={1});""".format(
+            sample_id, user_id
+        ))[0]
+
+        return render(request, 'sample/results.html',
+                      context={'sample_id': sample_id,
+                               'sample_results': True,
+                               'viewable': int(row['count'])})
     else:
         sample_list = Sample.objects.all()
         page = request.GET.get('page', 1)
@@ -75,43 +86,27 @@ def sample(request, sample_id=None):
         page_range = list(paginator.page_range)[start_index:end_index]
 
         return render(request, 'samples.html',
-                      {'samples': samples,
-                       'page_range': page_range,
-                       'total_pages': max_index})
+                      context={'samples': samples, 'page_range': page_range,
+                               'total_pages': max_index})
 
 
 def sample_summary(request):
 
     # Columns to include in table
     cols = [
-        'sample_tag', 'rank', 'sequencing_center', 'st_stripped', 'q_score',
-        'coverage', 'mean_read_length'
-    ]
-
-    # Columns to search text against
-    searchable = [
-        'sample_tag', 'username', 'sequencing_center'
+        'sample_id', 'sample_tag',  'rank', 'is_published', 'st_stripped',
+        'sample_accession', 'strain', 'country', 'region', 'isolation_source'
     ]
 
     # Initialize a DataTable
-    dt = DataTable(SampleSummary, cols, searchable)
+    dt = DataTable(cols)
 
     # Filter the based on query
-    query = request.GET['search[value]'].lower()
-    if query:
-        dt.filter_table(query)
-
-    # Sort the table
-    dt.sort_table(
-        request.GET['order[0][dir]'],
-        int(request.GET['order[0][column]'])
-    )
-
-    # Produce JSON
-    dt.produce_json(
-        int(request.GET['start']),
-        int(request.GET['length'])
-    )
+    order_by = cols[int(request.GET['order[0][column]'])]
+    direction = request.GET['order[0][dir]']
+    query = request.GET['search[value]'].lower().strip(' ')
+    dt.filter_table(query, order_by, direction, limit=request.GET['length'],
+                    offset=request.GET['start'])
 
     # Return JSON output
     return HttpResponse(dt.get_json_response())

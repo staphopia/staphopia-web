@@ -1,37 +1,36 @@
 {% load staticfiles %}
-
-<div class="panel-group" id="accordion">
-    <div class="panel panel-info">
-        <!-- Rank -->
-        <div class="panel-heading" style="text-align: center">{{ sample_tag }}</div>
-        <div class="panel-body text-center">
-            {% if rank == 3 %}
-                <img title="Gold quality data."src="{% static "img/gold.png" %}">
-            {% elif rank == 2 %}
-                <img title="Silver quality data." src="{% static "img/silver.png" %}">
-            {% else %}
-                <img title="Bronze quality data." src="{% static "img/bronze.png" %}">
-            {% endif %}
-
-        </div>
-
-        <!-- Summary -->
-        <div class="list-group">
-            <a id="summary" class="list-group-item list-group-item-info title-group">
-                Sample Summary
-            </a>
-        </div>
-        <div id="collapseSummary" class="list-group panel-collapse collapse in">
-            {% if user == 'ena##' %}
-                <a title="European Nucleotide Archive (ENA) related information"
-                   id='show-ena-info' class="list-group-item active" href="#">ENA Information</a>
-                <a id='show-meta-data' class="list-group-item" href="#">Meta-Data</a>
-            {% else %}
-                <a id='show-meta-data' class="list-group-item active" href="#">Meta-Data</a>
-            {% endif %}
-            <a id='show-sequence' class="list-group-item" href="#">Sequence Quality</a>
-            <a id='show-assembly' class="list-group-item" href="#">Assembly</a>
-            <a id='show-mlst' class="list-group-item" href="#">MLST</a>
-        </div>
-    </div>
-</div>
+<nav id="left-navbar" class="col-sm-3 col-md-2 d-none d-sm-block bg-light sidebar">
+  <ul class="nav nav-pills flex-column">
+    <li class="nav-item" style="background-color: #d9edf7">
+      <h4 class="card-header text-center" style="background-color: #d9edf7">{{ sample_tag }}</h4>
+    </li>
+    <li class="nav-item text-center">
+    {% if rank == 3 %}
+        <img style="width: 4rem;" title="Gold quality data."src="{% static "img/gold.png" %}">
+    {% elif rank == 2 %}
+        <img style="width: 4rem;" title="Silver quality data." src="{% static "img/silver.png" %}">
+    {% else %}
+        <img style="width: 4rem;" title="Bronze quality data." src="{% static "img/bronze.png" %}">
+    {% endif %}
+    </li>
+    <li role="separator" class="dropdown-divider"></li>
+    <li class="nav-item">
+      <a id="sample-information-link" class="nav-link" href="#sample-information">Sample Information</a>
+    </li>
+    {% if has_ena_links %}
+    <li class="nav-item">
+      <a class="nav-link" href="#ena-links">ENA Links</a>
+    </li>
+    {% endif %}
+    <li role="separator" class="dropdown-divider"></li>
+    <li class="nav-item">
+      <a class="nav-link" href="#sequence-quality">Sequence Quality</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#assembly-stats">Assembly Stats</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#mlst">MLST</a>
+    </li>
+  </ul>
+</nav>

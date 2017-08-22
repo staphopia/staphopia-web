@@ -1,126 +1,64 @@
 {% load humanize %}
 {% load summary %}
-
-<div id="sequence_panel" class="panel panel-info hide">
-    <div class="panel-heading">Sequence Quality</div>
-    <div class="panel-body">
-        <div class="row">
-            <div class='col-xs-12 col-md-6'>
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-12 text-center">
-                        <strong><u>Original FASTQ</u></strong>
-                    </li>
-                </ul>
-
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Estimated Coverage</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.0.coverage|floatformat:"0"|intcomma }}x
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Average Quality</li>
-                    <li class="list-group-item col-xs-6">
-                        Q{{ fq.0.qual_mean|floatformat:"0" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Total Base Count</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.0.total_bp|intcomma }} bp
-                    </li>
-                </ul>
-
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Total Read Count</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.0.read_total|intcomma }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Mean Read Length</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.0.read_mean|floatformat:"0"|intcomma }} bp
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Minimum Read Length</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.0.read_min|intcomma }} bp
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Maximum Read Length</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.0.read_max|intcomma }} bp
-                    </li>
-                </ul>
-            </div>
-            <div class='col-xs-12 col-md-6'>
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-12 text-center">
-                        <strong><u>Processed FASTQ</u></strong>
-                    </li>
-                </ul>
-
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Estimated Coverage</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.1.coverage|floatformat:"0"|intcomma }}x
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Average Quality</li>
-                    <li class="list-group-item col-xs-6">
-                        Q{{ fq.1.qual_mean|floatformat:"0" }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Total Base Count</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.1.total_bp|intcomma }} bp
-                    </li>
-                </ul>
-
-                <ul class="list-group row no-border condensed">
-                    <li class="list-group-item col-xs-6 text-right">Total Read Count</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.1.read_total|intcomma }}
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Mean Read Length</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.1.read_mean|floatformat:"0"|intcomma }} bp
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Minimum Read Length</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.1.read_min|intcomma }} bp
-                    </li>
-
-                    <li class="list-group-item col-xs-6 text-right">Maximum Read Length</li>
-                    <li class="list-group-item col-xs-6">
-                        {{ fq.1.read_max|intcomma }} bp
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <div class="row">
-            <div id="sequence-quality-chart" class="contains-chart"
-                 style="min-width: 400px; height: 600px; margin: 0 auto"> </div>
-        </div>
-        <div id="hidden-table-sequence" style="position: absolute; left: -9999em;">
-            <table id="seqeunce-quality-table" class="table text-center">
-                <thead>
-                    <tr>
-                        <td>Position</td>
-                        <td>Original</td>
-                        <td>Processed</td>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for row in fq.2 %}
-                    <tr>
-                        <td>{{ row.0 }}</td>
-                        <td>{{ row.1.0 }}</td>
-                        <td>{{ row.1.1 }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<h2 id="sequence-quality">Sequence Quality</h2>
+<p>
+Sequencing reads undergo error correction, quality filtering and subsampling to
+a maximum of 100x coverage. The statistics for both the original and processed
+reads are reported below.
+</p>
+<hr />
+<div class="row">
+    <div class="col">
+        <h5>Original Sequence Stats</h5>
+        <table class="table table-striped">
+            <tbody>
+            {% for k, v in original.items %}
+                <tr>
+                    <td>{{k}}</td>
+                    <td>{{v}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="col">
+        <h5>Processed Sequence Stats</h5>
+        <table class="table table-striped">
+            <tbody>
+            {% for k, v in processed.items %}
+                <tr>
+                    <td>{{k}}</td>
+                    <td>{{v}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
+<div class="row">
+    <div class="col">
+        <div id="sequence-quality-chart" class="contains-chart"
+             style="min-width: 400px; height: 600px; margin: 0 auto"> </div>
+    </div>
+</div>
+<div id="hidden-table-sequence" style="display: none;">
+    <table id="seqeunce-quality-table" class="table text-center">
+        <thead>
+            <tr>
+                <td>Position</td>
+                <td>Original</td>
+                <td>Processed</td>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in per_base %}
+            <tr>
+                <td>{{ row.0 }}</td>
+                <td>{{ row.1.0 }}</td>
+                <td>{{ row.1.1 }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<hr />
