@@ -72,6 +72,7 @@ def get_meta_data(context, sample_id):
     stats['is_public'] = metadata['is_public']
     stats['is_paired'] = metadata['is_paired']
     stats['is_published'] = metadata['is_published']
+    stats['sample_tag'] = metadata['sample_tag']
     stats['sample'] = OrderedDict((
         ('Scientific Name', metadata['biosample_scientific_name']),
         ('Strain', metadata['strain']),

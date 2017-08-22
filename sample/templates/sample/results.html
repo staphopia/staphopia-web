@@ -9,11 +9,10 @@
         {% get_mlst_data sample_id as mlst %}
         {% get_assembly_stats sample_id as assembly %}
         <div class="row">
-
-            {% include "sample/left-navbar.html" with rank=fq.1.rank sample_tag=meta_data.sample_tag user=meta_data.username %}
-            <main class="col-sm-9 ml-sm-auto col-md-10 pt-3" role="main">
+            {% include "sample/left-navbar.html" with rank=fq.1.rank sample_tag=metadata.sample_tag user=metadata.username %}
+            <main class="col-sm-8 ml-sm-auto col-md-8 col-lg-9  col-xl-10 pt-3" role="main">
                 <!-- Summary -->
-                {% include "sample/meta-data.html" with sample=metadata.sample ena=metadata.ena sequencing=metadata.sequencing metadata=metadata %}
+                {% include "sample/metadata.html" with sample=metadata.sample ena=metadata.ena sequencing=metadata.sequencing metadata=metadata %}
                 {% include "sample/sequence.html" with original=fq.original processed=fq.processed per_base=fq.per_base %}
                 {% include "sample/assembly.html" with assembly=assembly %}
                 {% include "sample/mlst.html" with srst2_hits=mlst.srst2_hits srst2_stats=mlst.srst2_stats blast=mlst.blast %}

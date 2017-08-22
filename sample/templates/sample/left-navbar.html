@@ -1,6 +1,6 @@
 {% load staticfiles %}
-<nav id="left-navbar" class="col-sm-3 col-md-2 d-none d-sm-block bg-light sidebar">
-  <ul class="nav nav-pills flex-column">
+<nav id="left-navbar" class="col-sm-4 col-md-4 col-lg-3 col-xl-2 d-none d-sm-block bg-light sidebar">
+  <ul class="nav nav-stacked flex-column">
     <li class="nav-item" style="background-color: #d9edf7">
       <h4 class="card-header text-center" style="background-color: #d9edf7">{{ sample_tag }}</h4>
     </li>
@@ -15,7 +15,11 @@
     </li>
     <li role="separator" class="dropdown-divider"></li>
     <li class="nav-item">
-      <a id="sample-information-link" class="nav-link" href="#sample-information">Sample Information</a>
+      <a id="sample-information-link" class="nav-link" href="#sample-metadata">Sample Metadata</a>
+      <nav class="nav nav-stacked flex-column">
+        <a class="nav-link ml-3 my-1" href="#sample-information">Sample Information</a>
+        <a class="nav-link ml-3 my-1" href="#sequencing-information">Sequencing Information</a>
+      </nav>
     </li>
     {% if has_ena_links %}
     <li class="nav-item">
