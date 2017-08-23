@@ -91,7 +91,9 @@ function generate_sequence_quality_chart() {
             }
         },
         yAxis: {
-            type: 'logarithmic',
+            min: 0,
+            max: 42,
+            tickInterval: 2,
             allowDecimals: false,
             title: { text: 'Mean Quality' }
         },

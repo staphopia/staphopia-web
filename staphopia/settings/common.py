@@ -61,7 +61,7 @@ ACCOUNT_ACTIVATION_DAYS = 7
 REGISTRATION_SUPPLEMENT_CLASS = None
 DEFAULT_FROM_EMAIL = 'usa300@staphopia.com'
 REGISTRATION_FROM_EMAIL = ("Staphopia's Friendly Robot <usa300@staphopia.com>")
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # django_email_changer
 EMAIL_CHANGE_NOTIFICATION_SUBJECT = ('[Email Update] - Please verify '

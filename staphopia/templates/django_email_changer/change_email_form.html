@@ -6,7 +6,7 @@
     <div class="row">
         {% include "settings/sidebar.html" %}
 
-        <div class="col-sm-9 col-md-10">
+        <div class="col">
             <div class="row">
                 <div>
                     <h3>Change Your Staphopia Email</h3>
@@ -17,21 +17,13 @@
                     <hr />
                 </div>
             </div>
-            <div class="row">
-                <div>
+            <div class="row justify-content-center">
+                <div class="col-8">
                     {% if form.errors %}
                         <div class="alert alert-warning" role="alert">
-                        <strong>Whoops! One or more fields has a problem!</strong>
+                        <h5>Whoops! One or more fields has a problem!</h5>
                             {% for field,error in form.errors.items %}
-                                {% if field == "new_password1" %}
-                                    <p class="indent">New Password: {{ error|join:"" }}</p>
-                                {% elif field == "new_password2" %}
-                                    <p class="indent">Repeat New Password: {{ error|join:"" }}</p>
-                                {% elif field == "old_password" %}
-                                    <p class="indent">Current Password: {{ error|join:"" }}</p>
-                                {% else %}
-                                    <p class="indent">Passwords: {{ error|join:"" }}</p>
-                                {% endif %}
+                                <p>{{ error|join:"" }}</p>
                             {% endfor %}
                         </div>
                     {% endif %}
@@ -39,37 +31,37 @@
                     <form class="form-horizontal" role="form" method="post">
                         {% csrf_token %}
                         <div class="form-group">
-                            <label class="col-sm-4 col-md-4 control-label" for="id_old_email">Current Email </label>
+                            <label class="control-label" for="id_old_email">Current Email </label>
 
-                            <div class="col-sm-6 col-md-5">
+                            <div>
                                 <input disabled value={{ user.email }} id="id_old_email"
                                        name="old_email" type="email" class="form-control input-md">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 col-md-4 control-label" for="id_new_email">New Email </label>
+                            <label class="control-label" for="id_new_email">New Email </label>
 
-                            <div class="col-sm-6 col-md-5">
-                                <input id="id_new_email" name="new_email" type="email" class="form-control input-md">
+                            <div>
+                                <input id="id_new_email" required name="new_email" type="email" class="form-control input-md">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 col-md-4 control-label" for="id_confirmed_email">Confirm Email </label>
+                            <label class="control-label" for="id_confirmed_email">Confirm Email </label>
 
-                            <div class="col-sm-6 col-md-5">
-                                <input id="id_confirmed_email" name="confirmed_email" type="email" class="form-control input-md">
+                            <div>
+                                <input id="id_confirmed_email" required name="confirmed_email" type="email" class="form-control input-md">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 col-md-4 control-label" for="id_password">Password </label>
+                            <label class="control-label" for="id_password">Password </label>
 
-                            <div class="col-sm-6 col-md-5">
-                                <input id="id_password" name="password" type="password" class="form-control input-md">
+                            <div>
+                                <input id="id_password" required name="password" type="password" class="form-control input-md">
                             </div>
                         </div>
                         <div class="form-group">
                           <label class="col-sm-4 col-md-4 control-label" for="submit"></label>
-                          <div class="col-sm-2 col-md-2">
+                          <div>
                             <button id="submit" name="submit" class="btn btn-primary">Change Email</button>
                           </div>
                         </div>

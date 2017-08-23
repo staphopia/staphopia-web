@@ -8,8 +8,7 @@ from django.core.urlresolvers import reverse_lazy
 # Thrid Party Apps
 from django_email_changer.views import (
     ActivateUserEmailModification,
-    ActivationEmailSentSuccessView,
-    CreateUserEmailModificationRequest,
+    ActivationEmailSentSuccessView
 )
 from organizations.backends import invitation_backend
 
@@ -46,9 +45,6 @@ urlpatterns = [
         name='sample_results'),
     url(r'^sample/$', sample.views.sample, name='samples'),
 
-    # Autofill Genome Submission fields
-    url(r'^settings/autofill/', include('autofill.urls'), name='autofill'),
-
     # django-email-changer
     url(r'settings/email/change/activate/(?P<code>[^/]+)/',
         ActivateUserEmailModification.as_view(),
@@ -57,7 +53,7 @@ urlpatterns = [
         ActivationEmailSentSuccessView.as_view(),
         name="django_change_email_sent_activation_email"),
     url(r'^settings/email/$',
-        CreateUserEmailModificationRequest.as_view(),
+        staphopia.views.CreateUserEmailModificationRequest.as_view(),
         name="django_email_changer_change_view"),
 
     # django-registration
