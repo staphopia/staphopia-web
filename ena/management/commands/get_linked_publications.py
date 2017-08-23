@@ -8,6 +8,7 @@ import sys
 
 from bs4 import BeautifulSoup
 
+from django.core.mail import EmailMessage
 from django.db import IntegrityError, transaction
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -39,53 +40,64 @@ class Command(BaseCommand):
         """Find links between SRA and Pubmed."""
         experiments = Experiment.objects.all()
         i = 0
-        total = float(experiments.count())
+        total = experiments.count()
         pubmed = {}
+        checked = 0
+        links = 0
+        skipped = 0
         for experiment in experiments.iterator():
-            sra_uid, skip = self.get_sra_uid(experiment, days=options['days'])
+            sra_obj, skip = self.get_sra_uid(experiment, days=options['days'])
             if not skip:
-                pmids = self.get_pubmed_link(sra_uid)
+                checked += 1
+                pmids = self.get_pubmed_link(sra_obj.uid)
                 if pmids:
                     for pmid in pmids:
                         if pmid not in pubmed:
-                            pubmed_info = self.get_pubmed_info(pmid)
-                            pubmed[pmid] = {
-                                'obj': self.insert_publication(pmid,
-                                                               pubmed_info)
-                            }
+                            pubmed_obj, created = self.get_pubmed_info(pmid)
+                            print('{0} ({1})\t{2}'.format(
+                                pmid, created, pubmed_obj.title
+                            ))
+                            pubmed[pmid] = {'obj': pubmed_obj}
                         self.insert_ena_to_pub(experiment, pubmed[pmid]['obj'])
-
+                        links += 1
+                sra_obj.is_queried = True
+                sra_obj.save()
                 time.sleep(0.33)
+                skipped = 0
+            else:
+                skipped += 1
 
             i += 1
             print("{0} -- {1} of {2} ({3:.2f}%) -- Skipped: {4}".format(
                 experiment.experiment_accession,
                 i,
                 total,
-                i / total * 100,
+                i / total * 100.0,
                 skip
             ))
-            break
+
+        self.email_stats(total, checked, skipped, len(pubmed.keys()), links)
+
+    def email_stats(self, total, checked, skipped, pmids, links):
+        """Email admin with update."""
+        labrat = "Staphopia's Friendly Robot <usa300@staphopia.com>"
+        subject = '[Staphopia ENA Update] - GetLinkedPubs Info.'
+        message = (
+            "A total of {0} samples out of {1} ({2} skipped), were tested for "
+            "links between SRA and PubMed.\n\n"
+            "{3} publications were linked to {4} samples.\n"
+        ).format(checked, total, skipped, pmids, links)
+        recipients = ['admin@staphopia.com', 'robert.petit@emory.edu']
+        email = EmailMessage(subject, message, labrat, recipients)
+        email.send(fail_silently=False)
 
     @transaction.atomic
     def insert_publication(self, pmid, pubmed_info):
         """Insert publication into the database."""
-        created = False
-        try:
-            with transaction.atomic():
-                publication = Publication.objects.create(
-                    pmid=pmid,
-                    **pubmed_info
-                )
-                created = True
-        except IntegrityError:
-            publication = Publication.objects.get(pmid=pmid)
-
-        print('{0} ({1})\t{2}'.format(
-            pmid, created, pubmed_info['title']
-        ))
-
-        return publication
+        return Publication.objects.create(
+            pmid=pmid,
+            **pubmed_info
+        )
 
     def insert_ena_to_pub(self, experiment, publication):
         """Insert link to ToPublication table."""
@@ -96,7 +108,7 @@ class Command(BaseCommand):
                     experiment_accession=experiment,
                     publication=publication
                 )
-                created = True
+            created = True
         except IntegrityError:
             topub = ToPublication.objects.get(
                 experiment_accession=experiment,
@@ -122,29 +134,26 @@ class Command(BaseCommand):
 
     def get_sra_uid(self, experiment, days=10):
         """Get the SRA UID."""
-        uid = None
+        obj = None
         skip = False
         try:
             obj = SraLink.objects.get(
                 experiment_accession=experiment
             )
             elapsed = timezone.now() - obj.last_checked
-            if elapsed > datetime.timedelta(days=days):
+            if elapsed > datetime.timedelta(days=days) or not obj.is_queried:
                 skip = False
-                obj.save()
             else:
                 skip = True
-
-            uid = obj.uid
         except SraLink.DoesNotExist:
             url = '{0}={1}'.format(ESEARCH, experiment.experiment_accession)
             soup = self.cook_soup(url)
             uid = soup.findAll('id')[0].get_text()
             with transaction.atomic():
-                SraLink.objects.create(experiment_accession=experiment,
-                                       uid=uid)
+                obj = SraLink.objects.create(experiment_accession=experiment,
+                                             uid=uid)
 
-        return [uid, skip]
+        return [obj, skip]
 
     def get_pubmed_link(self, uid):
         """Get PubMed Links."""
@@ -193,17 +202,22 @@ class Command(BaseCommand):
 
     def get_pubmed_info(self, pmid):
         """Fetch info (abstract, authors, etc...) related to pubmed id."""
-        url = '{0}={1}'.format(EFETCH, pmid)
-        soup = self.cook_soup(url)
+        try:
+            return [Publication.objects.get(pmid=pmid), False]
+        except Publication.DoesNotExist:
+            url = '{0}={1}'.format(EFETCH, pmid)
+            soup = self.cook_soup(url)
 
-        authors = [self.get_author_name(a) for a in soup.findAll('author')]
-        ids = [self.get_article_id(a) for a in soup.find_all('articleid')]
-        keyword_items = ['keyword', 'descriptorname', 'qualifiername']
-        keywords = set([i.get_text() for i in soup.find_all(keyword_items)])
-        return {
-            'authors': ';'.join(authors),
-            'title': soup.find('articletitle').get_text(),
-            'abstract': soup.find('abstracttext').get_text(),
-            'reference_ids': ';'.join(ids),
-            'keywords': ';'.join(list(keywords))
-        }
+            authors = [self.get_author_name(a) for a in soup.findAll('author')]
+            ids = [self.get_article_id(a) for a in soup.find_all('articleid')]
+            keyword_items = ['keyword', 'descriptorname', 'qualifiername']
+            keywords = set(
+                [i.get_text() for i in soup.find_all(keyword_items)]
+            )
+            return [self.insert_publication(pmid, {
+                'authors': ';'.join(authors),
+                'title': soup.find('articletitle').get_text(),
+                'abstract': soup.find('abstracttext').get_text(),
+                'reference_ids': ';'.join(ids),
+                'keywords': ';'.join(list(keywords))
+            }), True]

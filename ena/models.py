@@ -27,6 +27,7 @@ class SraLink(models.Model):
     )
     uid = models.TextField(unique=True)
     last_checked = models.DateTimeField(auto_now=True)
+    is_queried = models.BooleanField(default=False)
 
 
 class Study(models.Model):
