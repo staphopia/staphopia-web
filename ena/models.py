@@ -17,6 +17,18 @@ class Status(models.Model):
     status = models.TextField()
 
 
+class SraLink(models.Model):
+    """Store SRA UIDs to prevent redundant Entrez queries."""
+
+    experiment_accession = models.OneToOneField(
+        'Experiment',
+        db_column='experiment_accession',
+        on_delete=models.CASCADE
+    )
+    uid = models.TextField(unique=True)
+    last_checked = models.DateTimeField(auto_now=True)
+
+
 class Study(models.Model):
     """ENA Studies."""
 

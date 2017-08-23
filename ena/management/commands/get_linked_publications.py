@@ -1,16 +1,18 @@
 #! /usr/bin/env python
 """Find links between SRA and Pubmed."""
 from __future__ import print_function
+import datetime
 import requests
 import time
 import sys
 
 from bs4 import BeautifulSoup
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
-from ena.models import Experiment, ToPublication
+from ena.models import Experiment, ToPublication, SraLink
 from sample.models import Publication
 
 EUTILS = 'http://www.ncbi.nlm.nih.gov/entrez/eutils'
@@ -28,6 +30,11 @@ class Command(BaseCommand):
 
     help = 'Find links between SRA and Pubmed.'
 
+    def add_arguments(self, parser):
+        """Command line arguements."""
+        parser.add_argument('--days', dest='days', type=int, default=10,
+                            help='Ignore samples checked in last X days.')
+
     def handle(self, *args, **options):
         """Find links between SRA and Pubmed."""
         experiments = Experiment.objects.all()
@@ -35,31 +42,42 @@ class Command(BaseCommand):
         total = float(experiments.count())
         pubmed = {}
         for experiment in experiments.iterator():
-            sra_uid = self.get_sra_uid(experiment.experiment_accession)
-            pmids = self.get_pubmed_link(sra_uid)
-            if pmids:
-                for pmid in pmids:
-                    if pmid not in pubmed:
-                        pubmed_info = self.get_pubmed_info(pmid)
-                        pubmed[pmid] = {
-                            'obj': self.insert_publication(pmid, pubmed_info)
-                        }
-                    self.insert_ena_to_pub(experiment, pubmed[pmid]['obj'])
+            sra_uid, skip = self.get_sra_uid(experiment, days=options['days'])
+            if not skip:
+                pmids = self.get_pubmed_link(sra_uid)
+                if pmids:
+                    for pmid in pmids:
+                        if pmid not in pubmed:
+                            pubmed_info = self.get_pubmed_info(pmid)
+                            pubmed[pmid] = {
+                                'obj': self.insert_publication(pmid,
+                                                               pubmed_info)
+                            }
+                        self.insert_ena_to_pub(experiment, pubmed[pmid]['obj'])
 
-            time.sleep(0.33)
+                time.sleep(0.33)
 
             i += 1
-            print("{0} of {1} ({2:.2f}%)".format(i, total, i / total * 100))
+            print("{0} -- {1} of {2} ({3:.2f}%) -- Skipped: {4}".format(
+                experiment.experiment_accession,
+                i,
+                total,
+                i / total * 100,
+                skip
+            ))
+            break
 
+    @transaction.atomic
     def insert_publication(self, pmid, pubmed_info):
         """Insert publication into the database."""
         created = False
         try:
-            publication = Publication.objects.create(
-                pmid=pmid,
-                **pubmed_info
-            )
-            created = True
+            with transaction.atomic():
+                publication = Publication.objects.create(
+                    pmid=pmid,
+                    **pubmed_info
+                )
+                created = True
         except IntegrityError:
             publication = Publication.objects.get(pmid=pmid)
 
@@ -73,11 +91,12 @@ class Command(BaseCommand):
         """Insert link to ToPublication table."""
         created = False
         try:
-            topub = ToPublication.objects.create(
-                experiment_accession=experiment,
-                publication=publication
-            )
-            created = True
+            with transaction.atomic():
+                topub = ToPublication.objects.create(
+                    experiment_accession=experiment,
+                    publication=publication
+                )
+                created = True
         except IntegrityError:
             topub = ToPublication.objects.get(
                 experiment_accession=experiment,
@@ -101,21 +120,46 @@ class Command(BaseCommand):
                 continue
         return BeautifulSoup(xml, 'lxml')
 
-    def get_sra_uid(self, term):
+    def get_sra_uid(self, experiment, days=10):
         """Get the SRA UID."""
-        url = '{0}={1}'.format(ESEARCH, term)
-        soup = self.cook_soup(url)
-        return soup.findAll('id')[0].get_text()
+        uid = None
+        skip = False
+        try:
+            obj = SraLink.objects.get(
+                experiment_accession=experiment
+            )
+            elapsed = timezone.now() - obj.last_checked
+            if elapsed > datetime.timedelta(days=days):
+                skip = False
+                obj.save()
+            else:
+                skip = True
+
+            uid = obj.uid
+        except SraLink.DoesNotExist:
+            url = '{0}={1}'.format(ESEARCH, experiment.experiment_accession)
+            soup = self.cook_soup(url)
+            uid = soup.findAll('id')[0].get_text()
+            with transaction.atomic():
+                SraLink.objects.create(experiment_accession=experiment,
+                                       uid=uid)
+
+        return [uid, skip]
 
     def get_pubmed_link(self, uid):
         """Get PubMed Links."""
         url = '{0}={1}'.format(ELINK, uid)
         soup = self.cook_soup(url)
-        pmids = [i.get_text() for i in soup.findAll('id')]
-        try:
-            pmids.remove(uid)
-        except ValueError:
-            pass
+        pmids = []
+        is_sra_uid = True
+        for i in soup.findAll('id'):
+            # First ID in list is the SRA UID of the query, remaining (if any)
+            # are PubMed IDs
+            if is_sra_uid:
+                is_sra_uid = False
+            else:
+                pmids.append(i.get_text())
+
         return pmids
 
     def get_author_name(self, author):

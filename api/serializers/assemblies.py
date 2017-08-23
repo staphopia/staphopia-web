@@ -5,6 +5,7 @@ from assembly.models import Stats, Contigs
 
 class AssemblyStatSerializer(serializers.ModelSerializer):
     class Meta:
+        fields = '__all__'
         model = Stats
 
 
@@ -16,4 +17,5 @@ class ContigSerializer(serializers.ModelSerializer):
 
 class ContigFullSerializer(serializers.ModelSerializer):
     class Meta:
+        fields = '__all__'
         model = Contigs

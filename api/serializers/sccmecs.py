@@ -5,6 +5,7 @@ from sccmec.models import Cassette, Coverage, Primers, Proteins
 
 class SCCmecCassetteSerializer(serializers.ModelSerializer):
     class Meta:
+        fields = '__all__'
         model = Cassette
 
 
@@ -18,9 +19,11 @@ class SCCmecCoverageSerializer(serializers.ModelSerializer):
 
 class SCCmecPrimerSerializer(serializers.ModelSerializer):
     class Meta:
+        fields = '__all__'
         model = Primers
 
 
 class SCCmecProteinSerializer(serializers.ModelSerializer):
     class Meta:
+        fields = '__all__'
         model = Proteins
