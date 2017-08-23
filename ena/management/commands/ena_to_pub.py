@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 from __future__ import print_function
 import urllib2
-import time
 import sys
 
 from bs4 import BeautifulSoup
@@ -10,7 +9,7 @@ from django.db import transaction
 from django.core.management.base import BaseCommand
 
 from ena.models import Study, Experiment, ToPublication
-from sample.models import Sample, Publication
+from sample.models import Publication
 
 EUTILS = 'http://www.ncbi.nlm.nih.gov/entrez/eutils'
 ESEARCH = EUTILS + '/esearch.fcgi?db=sra&term'
@@ -18,16 +17,15 @@ ESUMMARY = EUTILS + '/esummary.fcgi?db=pubmed&id'
 EFETCH = EUTILS + '/efetch.fcgi?db=pubmed&retmode=xml&id'
 ELINK = EUTILS + '/elink.fcgi?dbfrom=sra&db=pubmed&id'
 
+
 class Command(BaseCommand):
     help = 'Link Study accessions to PubMed IDs.'
 
     def add_arguments(self, parser):
         parser.add_argument('pmid', help='PubMed ID to link ENA entries to.')
         parser.add_argument('study', help='Study accession for ENA entry.')
-        parser.add_argument('--output', help='Print output info.')
 
     def handle(self, *args, **options):
-        stats = {}
         try:
             study = Study.objects.get(pk=options['study'])
         except Study.DoesNotExist:
@@ -51,20 +49,23 @@ class Command(BaseCommand):
 
         total = 0
         for experiment in Experiment.objects.filter(study_accession=study):
-            to_pub, created = ToPublication.objects.get_or_create(
-                experiment_accession=experiment,
-                publication=publication
-            )
+            created = False
+            try:
+                to_pub = ToPublication.objects.get(
+                    experiment_accession=experiment,
+                    publication=publication
+                )
+                to_pub.text_mining = True
+                to_pub.save()
+            except ToPublication.DoesNotExist:
+                to_pub = ToPublication.objects.create(
+                    experiment_accession=experiment,
+                    publication=publication,
+                    text_mining=True
+                )
+                created = True
             total += 1
-            '''try:
-                sample = Sample.objects.get(sample_tag=experiment.pk)
-                sample.is_published = True
-                sample.save()
-                print('{0}\t{1}\t{2}'.format(
-                    experiment.pk, publication.pmid, created
-                ),file=sys.stderr)
-            except Sample.DoesNotExist:
-                print("Experiment {0} not in the database.".format(experiment.pk),file=sys.stderr)'''
+
         print("\t".join([str(total), publication.pmid, str(created), study.pk,
                          study.secondary_study_accession, publication.title]))
 
@@ -91,18 +92,6 @@ class Command(BaseCommand):
             except urllib2.URLError:
                 continue
         return BeautifulSoup(xml, 'lxml')
-
-
-    def get_pubmed_link(self, uid):
-        """Get PubMed Links."""
-        url = '{0}={1}'.format(ELINK, uid)
-        soup = self.cook_soup(url)
-        pmids = [i.get_text() for i in soup.findAll('id')]
-        try:
-            pmids.remove(uid)
-        except ValueError:
-            pass
-        return pmids
 
     def fix_unicode(self, string):
         return string.encode('ascii', 'ignore').decode('ascii')
@@ -152,8 +141,12 @@ class Command(BaseCommand):
         keywords = set([i.get_text() for i in soup.find_all(keyword_items)])
         return {
             'authors': ';'.join(authors),
-            'title': soup.find('articletitle').get_text().encode('ascii', 'ignore').decode('ascii'),
-            'abstract': soup.find('abstracttext').get_text().encode('ascii', 'ignore').decode('ascii'),
+            'title': soup.find('articletitle').get_text().encode(
+                'ascii', 'ignore'
+            ).decode('ascii'),
+            'abstract': soup.find('abstracttext').get_text().encode(
+                'ascii', 'ignore'
+            ).decode('ascii'),
             'reference_ids': ';'.join(ids),
             'keywords': ';'.join(list(keywords))
         }

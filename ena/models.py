@@ -171,6 +171,9 @@ class ToPublication(models.Model):
                                              on_delete=models.CASCADE)
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE,
                                     related_name="publication",)
+    sra_to_pubmed = models.BooleanField(default=False)
+    google_scholar = models.BooleanField(default=False)
+    text_mining = models.BooleanField(default=False)
 
 
 class GoogleScholar(models.Model):

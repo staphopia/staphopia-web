@@ -9,7 +9,7 @@ import sys
 from bs4 import BeautifulSoup
 
 from django.core.mail import EmailMessage
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -72,7 +72,7 @@ class Command(BaseCommand):
                 experiment.experiment_accession,
                 i,
                 total,
-                i / total * 100.0,
+                i / float(total) * 100,
                 skip
             ))
 
@@ -99,21 +99,24 @@ class Command(BaseCommand):
             **pubmed_info
         )
 
+    @transaction.atomic
     def insert_ena_to_pub(self, experiment, publication):
         """Insert link to ToPublication table."""
         created = False
         try:
-            with transaction.atomic():
-                topub = ToPublication.objects.create(
-                    experiment_accession=experiment,
-                    publication=publication
-                )
-            created = True
-        except IntegrityError:
             topub = ToPublication.objects.get(
                 experiment_accession=experiment,
                 publication=publication
             )
+            topub.sra_to_pubmed = True
+            topub.save()
+        except ToPublication.DoesNotExist:
+            topub = ToPublication.objects.create(
+                experiment_accession=experiment,
+                publication=publication,
+                sra_to_pubmed=True
+            )
+            created = True
 
         print('{0} ({1})\t{2}'.format(
             experiment.experiment_accession, created, publication.pmid
