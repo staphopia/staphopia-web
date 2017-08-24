@@ -182,5 +182,10 @@ class GoogleScholar(models.Model):
     accession = models.TextField(db_index=True)
     title = models.TextField()
     url = models.TextField()
-    cluster_id = models.TextField()
-    url_citations = models.TextField()
+
+
+class GoogleScholarStatus(models.Model):
+    """Keep track of accessions that have been queried."""
+    accession = models.TextField(db_index=True, unique=True)
+    last_checked = models.DateTimeField(auto_now=True)
+    is_queried = models.BooleanField(default=False)
