@@ -149,9 +149,15 @@ class Command(BaseCommand):
             else:
                 skip = True
         except SraLink.DoesNotExist:
+            uid = None
             url = '{0}={1}'.format(ESEARCH, experiment.experiment_accession)
-            soup = self.cook_soup(url)
-            uid = soup.findAll('id')[0].get_text()
+            while not uid:
+                soup = self.cook_soup(url)
+                try:
+                    uid = soup.findAll('id')[0].get_text()
+                except IndexError:
+                    print("Get UID again...")
+                    time.sleep(0.33)
             with transaction.atomic():
                 obj = SraLink.objects.create(experiment_accession=experiment,
                                              uid=uid)
