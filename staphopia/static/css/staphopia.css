@@ -67,10 +67,6 @@ p.indent {
   padding-right: 0;
 }
 
-.sidebar .nav {
-  margin-bottom: 20px;
-}
-
 .sidebar .nav-item {
   width: 100%;
 }
@@ -81,4 +77,49 @@ p.indent {
 
 .sidebar .nav-link {
   border-radius: 0;
+}
+/* all links */
+.sidebar .nav>li>a, .sidebar .nav>li>nav>a {
+    color: #767676;
+    border-left: 2px solid transparent;
+    padding: 4px 20px;
+    font-size: 18px;
+    font-weight: 400;
+}
+
+/* nested links */
+.sidebar .nav>li>nav>a {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    padding-left: 30px;
+    font-size: 14px;
+}
+
+/* active & hover links */
+.sidebar li.nav-item a.active,
+.sidebar li.nav-item a:hover{
+    color: #563d7c;
+    text-decoration: none;
+    background-color: transparent;
+    border-left-color: #563d7c;
+}
+
+/* all active links */
+.sidebar li.nav-item>a.active,
+.sidebar li.nav-item>a.active:hover {
+    font-weight: 700;
+}
+/* nested active links */
+.sidebar li.nav-item>nav>a.active,
+.sidebar li.nav-item>nav>a.active:hover {
+    font-weight: 500;
+}
+
+/* hide inactive nested list */
+.sidebar li.nav-item>nav {
+    display: none;
+}
+/* show active nested list */
+.sidebar li.nav-item>a.active + nav {
+    display: block;
 }

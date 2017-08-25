@@ -35,13 +35,17 @@
         <script src="{% static "js/staphopia-charts.js" %}"></script>
 
         <script>
-        var offset = 72;
         $('#left-navbar li a').click(function(event) {
+            var offset = 70;
             event.preventDefault();
             $($(this).attr('href'))[0].scrollIntoView();
+
+            if ($(this).attr('href') == "#mlst-blast") {
+                offset = 0;
+            }
             scrollBy(0, -offset);
         });
-        generate_sequence_quality_chart()
+        generate_sequence_quality_chart();
         </script>
     {% endif %}
 {% endblock %}

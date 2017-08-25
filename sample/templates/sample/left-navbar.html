@@ -17,8 +17,8 @@
     <li class="nav-item">
       <a id="sample-information-link" class="nav-link" href="#sample-metadata">Sample Metadata</a>
       <nav class="nav nav-stacked flex-column">
-        <a class="nav-link ml-3 my-1" href="#sample-information">Sample Information</a>
-        <a class="nav-link ml-3 my-1" href="#sequencing-information">Sequencing Information</a>
+        <a class="nav-link my-1" href="#sample-information">Sample Information</a>
+        <a class="nav-link my-1" href="#sequencing-information">Sequencing Information</a>
       </nav>
     </li>
     {% if has_ena_links %}
@@ -35,6 +35,10 @@
     </li>
     <li class="nav-item">
       <a class="nav-link" href="#mlst">MLST</a>
+      <nav class="nav nav-stacked flex-column">
+        <a class="nav-link my-1" href="#mlst-srst2">SRST2 Results</a>
+        <a class="nav-link my-1" href="#mlst-blast">BLAST Results</a>
+      </nav>
     </li>
   </ul>
 </nav>
