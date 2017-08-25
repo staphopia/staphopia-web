@@ -96,22 +96,24 @@ class Command(BaseCommand):
     def search(self, accession):
         links = 0
         search_query = scholarly.search_pubs_query(accession)
-        for result in search_query:
+        for r in search_query:
             links += 1
 
+            title = r.bib['title'] if 'title' in r.bib else 'MISSING TITLE'
+            url = r.bib['url'] if 'url' in r.bib else 'MISSING URL'
             id, created = GoogleScholar.objects.get_or_create(
                 accession=accession,
-                title=result.bib['title'],
-                url=result.bib['url']
+                title=title,
+                url=url
             )
 
             try:
-                print('{0} -- {1} added to database'.format(
-                    accession, result.bib['title']
+                print('{0} -- {1}'.format(
+                    accession, title
                 ))
             except UnicodeEncodeError:
-                print('{0} -- {1} added to database'.format(
-                    accession, result.bib['title'].encode('utf-8')
+                print('{0} -- {1}'.format(
+                    accession, title.encode('utf-8')
                 ))
 
         return links
