@@ -105,8 +105,13 @@ class Command(BaseCommand):
                 url=result.bib['url']
             )
 
-            print('{0} -- {1} added to database'.format(
-                accession, result.bib['title']
-            ))
+            try:
+                print('{0} -- {1} added to database'.format(
+                    accession, result.bib['title']
+                ))
+            except UnicodeEncodeError:
+                print('{0} -- {1} added to database'.format(
+                    accession, result.bib['title'].encode('utf-8')
+                ))
 
         return links
