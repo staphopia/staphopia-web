@@ -6,63 +6,17 @@ body {
     font-size: 16px !important;
     padding-top: 4em;
 }
+
 /* ------------------------------------
     Shared
 ------------------------------------ */
-.footnote {
-    font-size: 14px !important;
-}
 .navbar {
     background-color: #000;
     border: none !important;
 }
-.navbar-right {
-    margin-right: 10px !important;
-}
-
-
-button.log {
-    margin-left: 15px !important;
-}
-
-div.fix-navbar {
-    margin-top: 40px;
-}
 
 footer .copyright {
     text-align: center;
-}
-
-span.error {
-    color: red;
-    font-style: italic;
-    font-weight: bold;
-}
-
-div.fix-top-margin {
-    margin-top: 20px;
-}
-
-.tooltip-inner {
-    min-width: 110px;
-    width: 110px;
-}
-
-.no-border {
-    border: none !important;
-}
-
-.small-margin {
-    margin: 5px 0px !important;
-}
-
-ul.no-border li {
-    border: none !important;
-}
-
-ul.condensed li {
-    padding: 5px 8px !important;
-    font-size: 16px;
 }
 
 /* ------------------------------------
@@ -79,41 +33,15 @@ p.indent {
     text-align: justify;
 }
 
-img.embed {
-    max-width: 100%;
-    height: auto;
-    border: 1px solid #000000;
-}
-
-/* ------------------------------------
-    contact.html
------------------------------------- */
-div.panel {
-    margin-top: 20px;
-    margin-bottom: 0px;
-}
-
-label.text-right {
-    padding-right: 0px;
-}
-
-
-/* ------------------------------------
-    top10.html
------------------------------------- */
-table thead  td{
-    font-weight: bold;
-}
-
 /* ------------------------------------
     samples.html
 ------------------------------------ */
-#samples_table_wrapper {
-    font-size: 12px;
+.footnote {
+    font-size: 14px !important;
 }
 
-#samples_table_wrapper  table{
-    width: 100% !important;
+#samples_table_wrapper {
+    font-size: 12px;
 }
 
 .table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
@@ -125,39 +53,7 @@ table thead  td{
     background-color: #E2E4FF;
 }
 
-div.sample-summary {
-    font-size: 16px;
-}
-
-textarea {
-    width: 75%;
-}
-
-div.hide {
-    display: none;
-}
-
 /* sample-results */
-/*
- * Base structure
- */
-
-/* Move down content because we have a fixed navbar that is 3.5rem tall */
-
-/*
- * Typography
- */
-
-h1 {
-  margin-bottom: 20px;
-  padding-bottom: 9px;
-  border-bottom: 1px solid #eee;
-}
-
-/*
- * Sidebar
- */
-
 .sidebar {
   position: fixed;
   top: 56px;
@@ -167,10 +63,6 @@ h1 {
   overflow-x: hidden;
   overflow-y: auto;
   border-right: 1px solid #eee;
-}
-
-/* Sidebar navigation */
-.sidebar {
   padding-left: 0;
   padding-right: 0;
 }
@@ -189,18 +81,4 @@ h1 {
 
 .sidebar .nav-link {
   border-radius: 0;
-}
-
-/*
- * Dashboard
- */
-
- /* Placeholders */
-.placeholders {
-  padding-bottom: 3rem;
-}
-
-.placeholder img {
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
 }
