@@ -1,5 +1,5 @@
 """Verify an analysis completed."""
-
+import os
 from os.path import basename
 import glob
 
@@ -21,12 +21,24 @@ class Command(BaseCommand):
                             help='Only print incomplete samples.')
         parser.add_argument('--split', action='store_true',
                             help='Split sample tags.')
+        parser.add_argument('--single', action='store_true',
+                            help='Input is only a single sample.')
+        parser.add_argument('--sample_tag',  type=str, default=None,
+                            help='Sample tag used in analysis.')
 
     def handle(self, *args, **opts):
         """Verify an analysis completed."""
         # Validate all files are present
-        for sample_dir in glob.glob('{0}/*'.format(opts['dir'])):
-            sample_tag = basename(sample_dir)
+        samples = None
+        if opts['single']:
+            samples = [opts['dir']]
+        else:
+            samples = glob.glob('{0}/*'.format(opts['dir']))
+
+        for sample_dir in samples:
+            sample_tag = basename(sample_dir.rstrip('/'))
+            if opts['sample_tag']:
+                sample_tag = opts['sample_tag']
 
             if opts['split']:
                 sample_tag = sample_tag.split('_')[1]
@@ -39,4 +51,3 @@ class Command(BaseCommand):
                     print('{0}\tOK'.format(sample_tag))
                 else:
                     print('{0}\tINCOMPLETE'.format(sample_tag))
-
