@@ -1,6 +1,7 @@
-from rest_framework.response import Response
+from collections import OrderedDict
 
-from rest_framework import mixins, status, viewsets
+from rest_framework.response import Response
+from rest_framework import mixins, status as rf_status, viewsets
 
 from api.utils import format_results
 
@@ -12,16 +13,19 @@ class CustomReadOnlyModelViewSet(mixins.RetrieveModelMixin,
     A viewset that provides default `list()` and `retrieve()` actions.
     """
     def formatted_response(self, data, time=None, return_empty=False,
-                           status=status.HTTP_200_OK, limit=None):
+                           status=rf_status.HTTP_200_OK, limit=None):
         if len(data) or return_empty:
-            return Response(format_results(data, time=time, limit=limit), status=status)
+            return Response(format_results(data, time=time, limit=limit),
+                            status=status)
         else:
-            data = {
-                "count": 0,
-                "results": [],
-                "message": "Query did not return any hits."
-            }
-            return Response(data, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                OrderedDict((
+                    ("message", "Query did not return any hits."),
+                    ("count", 0),
+                    ("results", [])
+                )),
+                status=rf_status.HTTP_204_NO_CONTENT
+            )
 
     def paginate(self, queryset, serializer=None, page_size=None,
                  is_serialized=False):

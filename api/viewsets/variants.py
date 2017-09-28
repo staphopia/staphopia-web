@@ -94,9 +94,20 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
                             "data": request.data
                         })
             else:
+                annotation_id = None
+                if 'annotation_id' in request.GET:
+                    validator = validate_positive_integer(
+                        request.GET['annotation_id']
+                    )
+                    if validator['has_errors']:
+                        return Response(validator)
+                    else:
+                        annotation_id = request.GET['annotation_id']
+
                 return self.formatted_response(get_snps_by_sample(
                     request.data['ids'],
-                    request.user.pk
+                    request.user.pk,
+                    annotation_id=annotation_id
                 ))
 
 
@@ -141,9 +152,20 @@ class InDelViewSet(CustomReadOnlyModelViewSet):
                             "data": request.data
                         })
             else:
+                annotation_id = None
+                if 'annotation_id' in request.GET:
+                    validator = validate_positive_integer(
+                        request.GET['annotation_id']
+                    )
+                    if validator['has_errors']:
+                        return Response(validator)
+                    else:
+                        annotation_id = request.GET['annotation_id']
+
                 return self.formatted_response(get_indels_by_sample(
                     request.data['ids'],
-                    request.user.pk
+                    request.user.pk,
+                    annotation_id=annotation_id
                 ))
 
 
@@ -152,6 +174,16 @@ class AnnotationViewSet(CustomReadOnlyModelViewSet):
 
     queryset = Annotation.objects.all()
     serializer_class = AnnotationSerializer
+
+    def list(self, request):
+        if 'locus_tag' in request.GET:
+            queryset = Annotation.objects.filter(
+                locus_tag=request.GET['locus_tag']
+            )
+        else:
+            queryset = Annotation.objects.all()
+
+        return self.paginate(queryset, serializer=AnnotationSerializer)
 
     @list_route(methods=['post'])
     def bulk(self, request):

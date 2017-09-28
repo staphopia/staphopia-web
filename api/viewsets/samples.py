@@ -153,19 +153,31 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def indels(self, request, pk=None):
+        annotation_id = None
+        if 'annotation_id' in request.GET:
+            validator = validate_positive_integer(
+                request.GET['annotation_id']
+            )
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                annotation_id = request.GET['annotation_id']
+
         validator = validate_positive_integer(pk)
         if validator['has_errors']:
             return Response(validator, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             if 'paginate' in request.GET:
                 return self.paginate(
-                    get_indels_by_sample([pk], request.user.pk),
+                    get_indels_by_sample([pk], request.user.pk,
+                                         annotation_id=annotation_id),
                     page_size=100,
                     is_serialized=True
                 )
             else:
                 return self.formatted_response(
-                    get_indels_by_sample([pk], request.user.pk)
+                    get_indels_by_sample([pk], request.user.pk,
+                                         annotation_id=annotation_id)
                 )
 
     @detail_route(methods=['get'])
@@ -217,19 +229,31 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def snps(self, request, pk=None):
+        annotation_id = None
+        if 'annotation_id' in request.GET:
+            validator = validate_positive_integer(
+                request.GET['annotation_id']
+            )
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                annotation_id = request.GET['annotation_id']
+
         validator = validate_positive_integer(pk)
         if validator['has_errors']:
             return Response(validator, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             if 'paginate' in request.GET:
                 return self.paginate(
-                    get_snps_by_sample([pk], request.user.pk),
+                    get_snps_by_sample([pk], request.user.pk,
+                                       annotation_id=annotation_id),
                     page_size=100,
                     is_serialized=True
                 )
             else:
                 return self.formatted_response(
-                    get_snps_by_sample([pk], request.user.pk)
+                    get_snps_by_sample([pk], request.user.pk,
+                                       annotation_id=annotation_id)
                 )
 
     @detail_route(methods=['get'])
