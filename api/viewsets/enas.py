@@ -31,24 +31,28 @@ class EnaExperimentViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def info(self, request, pk=None):
-        client = APIClient()
-        client.force_authenticate(user=User.objects.get(username='test'))
-        exp = Experiment.objects.get(experiment_accession=pk)
-        run_info = []
-        is_miseq = True if 'miseq' in exp.instrument_model.lower() else False
-        runs = Run.objects.filter(experiment_accession=pk)
-        if runs.count() > 0:
-            for run in runs:
-                run_info.append(OrderedDict((
-                    ('run', run.run_accession),
-                    ('is_paired', run.is_paired),
-                    ('is_miseq', is_miseq),
-                    ('ftp', filter(None, run.fastq_ftp.split(';'))),
-                    ('aspera', filter(None, run.fastq_aspera.split(';'))),
-                    ('md5', filter(None, run.fastq_md5.split(';')))
-                )))
+        try:
+            exp = Experiment.objects.get(experiment_accession=pk)
+            client = APIClient()
+            client.force_authenticate(user=User.objects.get(username='test'))
 
-        return self.formatted_response(run_info)
+            run_info = []
+            is_miseq = True if 'miseq' in exp.instrument_model.lower() else False
+            runs = Run.objects.filter(experiment_accession=pk)
+            if runs.count() > 0:
+                for run in runs:
+                    run_info.append(OrderedDict((
+                        ('run', run.run_accession),
+                        ('is_paired', run.is_paired),
+                        ('is_miseq', is_miseq),
+                        ('ftp', filter(None, run.fastq_ftp.split(';'))),
+                        ('aspera', filter(None, run.fastq_aspera.split(';'))),
+                        ('md5', filter(None, run.fastq_md5.split(';')))
+                    )))
+
+            return self.formatted_response(run_info)
+        except Experiment.DoesNotExist:
+            return self.formatted_response([])
 
 
 class EnaRunViewSet(viewsets.ReadOnlyModelViewSet):
