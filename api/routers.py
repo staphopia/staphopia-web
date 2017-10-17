@@ -71,7 +71,8 @@ router.register(r'assembly/contig', ContigViewSet)
 
 # ENA Related Tables
 router.register(r'ena/study', EnaStudyViewSet)
-router.register(r'ena/experiment', EnaExperimentViewSet)
+router.register(r'ena/experiment', EnaExperimentViewSet,
+                base_name='experiment')
 router.register(r'ena/run', EnaRunViewSet)
 
 # Gene annotation related tables
