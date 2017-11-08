@@ -66,7 +66,7 @@ def get_samples_by_tag(tag_id):
     return query_database(sql)
 
 
-def get_public_samples(is_published=False):
+def get_public_samples(is_published=False, include_location=False):
     """Return sample info associated with a tag."""
     sql = None
     if is_published:
@@ -84,7 +84,15 @@ def get_public_samples(is_published=False):
                     results[row['sample_tag']]['pmid'].append(int(row['pmid']))
 
         return [vals for k, vals in results.items()]
-
+    elif include_location:
+        sql = """SELECT p.sample_id, is_paired, is_public, is_published,
+                        sample_tag, st_original, st_stripped,
+                        st_is_exact_match, pmid, location, region, country
+                 FROM published_ena_samples AS p
+                 LEFT JOIN sample_metadata AS m
+                 ON p.sample_id=m.sample_id
+                 WHERE m.location <> 'unknown/missing';"""
+        return query_database(sql)
     else:
         return query_database('SELECT * FROM public_ena_samples;')
 

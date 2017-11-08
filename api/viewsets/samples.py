@@ -83,8 +83,11 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     @list_route(methods=['get'])
     def public(self, request):
         """Return all public ENA samples."""
-        samples = get_public_samples()
-
+        samples = None
+        if 'include_location' in request.GET:
+            samples = get_public_samples(include_location=True)
+        else:
+            samples = get_public_samples()
         return self.paginate(samples, page_size=500, is_serialized=True)
 
     @list_route(methods=['get'])
