@@ -91,7 +91,8 @@ def get_public_samples(is_published=False, include_location=False):
                  FROM published_ena_samples AS p
                  LEFT JOIN sample_metadata AS m
                  ON p.sample_id=m.sample_id
-                 WHERE m.location <> 'unknown/missing';"""
+                 WHERE m.location <> 'unknown/missing' AND
+                       m.location <> 'not collected';"""
         return query_database(sql)
     else:
         return query_database('SELECT * FROM public_ena_samples;')
