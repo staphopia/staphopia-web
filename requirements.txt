@@ -1,25 +1,34 @@
-Django==1.11.4
-django-inspectional-registration==0.6.2
-django-crispy-forms==1.6.1
-python-magic==0.4.13
-django-datatables-view==1.14.0
-psycopg2==2.7.3
-django-email-changer==0.1.2
-django-storages-redux==1.3.3
-boto==2.48.0
-django-grappelli==2.10.1
-djangorestframework==3.6.3
-markdown==2.6.8
-django-filter==0.13.0
-PyVCF==0.6.8
-bitarray==0.8.1
-django-extensions==1.8.1
-pygraphviz==1.3.1
+uwsgi==2.0.15
+Django==2.0
+psycopg2==2.7.3.2
+django-crispy-forms==1.7.0
+django-extensions==1.9.8
+django-filter==2.0.0.dev1
+django-guardian==1.4.9
+django-registration-redux==2.0
+python-magic==0.4.15
+urllib3==1.22
+beautifulsoup4==4.6.0
+lxml==4.1.1
+djangorestframework==3.7.3
+markdown==2.6.9
 git+https://github.com/staphopia/scholarly.git
-psutil==4.1.0
-beautifulsoup4==4.4.1
-lxml==3.6.0
-elasticsearch==2.3.0
-urllib3==1.15.1
-django-haystack==2.4.1
-django-organizations==0.9.1
+numpy==1.13.3
+
+# Needs Testing
+django-datatables-view==1.14.0
+PyVCF==0.6.8
+
+# Not Django 2.0 or Python 3.6 compatible
+# django-email-changer==0.1.2
+
+# Not sure we need anymore
+# django-storages-redux==1.3.3 -- AWS related
+# boto==2.48.0 -- AWS related
+# django-grappelli==2.10.1 -- Admin related
+# bitarray==0.8.1 -- Kmer related
+# pygraphviz==1.3.1 -- creating DB schema
+# elasticsearch==2.3.0 -- kmer related
+# psutil==4.1.0 -- kmer related
+# django-haystack==2.4.1 kmer-related
+# django-organizations==0.9.1 -- related to groups

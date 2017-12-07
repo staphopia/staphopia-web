@@ -8,7 +8,7 @@ from django.contrib.postgres.search import SearchVectorField
 class Sample(models.Model):
     """Basic sample information."""
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, models.CASCADE)
     sample_tag = models.TextField(db_index=True, default='')
     is_paired = models.BooleanField(default=False)
     is_public = models.BooleanField(default=True, db_index=True)
@@ -20,6 +20,7 @@ class Sample(models.Model):
         indexes = [
             GinIndex(fields=['document'])
         ]
+
 
 class ToResistance(models.Model):
     """Antibiotic resistance tests conducted on a Sample."""
@@ -101,7 +102,7 @@ class SearchHistory(models.Model):
 class MetaDataHistory(models.Model):
     """Capture user changes to metadata fields."""
     sample = models.OneToOneField('Sample', on_delete=models.CASCADE)
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     field = models.TextField()
     previous = models.TextField()

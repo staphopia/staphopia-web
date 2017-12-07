@@ -21,21 +21,21 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 Applications
 ----------------------------------------------------------------------------'''
 INSTALLED_APPS = (
+
     'rest_framework',
     'rest_framework.authtoken',
 
     'django.contrib.sites',
     'django.contrib.admin',
     'registration',
-    'registration.contrib.notification',
-    'django_email_changer',
     'django.contrib.auth',
+    # 'django_email_changer',
+
     'django.contrib.contenttypes',
     'django.contrib.humanize',
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'organizations',
 
     'crispy_forms',
     'django_extensions',

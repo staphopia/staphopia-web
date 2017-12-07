@@ -1,5 +1,5 @@
 import json
-from cStringIO import StringIO
+from io import StringIO
 
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q

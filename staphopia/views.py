@@ -1,21 +1,19 @@
-from threading import Thread
-
 from django.core.mail import EmailMessage, send_mail
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.views.generic import FormView
 from django.views.generic.edit import ProcessFormView, FormMixin
 from django.views.generic.base import TemplateResponseMixin
 
-from registration.backends import get_backend
-from django_email_changer import settings
-from django_email_changer.models import UserEmailModification
+# from registration.backends import get_backend
+# from django_email_changer import settings
+# from django_email_changer.models import UserEmailModification
 
 from staphopia.forms import (
     ContactForm,
     RegistrationFormWithName,
-    UserEmailModificationForm
+    # UserEmailModificationForm
 )
 
 
@@ -74,7 +72,7 @@ class RegistrationView(FormMixin, TemplateResponseMixin, ProcessFormView):
     template_name = r'registration/registration_form.html'
 
     def __init__(self, *args, **kwargs):
-        self.backend = get_backend()
+        #self.backend = get_backend()
         super(RegistrationView, self).__init__(*args, **kwargs)
 
     def get_success_url(self):
@@ -159,6 +157,7 @@ class RegistrationView(FormMixin, TemplateResponseMixin, ProcessFormView):
         return super(RegistrationView, self).dispatch(request, *args, **kwargs)
 
 
+'''
 class CreateUserEmailModificationRequest(FormView):
     form_class = UserEmailModificationForm
     http_method_names = ["get", "post", ]
@@ -195,3 +194,4 @@ class CreateUserEmailModificationRequest(FormView):
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
+'''
