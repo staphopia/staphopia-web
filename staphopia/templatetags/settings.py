@@ -6,10 +6,11 @@ register = template.Library()
 
 
 # settings value
-@register.assignment_tag
+@register.simple_tag
 def site_env():
     return getattr(settings, 'SITE_ENV', "")
 
-@register.assignment_tag
+
+@register.simple_tag
 def get_token(user):
     return Token.objects.get(user=user)
