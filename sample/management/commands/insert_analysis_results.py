@@ -3,14 +3,9 @@
 import json
 
 from django.db import transaction
-from django.db.utils import IntegrityError
-from django.core.management.base import BaseCommand, CommandError
-from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand
 
-from staphopia.utils import md5sum
-from sample.models import Sample, ToTag
-
-from sample.tools import create_tag, validate_analysis
+from sample.tools import get_analysis_status, handle_new_sample
 from assembly.tools import insert_assembly_stats, insert_assembly
 from gene.tools import insert_gene_annotations, insert_blast_results
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
@@ -37,96 +32,46 @@ class Command(BaseCommand):
                                  'Example: ga-outbreak, vanA-samples, etc...')
         parser.add_argument('--comment', type=str, default="",
                             help=('Any comments about the project.'))
-        parser.add_argument('--strain', type=str, default="",
-                            help=('Strain name of the input sample.'))
         parser.add_argument('--is_paired', action='store_true',
                             help='Sample contains paired reads.')
         parser.add_argument('--is_public', action='store_true',
                             help='Sample should be made public.')
         parser.add_argument('--is_published', action='store_true',
                             help='Sample is published.')
-        parser.add_argument('--runtime', action='store_true',
-                            help='Insert runtimes as well.')
         parser.add_argument('--skip_existing', action='store_true',
                             help='Skip module if its already in the database.')
         parser.add_argument('--force', action='store_true',
                             help='Force updates for existing entries.')
-        parser.add_argument('--preload', action='store_true',
-                            help='Preload UniRef50 clusters into memory.')
+
 
     @transaction.atomic
     def handle(self, *args, **opts):
         """Insert the results of sample analysis into the database."""
-        # Validate all files are present
+
+        # Validate all files are present, will cause error if files are missing
         print("Validating required files are present...")
-        files = validate_analysis(opts['sample_dir'], opts['sample_tag'])
-        fq_md5sum = md5sum('{0}/{1}.cleanup.fastq.gz'.format(
-            opts['sample_dir'], opts['sample_tag']
-        ))
+        files = get_analysis_status(opts['sample_tag'], opts['sample_dir'])
 
-        # Get User
-        try:
-            user = User.objects.get(username=opts['user'])
-        except User.DoesNotExist:
-            raise CommandError('user: {0} does not exist'.format(
-                opts['user']
-            ))
+        # Get or create a new Sample
+        sample_info = {
+            'sample_tag': opts['smaple_tag'],
+            'is_paired': True if 'fastq_r2' in files else False,
+            'is_public': opts['is_public'],
+            'is_published': opts['is_published']
+        }
 
-        if user.username == 'test':
-            fq_md5sum = ''.join(['test_', fq_md5sum[0:27]])
-
-        # Test if results already inserted
-        sample = None
-        try:
-            sample = Sample.objects.get(md5sum=fq_md5sum)
-            print("Found existing sample: {0} ({1})".format(
-                sample.sample_tag, sample.md5sum
-            ))
-            if opts['skip_existing']:
-                print("\tSkip reloading existing data.")
-            elif not opts['force']:
-                raise CommandError(
-                    'Sample exists, please use --force to use it.'
-                )
-            else:
-                Sample.objects.filter(md5sum=fq_md5sum).update(
-                    sample_tag=opts['sample_tag'],
-                    is_paired=opts['is_paired'],
-                    is_public=opts['is_public'],
-                    is_published=opts['is_published']
-                )
-        except Sample.DoesNotExist:
-            # Create new sample
-            try:
-                sample = Sample.objects.create(
-                    user=user,
-                    sample_tag=opts['sample_tag'],
-                    md5sum=fq_md5sum,
-                    is_paired=opts['is_paired'],
-                    is_public=opts['is_public'],
-                    is_published=opts['is_published']
-                )
-                print("Created new sample: {0} {1}".format(sample.id,
-                                                           sample.sample_tag))
-            except IntegrityError as e:
-                raise CommandError(
-                    'Error, unable to create Sample object. {0}'.format(e)
-                )
-
+        project_info = None
         if opts['project_tag']:
-            tag = create_tag(user, opts['project_tag'], opts['comment'])
-            try:
-                totag, created = ToTag.objects.get_or_create(
-                    sample=sample, tag=tag
-                )
-                if created:
-                    print("Project tag '{0}' saved".format(
-                        opts['project_tag']
-                    ))
-            except IntegrityError as e:
-                raise CommandError(
-                    'Error, unable to link Sample to Tag. {0}'.format(e)
-                )
+            project_info = {
+                'tag': opts['project_tag'],
+                'comment': opts['comment']
+            }
+
+        sample = handle_new_sample(
+            sample_info, opts['user'], files['fastq_md5'],
+            skip_existing=opts['skip_existing'], force=opts['force'],
+            project_info=project_info
+        )
 
         # Insert analysis results
         print("Inserting Sequence Stats...")
@@ -183,7 +128,7 @@ class Command(BaseCommand):
             files['annotation_genes'], files['annotation_proteins'],
             files['annotation_contigs'], files['annotation_gff'],
             sample, compressed=True, force=opts['force'],
-            preload=opts['preload'], skip=opts['skip_existing']
+            skip=opts['skip_existing']
         )
 
         blastp = [

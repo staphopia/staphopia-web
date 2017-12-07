@@ -1,8 +1,6 @@
 """Models associated with Sample."""
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.indexes import GinIndex
-from django.contrib.postgres.search import SearchVectorField
 
 
 class Sample(models.Model):
@@ -13,13 +11,6 @@ class Sample(models.Model):
     is_paired = models.BooleanField(default=False)
     is_public = models.BooleanField(default=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
-    md5sum = models.CharField(default='', max_length=32, unique=True)
-    document = SearchVectorField(null=True)
-
-    class Meta:
-        indexes = [
-            GinIndex(fields=['document'])
-        ]
 
 
 class ToResistance(models.Model):
