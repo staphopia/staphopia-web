@@ -36,7 +36,7 @@ from api.viewsets.sccmecs import (
 
 from api.viewsets.search import SearchViewSet
 from api.viewsets.sequences import SequenceStatViewSet
-from api.viewsets.sequence_types import MlstBlastViewSet, MlstSrst2ViewSet
+from api.viewsets.sequence_types import MlstBlastViewSet
 
 from api.viewsets.top import TopViewSet
 from api.viewsets.info import InfoViewSet, StatusViewSet
@@ -92,7 +92,6 @@ router.register(r'kmer', KmerViewSet)
 
 # Seqeunce Type (MLST) Related Tables
 router.register(r'mlst/blast', MlstBlastViewSet)
-router.register(r'mlst/srst2', MlstSrst2ViewSet)
 
 # SCCmec related tables
 router.register(r'sccmec/cassette', SCCmecCassetteViewSet)

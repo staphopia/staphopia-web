@@ -44,29 +44,3 @@ class Blast(models.Model):
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'mlst'
-
-
-class Srst2(models.Model):
-    """SRST2 results from mapping of FASTQ files."""
-
-    sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
-    st_original = models.TextField()
-    st_stripped = models.PositiveIntegerField(default=0, db_index=True)
-    is_exact = models.BooleanField(default=False, db_index=True)
-    arcc = models.TextField()
-    aroe = models.TextField()
-    glpf = models.TextField()
-    gmk = models.TextField()
-    pta = models.TextField()
-    tpi = models.TextField()
-    yqil = models.TextField()
-    mismatches = models.TextField()
-    uncertainty = models.TextField()
-    depth = models.DecimalField(max_digits=8, decimal_places=3)
-    maxMAF = models.DecimalField(max_digits=11, decimal_places=7)
-
-    def sample_tag(self):
-        """Display sample tag in admin view."""
-        return self.sample.sample_tag
-    sample_tag.short_description = 'Sample Tag'
-    sample_tag.admin_order_field = 'mlst'

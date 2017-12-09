@@ -38,7 +38,6 @@ from api.queries.variants import get_indels_by_sample, get_snps_by_sample
 from api.validators import validate_positive_integer, validate_list_of_ids
 
 from sample.models import Publication, Sample, Tag, Resistance
-from mlst.models import Srst2
 
 
 class SampleViewSet(CustomReadOnlyModelViewSet):
@@ -64,6 +63,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 return Response(validator)
             else:
                 ids = None
+                '''
                 if 'is_exact' in request.GET:
                     ids = Srst2.objects.filter(
                         st_stripped=request.GET['st'], is_exact=True
@@ -72,6 +72,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                     ids = Srst2.objects.filter(
                         st_stripped=request.GET['st']
                     ).values_list('sample_id', flat=True)
+                '''
                 queryset = get_samples(request.user.pk, sample_ids=ids)
         elif 'user_only' in request.GET:
             queryset = get_samples(request.user.pk, user_only=True)

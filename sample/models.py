@@ -11,6 +11,7 @@ class Sample(models.Model):
     is_paired = models.BooleanField(default=False)
     is_public = models.BooleanField(default=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
+    md5sum = models.CharField(default='', max_length=32) # add unique=True once MD5s fixed
 
 
 class ToResistance(models.Model):

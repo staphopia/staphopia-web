@@ -5,7 +5,9 @@ import json
 from django.db import transaction
 from django.core.management.base import BaseCommand
 
-from sample.tools import get_analysis_status, handle_new_sample
+from sample.tools import (
+    get_analysis_status, handle_new_sample, update_ena_md5sum
+)
 from assembly.tools import insert_assembly_stats, insert_assembly
 from gene.tools import insert_gene_annotations, insert_blast_results
 from mlst.tools import insert_mlst_blast, insert_mlst_srst2
@@ -52,7 +54,16 @@ class Command(BaseCommand):
         print("Validating required files are present...")
         files = get_analysis_status(opts['sample_tag'], opts['sample_dir'])
 
+        # Get FASTQ MD5
+        md5sum = None
+        with open(files['fastq_md5'], 'r') as fh:
+            for line in fh:
+                md5sum = line.rstrip()
+
         # Get or create a new Sample
+        if opts['update_ena_md5sum']:
+            update_ena_md5sum(opts['user'], opts['sample_tag'], md5sum)
+
         sample_info = {
             'sample_tag': opts['smaple_tag'],
             'is_paired': True if 'fastq_r2' in files else False,
@@ -68,9 +79,8 @@ class Command(BaseCommand):
             }
 
         sample = handle_new_sample(
-            sample_info, opts['user'], files['fastq_md5'],
-            skip_existing=opts['skip_existing'], force=opts['force'],
-            project_info=project_info
+            sample_info, opts['user'], md5sum, force=opts['force'],
+            skip_existing=opts['skip_existing'], project_info=project_info
         )
 
         # Insert analysis results

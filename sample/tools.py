@@ -6,6 +6,7 @@ from sample.tools import UTIL1, UTIL2, etc...
 """
 import os
 
+from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
@@ -28,6 +29,8 @@ def create_tag(user, tag, comment):
         tag_obj, created = Tag.objects.get_or_create(
             user=user, tag=tag, comment=comment
         )
+        if created:
+            print(f'Created new tag: {tag} ({tag_obj.id})')
         return tag_obj
     except IntegrityError as e:
         raise CommandError('tag creation failed: {0}'.format(e))
@@ -47,26 +50,35 @@ def get_program_id(program, version, comments):
     return program_obj
 
 
-def file_exists(file, directory, sample):
+def get_file_path(file, directory, sample):
     if '{1}' in file:
         file = file.format(directory, sample)
     else:
         file = file.format(directory)
+
+    return os.path.abspath(os.path.realpath(file))
+
+
+def file_exists(file):
     try:
-        target = os.path.abspath(os.path.realpath(file))
-        return os.path.exists(target)
+        return os.path.exists(file)
     except OSError:
         return False
 
 
 def get_files(directory, sample):
-
-    fq = file_exists('{0}/illumina-cleanup/{1}.cleanup.fastq.gz',
-                     directory, sample)
-    fq_r1 = file_exists('{0}/illumina-cleanup/{1}_R1.cleanup.fastq.gz',
-                        directory, sample)
-    fq_r2 = file_exists('{0}/illumina-cleanup/{1}_R2.cleanup.fastq.gz',
-                        directory, sample)
+    fq = file_exists(
+        get_file_path('{0}/illumina-cleanup/{1}.cleanup.fastq.gz',
+                      directory, sample)
+    )
+    fq_r1 = file_exists(
+        get_file_path('{0}/illumina-cleanup/{1}_R1.cleanup.fastq.gz',
+                      directory, sample)
+    )
+    fq_r2 = file_exists(
+        get_file_path('{0}/illumina-cleanup/{1}_R2.cleanup.fastq.gz',
+                      directory, sample)
+    )
 
     if fq_r1 and fq_r2:
         return get_file_list(True)
@@ -216,13 +228,14 @@ def test_files_exist(directory, sample, files, optional=False):
         if key == 'timeline':
             path = path.replace('/analyses', '')
 
-        if file_exists(file, path, sample):
-            full_path[key] = file
+        file_path = get_file_path(file, path, sample)
+        if file_exists(file_path):
+            full_path[key] = file_path
         else:
             if key == 'plasmid':
                 full_path['plasmid'] = False
             else:
-                missing.append(file)
+                missing.append(file_path)
 
     if len(missing) and not optional:
         raise RuntimeError(
@@ -258,8 +271,7 @@ def get_analysis_status(sample, sample_directory, optional=False):
         return [False, False]
 
 
-def handle_new_sample(sample_info, username, fastq_md5, skip_existing=False,
-                      force=False, project_info=None):
+def get_user(username):
     from django.contrib.auth.models import User
     # Get User
     try:
@@ -267,16 +279,33 @@ def handle_new_sample(sample_info, username, fastq_md5, skip_existing=False,
     except User.DoesNotExist:
         raise CommandError('user: {0} does not exist'.format(username))
 
-    # Get FASTQ MD5
-    fq_md5sum = None
-    with open(fastq_md5, 'r') as fh:
-        for line in fh:
-            fq_md5sum = line.rstrip()
+    return user
 
+
+@transaction.atomic
+def update_ena_md5sum(username, sample_tag, md5sum):
+    if username == 'ena':
+        try:
+            user = get_user(username)
+            sample = Sample.objects.get(user=user, sample_tag=sample_tag)
+            sample.md5sum = md5sum
+            sample.save()
+            print('Updating md5sum for sample: {0} ({1})'.format(
+                sample_tag, md5sum
+            ))
+        except Sample.DoesNotExist:
+            pass
+
+
+@transaction.atomic
+def handle_new_sample(sample_info, username, md5sum, skip_existing=False,
+                      force=False, project_info=None, is_ena=False):
     # Test if results already inserted
+    user = get_user(username)
     sample = None
     try:
-        sample = Sample.objects.get(md5sum=fq_md5sum)
+        # If ena, we can update by user and sample_tag incase it already exists
+        sample = Sample.objects.get(md5sum=md5sum)
         print("Found existing sample: {0} ({1})".format(
             sample.sample_tag, sample.md5sum
         ))
@@ -287,7 +316,9 @@ def handle_new_sample(sample_info, username, fastq_md5, skip_existing=False,
                 'Sample exists, please use --force to use it.'
             )
         else:
-            Sample.objects.filter(md5sum=fq_md5sum).update(
+            print("Updated sample: {0} {1}".format(sample.id,
+                                                   sample.sample_tag))
+            Sample.objects.filter(md5sum=md5sum).update(
                 sample_tag=sample_info['sample_tag'],
                 is_paired=sample_info['is_paired'],
                 is_public=sample_info['is_public'],
@@ -299,7 +330,7 @@ def handle_new_sample(sample_info, username, fastq_md5, skip_existing=False,
             sample = Sample.objects.create(
                 user=user,
                 sample_tag=sample_info['sample_tag'],
-                md5sum=fq_md5sum,
+                md5sum=md5sum,
                 is_paired=sample_info['is_paired'],
                 is_public=sample_info['is_public'],
                 is_published=sample_info['is_published']
