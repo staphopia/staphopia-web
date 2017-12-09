@@ -24,13 +24,11 @@ class Command(BaseCommand):
         """Insert the results of sample analysis into the database."""
 
         # Validate all files are present, will cause error if files are missing
-        print("Validating required files are present...")
         experiment = os.path.basename(opts['sample_dir'])
         files, missing = get_analysis_status(experiment, opts['sample_dir'])
 
         # Get FASTQ MD5
         md5sum = None
-        print(files['fastq_md5'])
         with open(files['fastq_md5'], 'r') as fh:
             for line in fh:
                 md5sum = line.rstrip()

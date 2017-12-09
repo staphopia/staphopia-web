@@ -222,7 +222,7 @@ def get_file_list(is_paired):
 def test_files_exist(directory, sample, files, optional=False):
     """Read a dict of files, and test if they exist."""
     missing = []
-    full_path = {'plasmid': True}
+    full_path = {'plasmid': True, 'virulence': True}
     for key, file in files.items():
         path = directory
         if key == 'timeline':
@@ -232,8 +232,12 @@ def test_files_exist(directory, sample, files, optional=False):
         if file_exists(file_path):
             full_path[key] = file_path
         else:
-            if key == 'plasmid':
+            if 'plasmid' in key:
+                full_path[key] = False
                 full_path['plasmid'] = False
+            elif 'virulence' in key:
+                full_path[key] = False
+                full_path['virulence'] = False
             else:
                 missing.append(file_path)
 
