@@ -10,7 +10,7 @@ from django.core.management.base import CommandError
 
 from staphopia.utils import read_fasta, read_json, timeit
 
-from assembly.models import Contigs, Stats
+from assembly.models import Contig, Summary
 
 
 @timeit
@@ -22,28 +22,18 @@ def insert_assembly_stats(assembly, sample, is_scaffolds=False, force=False,
     try:
         save = True
         if force:
-            print("\tForce used, emptying Assembly stats related results.")
-            Stats.objects.filter(
-                sample=sample,
-                is_scaffolds=is_scaffolds,
-                is_plasmids=is_plasmids
-            ).delete()
+            print("\tForce used, emptying Assembly related results.")
+            Summary.objects.filter(sample=sample).delete()
         elif skip:
             try:
-                Stats.objects.get(sample=sample, is_scaffolds=is_scaffolds,
-                                  is_plasmids=is_plasmids)
-                print("\tSkip reloading existing Assembly Stats.")
+                Summary.objects.get(sample=sample)
+                print("\tSkip reloading existing Assembly Summary.")
                 save = False
-            except Stats.DoesNotExist:
+            except Summary.DoesNotExist:
                 pass
 
         if save:
-            assembly = Stats(
-                sample=sample,
-                is_scaffolds=is_scaffolds,
-                is_plasmids=is_plasmids,
-                **json_data
-            )
+            assembly = Summary(sample=sample, **json_data)
             assembly.save()
         return True
     except IntegrityError as e:
@@ -60,33 +50,32 @@ def insert_assembly(assembly, sample, is_plasmids=False, force=False,
     save = True
     if force:
         print("\tForce used, emptying Assembly sequence related results.")
-        Contigs.objects.filter(sample=sample, is_plasmids=is_plasmids).delete()
+        Contig.objects.filter(sample=sample, is_plasmids=is_plasmids).delete()
     elif skip:
         try:
-            Contigs.objects.get(sample=sample, is_plasmids=is_plasmids)
+            Contig.objects.get(sample=sample, is_plasmids=is_plasmids)
             # Single contig/plasmid
             print("\tSkip reloading existing Assembly Contigs.")
             save = False
-        except Contigs.MultipleObjectsReturned:
+        except Contig.MultipleObjectsReturned:
             # Multiple contigs
             print("\tSkip reloading existing Assembly Contigs.")
             save = False
-        except Contigs.DoesNotExist:
+        except Contig.DoesNotExist:
             pass
 
     if save:
         assembly = read_fasta(assembly, compressed=True)
         contigs = []
         for name, seq in assembly.items():
-            contigs.append(Contigs(
+            contigs.append(Contig(
                 sample=sample,
-                is_plasmids=is_plasmids,
                 name=name,
                 sequence=seq
             ))
 
         try:
-            Contigs.objects.bulk_create(contigs, batch_size=100)
+            Contig.objects.bulk_create(contigs, batch_size=100)
             print('\tAssembly sequences saved.')
         except IntegrityError as e:
             raise CommandError('{0} Assembly Contigs Error: {1}'.format(
@@ -97,6 +86,6 @@ def insert_assembly(assembly, sample, is_plasmids=False, force=False,
 def get_contig(sample, name):
     """return a contig instance."""
     try:
-        return Contigs.objects.get(sample=sample, is_plasmids=False, name=name)
-    except Contigs.DoesNotExist:
-        return Contigs.objects.get(name="none")
+        return Contig.objects.get(sample=sample, is_plasmids=False, name=name)
+    except Contig.DoesNotExist:
+        return Contig.objects.get(name="none")

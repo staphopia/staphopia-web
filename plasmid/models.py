@@ -8,10 +8,11 @@ from django.db import models
 from sample.models import Sample
 
 
-class Contigs(models.Model):
+class Contig(models.Model):
     """Assembled plasmids for each sample."""
 
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
+                               related_name='plasmid_contig_sample')
     name = models.TextField(db_index=True)
     sequence = models.TextField()
 
@@ -19,9 +20,10 @@ class Contigs(models.Model):
         unique_together = ('sample', 'name')
 
 
-class Stats(models.Model):
+class Summary(models.Model):
     """Statistics of the assembled genome."""
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
+                               related_name='plasmid_summary_sample')
 
     total_contig = models.PositiveSmallIntegerField()
     total_contig_length = models.PositiveIntegerField()

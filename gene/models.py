@@ -6,8 +6,8 @@ Staphopia samples.
 """
 from django.db import models
 
-from assembly.models import Contigs
-from sample.models import Sample, Program
+from assembly.models import Contig
+from sample.models import Sample
 from variant.models import Reference, Annotation
 
 
@@ -57,7 +57,7 @@ class ReferenceMapping(models.Model):
 class Features(models.Model):
     """Annotated info for each predicted gene."""
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    contig = models.ForeignKey(Contigs, on_delete=models.CASCADE, default=0)
+    contig = models.ForeignKey(Contig, on_delete=models.CASCADE, default=0)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     inference = models.ForeignKey('Inference', on_delete=models.CASCADE)
@@ -97,7 +97,6 @@ class BlastResults(models.Model):
     """Predicted gene BLAST hits against UniRef50."""
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     feature = models.ForeignKey('Features', on_delete=models.CASCADE)
-    program = models.ForeignKey(Program, on_delete=models.CASCADE)
 
     bitscore = models.PositiveSmallIntegerField()
     evalue = models.DecimalField(max_digits=7, decimal_places=2)

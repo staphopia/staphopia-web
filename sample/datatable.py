@@ -2,10 +2,8 @@ import json
 from io import StringIO
 
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import Q
 
-from staphopia.utils import REMatcher
-from sample.models import SearchHistory
+from search.models import History
 
 from api.queries.search import basic_search, total_samples, get_filtered_count
 
@@ -34,13 +32,11 @@ class DataTable(object):
     def log_query(self, query):
         """Store the query for improvement purposes."""
         try:
-            obj = SearchHistory.objects.get(query=query)
+            obj = History.objects.get(query=query)
             obj.count += 1
             obj.save()
-        except SearchHistory.DoesNotExist:
-            obj = SearchHistory.objects.create(query=query, count=1)
-
-
+        except History.DoesNotExist:
+            obj = History.objects.create(query=query, count=1)
 
     def get_json_response(self):
         data = [

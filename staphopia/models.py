@@ -10,14 +10,24 @@ from django.dispatch import receiver
 
 from rest_framework.authtoken.models import Token
 
-from assembly.models import Contigs
-from sample.models import Sample, Program
+from assembly.models import Contig
+from sample.models import Sample
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
+
+class Version(models.Model):
+    """Store Docker tag used to process samples."""
+    repo = models.TextField()
+    tag = models.TextField(unique=True)
+    sha256 = models.CharField(max_length=64, unique=True)
+
+    class Meta:
+        unique_together = ('repo', 'tag', 'sha256')
 
 
 class BlastQuery(models.Model):
@@ -34,8 +44,7 @@ class GenericBlast(models.Model):
     """Unique 31-mer strings stored as strings."""
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    contig = models.ForeignKey(Contigs, on_delete=models.CASCADE)
-    program = models.ForeignKey(Program, on_delete=models.CASCADE)
+    contig = models.ForeignKey(Contig, on_delete=models.CASCADE)
     query = models.ForeignKey('staphopia.BlastQuery', on_delete=models.CASCADE)
 
     bitscore = models.PositiveSmallIntegerField()

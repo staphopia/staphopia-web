@@ -10,13 +10,13 @@ from api.serializers.assemblies import (
 )
 from api.validators import validate_list_of_ids
 
-from assembly.models import Stats, Contigs
+from assembly.models import Summary, Contig
 
 
 class AssemblyViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving assembly stats."""
 
-    queryset = Stats.objects.all()
+    queryset = Summary.objects.all()
     serializer_class = AssemblyStatSerializer
 
     @list_route(methods=['post'])
@@ -43,17 +43,17 @@ class AssemblyViewSet(CustomReadOnlyModelViewSet):
 class ContigViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving assembled contigs."""
 
-    queryset = Contigs.objects.all()
+    queryset = Contig.objects.all()
     serializer_class = ContigSerializer
 
     def retrieve(self, request, pk=None):
         queryset = None
         serializer = None
         if pk:
-            queryset = Contigs.objects.get(pk=pk)
+            queryset = Contig.objects.get(pk=pk)
             serializer = ContigFullSerializer(queryset)
         else:
-            queryset = Contigs.objects.all()
+            queryset = Contig.objects.all()
             serializer = ContigSerializer(queryset)
 
         return Response(serializer.data)

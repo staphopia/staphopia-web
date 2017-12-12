@@ -6,14 +6,14 @@ from api.serializers.sequences import SequenceStatSerializer
 from api.queries.sequences import get_sequencing_stats
 from api.validators import validate_list_of_ids
 
-from sequence.models import Stat
+from sequence.models import Summary
 
 
 class SequenceStatViewSet(CustomReadOnlyModelViewSet):
     """
     A simple ViewSet for listing or retrieving Samples.
     """
-    queryset = Stat.objects.all()
+    queryset = Summary.objects.all()
     serializer_class = SequenceStatSerializer
 
     @list_route(methods=['post'])

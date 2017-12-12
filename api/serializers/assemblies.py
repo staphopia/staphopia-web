@@ -1,21 +1,21 @@
 """ . """
 from rest_framework import serializers
-from assembly.models import Stats, Contigs
+from assembly.models import Summary, Contig
 
 
 class AssemblyStatSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
-        model = Stats
+        model = Summary
 
 
 class ContigSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Contigs
-        fields = ('id', 'is_plasmids', 'name', 'sample')
+        model = Contig
+        fields = ('id', 'name', 'sample')
 
 
 class ContigFullSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
-        model = Contigs
+        model = Contig

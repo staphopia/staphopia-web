@@ -21,7 +21,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 Applications
 ----------------------------------------------------------------------------'''
 INSTALLED_APPS = (
-
     'rest_framework',
     'rest_framework.authtoken',
 
@@ -42,18 +41,24 @@ INSTALLED_APPS = (
     'django_datatables_view',
 
     # Staphopia Related
-    'staphopia',
     'autofill',
-    'sample',
-    'ena',
     'assembly',
+    'ena',
     'gene',
-    'mlst',
-    'sequence',
-    'variant',
     'kmer',
+    'metadata',
+    'mlst',
+    'plasmid',
+    'publication',
     'resistance',
+    'sample',
     'sccmec',
+    'search',
+    'sequence',
+    'staphopia',
+    'tag',
+    'variant',
+    'virulence'
 )
 
 # django-registration
@@ -97,7 +102,9 @@ REST_FRAMEWORK = {
         'anon': '10/day',
         'user': '100000000000/day'
     },
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': (
+        'rest_framework.pagination.PageNumberPagination'
+    ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'PAGE_SIZE': 100
 }
@@ -114,7 +121,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'staphopia.middleware.LoginRequiredMiddleware'
+    # 'staphopia.middleware.LoginRequiredMiddleware'
 ]
 APPEND_SLASH = True
 

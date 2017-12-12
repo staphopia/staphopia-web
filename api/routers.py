@@ -19,11 +19,11 @@ from api.viewsets.genes import (
 from api.viewsets.kmers import KmerViewSet
 
 from api.viewsets.samples import (
-    PublicationViewSet,
+#    PublicationViewSet,
     SampleViewSet,
-    TagViewSet,
-    ResistanceViewSet,
-    MetaDataViewSet
+#    TagViewSet,
+#    ResistanceViewSet,
+#    MetaDataViewSet
 )
 
 from api.viewsets.sccmecs import (
@@ -60,10 +60,10 @@ router = routers.DefaultRouter()
 
 # Sample Related Tables
 router.register(r'sample', SampleViewSet)
-router.register(r'tag', TagViewSet)
-router.register(r'publication', PublicationViewSet)
-router.register(r'resistance', ResistanceViewSet)
-router.register(r'metadata', MetaDataViewSet, base_name='metadata')
+# router.register(r'tag', TagViewSet)
+# router.register(r'publication', PublicationViewSet)
+# router.register(r'resistance', ResistanceViewSet)
+# router.register(r'metadata', MetaDataViewSet, base_name='metadata')
 
 # Assembly related table
 router.register(r'assembly/stat', AssemblyViewSet)

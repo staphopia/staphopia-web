@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
-from sample.models import Sample, Program, Tag, ToTag
+from sample.models import Sample, Tag, ToTag
 
 
 def get_sample(db_tag):
@@ -34,20 +34,6 @@ def create_tag(user, tag, comment):
         return tag_obj
     except IntegrityError as e:
         raise CommandError('tag creation failed: {0}'.format(e))
-
-
-def get_program_id(program, version, comments):
-    """Add program and version to database."""
-    program_obj, created = Program.objects.get_or_create(
-        program=program,
-        version=version,
-        comments=comments
-    )
-
-    if created:
-        print("Added {0} ({1}) to Program table".format(program, version))
-
-    return program_obj
 
 
 def get_file_path(file, directory, sample):

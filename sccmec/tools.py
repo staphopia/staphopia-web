@@ -15,7 +15,6 @@ from django.db.utils import IntegrityError
 from assembly.tools import get_contig
 from sccmec.models import Cassette, Coverage, Proteins, Primers, Subtypes
 from staphopia.utils import gziplines, get_blast_query, read_json, timeit
-from sample.tools import get_program_id
 
 
 @timeit
@@ -130,6 +129,7 @@ def insert_sccmec_blast(blast, sample, is_primers=True, is_subtype=False,
             # Get contig id
             if len(hit['hits']):
                 # Get program, query and contig id
+                '''
                 if not program:
                     program = get_program_id(
                         entry['report']['program'],
@@ -138,6 +138,7 @@ def insert_sccmec_blast(blast, sample, is_primers=True, is_subtype=False,
                             entry['report']['search_target']['db']
                         )
                     )
+                '''
                 query = get_blast_query(hit['query_title'], hit['query_len'])
                 contig = get_contig(sample,
                                     hit['hits'][0]['description'][0]['title'])

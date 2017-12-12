@@ -1,14 +1,9 @@
-from rest_framework import status, viewsets
+from rest_framework import status
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
-from api.serializers.samples import (
-    PublicationSerializer,
-    SampleSerializer,
-    TagSerializer,
-    ResistanceSerializer
-)
+from api.serializers.samples import SampleSerializer
 
 from api.queries.assemblies import get_assembly_stats, get_assembled_contigs
 from api.queries.samples import (
@@ -35,9 +30,9 @@ from api.queries.sccmecs import (
 )
 from api.queries.variants import get_indels_by_sample, get_snps_by_sample
 
-from api.validators import validate_positive_integer, validate_list_of_ids
+from api.validators import validate_positive_integer
 
-from sample.models import Publication, Sample, Tag, Resistance
+from sample.models import Sample
 
 
 class SampleViewSet(CustomReadOnlyModelViewSet):
@@ -272,7 +267,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             [pk], request.user.pk
         ))
 
-
+'''
 class TagViewSet(CustomReadOnlyModelViewSet):
     """
     A simple ViewSet for listing or retrieving Samples.
@@ -384,3 +379,4 @@ class MetaDataViewSet(CustomReadOnlyModelViewSet):
                 return self.formatted_response(get_sample_metadata(
                     request.data['ids'], single=False
                 ))
+'''
