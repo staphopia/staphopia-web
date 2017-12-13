@@ -1,10 +1,12 @@
 """Insert the results of sample analysis into the database."""
 import os
+import sys
 
 from django.core.management.base import BaseCommand
 
 from sample.tools import (
-    get_analysis_status, handle_new_sample, update_ena_md5sum
+    check_md5_existence, get_analysis_status, get_sample_by_name,
+    handle_sample, insert_md5s
 )
 
 from ena.models import Experiment, Study
@@ -27,18 +29,9 @@ class Command(BaseCommand):
         experiment = os.path.basename(opts['sample_dir'])
         files, missing = get_analysis_status(experiment, opts['sample_dir'])
 
-        # Get FASTQ MD5
-        md5sum = None
-        with open(files['fastq_md5'], 'r') as fh:
-            for line in fh:
-                md5sum = line.rstrip()
-
-        # Update existing samples
-        update_ena_md5sum('ena', experiment, md5sum)
-
+        # Update or create sample fields
         sample_info = {
-            'sample_tag': experiment,
-            'is_paired': True if 'fastq_r2' in files else False,
+            'name': experiment,
             'is_public': True,
             'is_published': False
         }
@@ -56,6 +49,30 @@ class Command(BaseCommand):
         except Experiment.DoesNotExist:
             print('{0} does not exist.'.format(opts['experiment']))
 
-        handle_new_sample(
-            sample_info, 'ena', md5sum, force=True, project_info=project_info
+        # Get FASTQ MD5
+        md5s = []
+        with open(files['fastq_original_md5'], 'r') as fh:
+            for line in fh:
+                md5s.append(line.rstrip().split(" ")[0])
+
+        # Check if MD5 exists
+        sample_md5 = check_md5_existence(md5s)
+
+        # Check if sample exists
+        sample = get_sample_by_name('ena', experiment)
+
+        if sample and sample_md5:
+            if sample.id != sample_md5:
+                # Error, trying to update a sample when MD5 exists for another
+                # sample
+                print(f'MD5s exist for sample {sample_md5}, but sample '
+                       '{sample.id} is being updated. Cannot continue.',
+                       file=sys.err)
+                sys.exit(1)
+
+        sample = handle_sample(
+            sample_info, 'ena', force=True, project_info=project_info
         )
+
+        if not sample_md5:
+            insert_md5s(sample, md5s)

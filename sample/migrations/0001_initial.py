@@ -15,13 +15,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='MD5',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('md5sum', models.CharField(max_length=32, unique=True)),
-            ],
-        ),
-        migrations.CreateModel(
             name='Sample',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -30,11 +23,6 @@ class Migration(migrations.Migration):
                 ('is_published', models.BooleanField(db_index=True, default=False)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
-        ),
-        migrations.AddField(
-            model_name='md5',
-            name='sample',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sample.Sample'),
         ),
         migrations.AlterUniqueTogether(
             name='sample',

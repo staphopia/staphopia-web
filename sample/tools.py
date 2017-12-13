@@ -10,7 +10,8 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
-from sample.models import Sample, Tag, ToTag
+from sample.models import Sample, MD5
+from tag.models import Tag, ToSample
 
 
 def get_sample(db_tag):
@@ -105,7 +106,8 @@ def get_file_list(is_paired):
             'fastq_original': '{0}/illumina-cleanup/{1}.original.fastq.json',
             'fastq_r1': '{0}/illumina-cleanup/{1}_R1.cleanup.fastq.gz',
             'fastq_r2': '{0}/illumina-cleanup/{1}_R2.cleanup.fastq.gz',
-            'fastq_md5': '{0}/illumina-cleanup/{1}.cleanup.md5',
+            'fastq_cleanup_md5': '{0}/illumina-cleanup/{1}.cleanup.md5',
+            'fastq_original_md5': '{0}/illumina-cleanup/{1}.original.md5',
 
             'kmer': '{0}/kmer/{1}.jf',
 
@@ -181,7 +183,8 @@ def get_file_list(is_paired):
             'fastq_ecc': '{0}/illumina-cleanup/{1}.post-ecc.fastq.json',
             'fastq_original': '{0}/illumina-cleanup/{1}.original.fastq.json',
             'fastq_r1': '{0}/illumina-cleanup/{1}.cleanup.fastq.gz',
-            'fastq_md5': '{0}/illumina-cleanup/{1}.cleanup.md5',
+            'fastq_cleanup_md5': '{0}/illumina-cleanup/{1}.cleanup.md5',
+            'fastq_original_md5': '{0}/illumina-cleanup/{1}.original.md5',
 
             'kmer': '{0}/kmer/{1}.jf',
 
@@ -272,32 +275,56 @@ def get_user(username):
     return user
 
 
+def get_sample_by_name(username, name):
+    """Get a sample instance using the username and name of sample."""
+    user = get_user(username)
+    sample = False
+    try:
+        sample = Sample.objects.get(user=user, name=name)
+        print(f'Found sample {name} ({sample.id})')
+    except Sample.DoesNotExist:
+        print(f'Sample {name} does not exist for user {username}')
+        pass
+
+    return sample
+
+
 @transaction.atomic
-def update_ena_md5sum(username, sample_tag, md5sum):
-    if username == 'ena':
+def check_md5_existence(md5s):
+    """Check for MD5 existence, return sample id if it does."""
+    exists = False
+    for md5sum in md5s:
         try:
-            user = get_user(username)
-            sample = Sample.objects.get(user=user, sample_tag=sample_tag)
-            sample.md5sum = md5sum
-            sample.save()
-            print('Updating md5sum for sample: {0} ({1})'.format(
-                sample_tag, md5sum
-            ))
-        except Sample.DoesNotExist:
+            md5 = MD5.objects.get(md5sum=md5sum)
+            print(f'MD5 {md5sum} already exists for sample {md5.sample_id}')
+            exists = md5.sample_id
+        except MD5.DoesNotExist:
+            print(f'MD5 {md5sum} not found')
             pass
+    return exists
 
 
 @transaction.atomic
-def handle_new_sample(sample_info, username, md5sum, skip_existing=False,
-                      force=False, project_info=None, is_ena=False):
+def insert_md5s(sample, md5s):
+    for md5 in md5s:
+        try:
+            MD5.objects.create(sample=sample, md5sum=md5)
+            print(f'Inserted md5 {md5} for sample {sample.name}')
+        except IntegrityError as e:
+            raise CommandError(f'Error, unable to create MD5 object. {e}')
+
+
+@transaction.atomic
+def handle_sample(sample_info, username, skip_existing=False, force=False,
+                  project_info=None, is_ena=False):
     # Test if results already inserted
     user = get_user(username)
     sample = None
     try:
-        # If ena, we can update by user and sample_tag incase it already exists
-        sample = Sample.objects.get(md5sum=md5sum)
+        # If ena, we can update by user and name incase it already exists
+        sample = Sample.objects.get(user=user, name=sample_info['name'])
         print("Found existing sample: {0} ({1})".format(
-            sample.sample_tag, sample.md5sum
+            sample.name, sample.id
         ))
         if skip_existing:
             print("\tSkip reloading existing data.")
@@ -307,10 +334,9 @@ def handle_new_sample(sample_info, username, md5sum, skip_existing=False,
             )
         else:
             print("Updated sample: {0} {1}".format(sample.id,
-                                                   sample.sample_tag))
-            Sample.objects.filter(md5sum=md5sum).update(
-                sample_tag=sample_info['sample_tag'],
-                is_paired=sample_info['is_paired'],
+                                                   sample.name))
+            Sample.objects.filter(user=user, name=sample_info['name']).update(
+                name=sample_info['name'],
                 is_public=sample_info['is_public'],
                 is_published=sample_info['is_published']
             )
@@ -319,14 +345,12 @@ def handle_new_sample(sample_info, username, md5sum, skip_existing=False,
         try:
             sample = Sample.objects.create(
                 user=user,
-                sample_tag=sample_info['sample_tag'],
-                md5sum=md5sum,
-                is_paired=sample_info['is_paired'],
+                name=sample_info['name'],
                 is_public=sample_info['is_public'],
                 is_published=sample_info['is_published']
             )
             print("Created new sample: {0} {1}".format(sample.id,
-                                                       sample.sample_tag))
+                                                       sample.name))
         except IntegrityError as e:
             raise CommandError(
                 'Error, unable to create Sample object. {0}'.format(e)
@@ -335,7 +359,7 @@ def handle_new_sample(sample_info, username, md5sum, skip_existing=False,
     if project_info:
         tag = create_tag(user, project_info['tag'], project_info['comment'])
         try:
-            totag, created = ToTag.objects.get_or_create(
+            tosample, created = ToSample.objects.get_or_create(
                 sample=sample, tag=tag
             )
             if created:
@@ -344,3 +368,5 @@ def handle_new_sample(sample_info, username, md5sum, skip_existing=False,
             raise CommandError(
                 'Error, unable to link Sample to Tag. {0}'.format(e)
             )
+
+    return sample
