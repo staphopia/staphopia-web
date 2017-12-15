@@ -229,7 +229,7 @@ def test_files_exist(directory, sample, files, optional=False):
                 missing.append(file_path)
 
     if len(missing) and not optional:
-        raise RuntimeError(
+        raise CommandError(
             'Required files are missing.\nMissing Files...\n{0}'.format(
                 '\n'.join(missing)
             )

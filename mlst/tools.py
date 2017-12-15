@@ -41,6 +41,15 @@ def parse_ariba(basic_report, detailed_report):
     22  7   6   1   5   8   8   6
     '''
     basic_report = read_table(basic_report)
+    basic_report['uncertainty'] = False
+    if 'Novel' in basic_report['ST']:
+        basic_report['ST'] = "10000"
+    elif basic_report['ST'] == 'ND':
+        basic_report['ST'] = 0
+    elif basic_report['ST'].endswith('*'):
+        # * indicates uncertainty in Ariba call
+        basic_report['ST'] = basic_report['ST'].rstrip('*')
+        basic_report['uncertainty'] = True
 
     '''
     Parse Detailed Report (tabs not spaces)
@@ -113,26 +122,36 @@ def insert_mlst(sample, version, results, force=False):
 
     # Overlap, three digits (ariba, mentalist, blast)
     # If all agree: 111
+    ariba = results['ariba']
     if st['ariba'] == st['mentalist'] and st['mentalist'] == st['blast']:
         st['st'] = st['ariba']
-    elif st['ariba'] == st['mentalist'] and not st['blast']:
+    elif st['ariba'] == st['mentalist']:
         st['st'] = st['ariba']
-    elif st['mentalist'] and not st['ariba'] and not st['blast']:
+    elif st['ariba'] == st['blast']:
+        st['st'] = st['ariba']
+    elif st['mentalist'] == st['blast']:
         st['st'] = st['mentalist']
-    elif st['ariba'] and not st['mentalist'] and not st['blast']:
+    elif st['ariba'] and st['ariba'] != 10000 and not ariba['uncertainty']:
+        # 10000 is 'Novel' as considered by Ariba
+        # If there is uncertainty, don't call ST soley on Ariba. Previous
+        # conditions had support from other methods.
         st['st'] = st['ariba']
+    elif st['mentalist']:
+        st['st'] = st['mentalist']
 
     try:
         if force:
-            MLST.objects.update_or_create(sample=sample, version=version, **st)
+            MLST.objects.update_or_create(
+                sample=sample,
+                version=version,
+                defaults=st
+            )
             print(f'Updated MLST calls for {sample.name}')
         else:
             MLST.objects.create(sample=sample, version=version, **st)
             print(f'Inserted MLST calls for {sample.name}')
     except IntegrityError as e:
-        raise CommandError(
-            f'Duplicate entry, will not update unless --force is used.'
-        )
+        raise CommandError(e)
 
 
 @timeit
@@ -141,8 +160,11 @@ def insert_report(sample, version, reports, force=False):
     '''Insert detailed report of mlst calls into database.'''
     try:
         if force:
-            Report.objects.update_or_create(sample=sample, version=version,
-                                            **reports)
+            Report.objects.update_or_create(
+                sample=sample,
+                version=version,
+                defaults=reports
+            )
             print(f'Updated MLST reports for {sample.name}')
         else:
             Report.objects.create(sample=sample, version=version, **reports)
