@@ -171,5 +171,5 @@ def insert_report(sample, version, reports, force=False):
             print(f'Inserted MLST reports for {sample.name}')
     except IntegrityError as e:
         raise CommandError(
-            f'Duplicate entry, will not update unless --force is used.'
+            f'{sample.name} exists, will not update unless --force is used. {e}'
         )

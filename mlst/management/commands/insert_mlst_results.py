@@ -37,8 +37,8 @@ class Command(BaseCommand):
                             files['fastq_original_md5'])
         version = get_pipeline_version(files['version'])
 
-        st = {'ariba': None}
-        report = {'ariba': None}
+        st = {'ariba': 0}
+        report = {'ariba': 'empty'}
         if 'fastq_r2' in files:
             # Ariba only works on paired end reads
             st['ariba'], report['ariba'] = parse_ariba(

@@ -2,7 +2,7 @@
 import os
 import sys
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from sample.tools import (
     check_md5_existence, get_analysis_status, get_sample_by_name,
@@ -27,6 +27,7 @@ class Command(BaseCommand):
 
         # Validate all files are present, will cause error if files are missing
         experiment = os.path.basename(opts['sample_dir'])
+        print(f'Working on {experiment} ({opts["sample_dir"]})')
         files, missing = get_analysis_status(experiment, opts['sample_dir'])
 
         # Update or create sample fields
@@ -47,7 +48,7 @@ class Command(BaseCommand):
                 'comment': experiment_obj.study_accession.study_title
             }
         except Experiment.DoesNotExist:
-            print('{0} does not exist.'.format(opts['experiment']))
+            raise CommandError(f'{experiment} does not exist.')
 
         # Get FASTQ MD5
         md5s = []

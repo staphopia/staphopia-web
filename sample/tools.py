@@ -130,7 +130,6 @@ def get_file_list(is_paired):
             'resistance_report': '{0}/resistance/report.tsv',
             'resistance_assembled_seqs': '{0}/resistance/assembled_seqs.fa.gz',
             'resistance_debug_report': '{0}/resistance/debug.report.tsv',
-            'resistance_clusters': '{0}/resistance/log.clusters.gz',
 
             'sccmec_coverage': '{0}/sccmec/cassette-coverages.gz',
             'sccmec_primers': '{0}/sccmec/primers.json',
@@ -144,7 +143,6 @@ def get_file_list(is_paired):
             'virulence_report': '{0}/virulence/report.tsv',
             'virulence_assembled_seqs': '{0}/virulence/assembled_seqs.fa.gz',
             'virulence_debug_report': '{0}/virulence/debug.report.tsv',
-            'virulence_clusters': '{0}/virulence/log.clusters.gz',
 
             'timeline': '{0}/staphopia-timeline.html',
             'version': '{0}/staphopia-version.txt'
@@ -259,7 +257,9 @@ def get_analysis_status(sample, sample_directory, optional=False):
     if files:
         return test_files_exist(directory, sample, files, optional=optional)
     else:
-        return [False, False]
+        raise CommandError(
+            f'Required files missing. Please check {sample_directory} exists.'
+        )
 
 
 def get_user(username):
