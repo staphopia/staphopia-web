@@ -14,6 +14,8 @@ djangorestframework==3.7.3
 markdown==2.6.9
 git+https://github.com/staphopia/scholarly.git
 numpy==1.13.3
+pandas==0.21.1
+requests
 
 # Needs Testing
 django-datatables-view==1.14.0

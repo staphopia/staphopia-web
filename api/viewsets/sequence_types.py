@@ -10,6 +10,7 @@ from api.queries.sequence_types import (
 )
 from api.validators import validate_list_of_ids
 
+'''
 from mlst.models import Blast
 
 
@@ -34,3 +35,4 @@ class MlstBlastViewSet(CustomReadOnlyModelViewSet):
                 return self.formatted_response(get_blast_sequence_type(
                     request.data['ids'], request.user.pk
                 ))
+'''

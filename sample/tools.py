@@ -14,14 +14,6 @@ from sample.models import Sample, MD5
 from tag.models import Tag, ToSample
 
 
-def get_sample(db_tag):
-    """Return Sample object is it exists, else raise error."""
-    try:
-        return Sample.objects.get(db_tag=db_tag)
-    except Sample.DoesNotExist:
-        raise CommandError('db_tag: {0} does not exist'.format(db_tag))
-
-
 def create_tag(user, tag, comment):
     """Create a database tag."""
     try:
@@ -122,6 +114,8 @@ def get_file_list(is_paired):
             'mlst_ariba_details': '{0}/mlst/ariba/mlst_report.details.tsv',
             'mlst_blastn': '{0}/mlst/mlst-blastn.json',
             'mlst_mentalist': '{0}/mlst/mentalist/mlst.txt',
+            'mlst_mentalist_ties': '{0}/mlst/mentalist/mlst.txt.ties.txt',
+            'mlst_mentalist_votes': '{0}/mlst/mentalist/mlst.txt.votes.txt',
 
             'plasmid_contigs': '{0}/plasmids/{1}.contigs.fasta.gz',
             'plasmid_contig_stats': '{0}/plasmids/{1}.contigs.json',
@@ -152,7 +146,8 @@ def get_file_list(is_paired):
             'virulence_debug_report': '{0}/virulence/debug.report.tsv',
             'virulence_clusters': '{0}/virulence/log.clusters.gz',
 
-            'timeline': '{0}/staphopia-timeline.html'
+            'timeline': '{0}/staphopia-timeline.html',
+            'version': '{0}/staphopia-version.txt'
         }
     else:
         return {
@@ -190,6 +185,8 @@ def get_file_list(is_paired):
 
             'mlst_blastn': '{0}/mlst/mlst-blastn.json',
             'mlst_mentalist': '{0}/mlst/mentalist/mlst.txt',
+            'mlst_mentalist_ties': '{0}/mlst/mentalist/mlst.txt.ties.txt',
+            'mlst_mentalist_votes': '{0}/mlst/mentalist/mlst.txt.votes.txt',
 
             'plasmid_contigs': '{0}/plasmids/{1}.contigs.fasta.gz',
             'plasmid_contig_stats': '{0}/plasmids/{1}.contigs.json',
@@ -204,7 +201,8 @@ def get_file_list(is_paired):
 
             'variants': '{0}/variants/{1}.variants.vcf.gz',
 
-            'timeline': '{0}/staphopia-timeline.html'
+            'timeline': '{0}/staphopia-timeline.html',
+            'version': '{0}/staphopia-version.txt'
         }
 
 
@@ -214,7 +212,7 @@ def test_files_exist(directory, sample, files, optional=False):
     full_path = {'plasmid': True, 'virulence': True}
     for key, file in files.items():
         path = directory
-        if key == 'timeline':
+        if key == 'timeline' or key == 'version':
             path = path.replace('/analyses', '')
 
         file_path = get_file_path(file, path, sample)
@@ -312,6 +310,32 @@ def insert_md5s(sample, md5s):
             print(f'Inserted md5 {md5} for sample {sample.name}')
         except IntegrityError as e:
             raise CommandError(f'Error, unable to create MD5 object. {e}')
+
+
+def get_sample(username, name, md5file):
+    """Return Sample object is it exists, else raise error."""
+    # Get FASTQ MD5
+    md5s = []
+    with open(md5file, 'r') as fh:
+        for line in fh:
+            md5s.append(line.rstrip().split(" ")[0])
+
+    # Check if MD5 exists
+    sample_md5 = check_md5_existence(md5s)
+
+    # Check if sample exists
+    sample = get_sample_by_name(username, name)
+
+    if sample.id != sample_md5:
+        # Error, trying to update a sample when MD5 exists for another
+        # sample
+        raise CommandError(
+            f'MD5s exist for sample {sample_md5}, but sample '
+             '{sample.id} is being updated. Cannot continue.'
+        )
+        sys.exit(1)
+    else:
+        return sample
 
 
 @transaction.atomic

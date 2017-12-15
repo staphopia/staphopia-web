@@ -20,16 +20,6 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Token.objects.create(user=instance)
 
 
-class Version(models.Model):
-    """Store Docker tag used to process samples."""
-    repo = models.TextField()
-    tag = models.TextField(unique=True)
-    sha256 = models.CharField(max_length=64, unique=True)
-
-    class Meta:
-        unique_together = ('repo', 'tag', 'sha256')
-
-
 class BlastQuery(models.Model):
     """Store the query title of blast results."""
 

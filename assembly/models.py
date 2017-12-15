@@ -6,24 +6,28 @@ samples.
 """
 from django.db import models
 from sample.models import Sample
+from version.models import Version
 
 
 class Contig(models.Model):
     """Assembled contigs for each sample renamed by PROKKA."""
-
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
                                related_name='assembly_contig_sample')
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='assembly_contig_version')
     name = models.TextField(db_index=True)
     sequence = models.TextField()
 
     class Meta:
-        unique_together = ('sample', 'name')
+        unique_together = ('sample', 'version', 'name')
 
 
 class Summary(models.Model):
     """Summary statistics of the assembled genome."""
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
                                related_name='assembly_summary_sample')
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='assembly_summary_version')
     total_contig = models.PositiveSmallIntegerField()
     total_contig_length = models.PositiveIntegerField()
 
@@ -64,3 +68,6 @@ class Summary(models.Model):
         return self.sample.sample_tag
     sample_tag.short_description = 'Sample Tag'
     sample_tag.admin_order_field = 'sample'
+
+    class Meta:
+        unique_together = ('sample', 'version')

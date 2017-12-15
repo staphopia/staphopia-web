@@ -4,127 +4,150 @@ Useful functions associated with mlst.
 To use:
 from mlst.tools import UTIL1, UTIL2, etc...
 """
+import json
+
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
 from staphopia.utils import file_exists, read_json, timeit
 
-from mlst.models import Blast, Srst2
+from mlst.models import SequenceTypes, MLST, Report
 
 
-@timeit
-@transaction.atomic
-def insert_mlst_blast(blast, sample, force=False, skip=False):
-    """Insert JSON formatted BLAST hits against MLST loci."""
-    save = True
-    if force:
-        print("\tForce used, emptying MLST BLAST related results.")
-        Blast.objects.filter(sample=sample).delete()
-    elif skip:
-        try:
-            Blast.objects.get(sample=sample)
-        except Blast.MultipleObjectsReturned:
-            print("\tSkip reloading existing MLST Blast.")
-            save = False
-        except Blast.DoesNotExist:
-            pass
+def read_table(table, header=True, sep='\t', ):
+    names = None
+    rows = []
+    with open(table, 'r') as fh:
+        for line in fh:
+            cols = line.rstrip().split(sep)
+            if header:
+                names = cols
+                header = False
+            else:
+                rows.append(dict(zip(names, cols)))
 
-    if save:
-        json_data = read_json(blast)
-        for locus, results in json_data.items():
-            locus_id = results['sseqid'].split('_')[1]
-            try:
-                blastn, created = Blast.objects.get_or_create(
-                    sample=sample,
-                    locus_name=locus,
-                    locus_id=locus_id,
-                    bitscore=float(results['bitscore']),
-                    slen=results['slen'],
-                    length=results['length'],
-                    gaps=results['gaps'],
-                    mismatch=results['mismatch'],
-                    pident=results['pident'],
-                    evalue=results['evalue']
-                )
-                print("\tBLASTN Results Saved")
-            except IntegrityError as e:
-                raise CommandError('{0} MLSTBlast Error: {1}'.format(
-                    sample.sample_tag, e)
-                )
-
-
-@timeit
-@transaction.atomic
-def insert_mlst_srst2(srst2, sample, force=False, skip=False):
-    """Insert SRST2 hits against MLST loci."""
-    save = True
-    if force:
-        print("\tForce used, emptying MLST SRST2 related results.")
-        Srst2.objects.filter(sample=sample).delete()
-    elif skip:
-        try:
-            Srst2.objects.get(sample=sample)
-            print("\tSkip reloading existing MLST SRST2.")
-            save = False
-        except Srst2.DoesNotExist:
-            pass
-
-    if save:
-        if file_exists(srst2):
-            cols = None
-            with open(srst2, 'r') as fh:
-                fh.readline()
-                cols = fh.readline().rstrip().split('\t')
-
-            if not cols[0]:
-                cols = ['0'] * 13
-
-            if len(cols) == 12:
-                cols.append('0')
-
-            try:
-                # 0:Sample 1:st   2:arcc 3:aroe 4:glpf 5:gmk_ 6:pta_ 7:tpi_
-                # 8:yqil   9:mismatches   10:uncertainty 11:depth   12:maxMAF
-                st_stripped, is_exact = determine_st(cols[1])
-
-                Srst2.objects.create(
-                    sample=sample,
-                    st_original=cols[1],
-                    st_stripped=st_stripped,
-                    is_exact=is_exact,
-                    arcc=cols[2],
-                    aroe=cols[3],
-                    glpf=cols[4],
-                    gmk=cols[5],
-                    pta=cols[6],
-                    tpi=cols[7],
-                    yqil=cols[8],
-                    mismatches=cols[9],
-                    uncertainty=cols[10],
-                    depth=float(cols[11]),
-                    maxMAF=float("{0:.7f}".format(float(cols[12])))
-                )
-                print("\tSRST2 Results Saved")
-            except IntegrityError as e:
-                raise CommandError('{0} MLSTSrst2 Error: {1}'.format(
-                    sample.sample_tag, e
-                ))
-
-
-def determine_st(st):
-    """Determine stipped vs exact match ST."""
-    import re
-    exact_st = re.compile('^(\d+)$')
-    likely_st = re.compile('^(\d+)(.*)$')
-
-    if exact_st.match(st):
-        # Exact match
-        return [int(st), True]
-    elif likely_st.match(st):
-        # Good idea, there is either mismatche(s) or uncertainity
-        m = likely_st.match(st)
-        return [m.group(1), False]
+    if len(rows) == 1:
+        return rows[0]
     else:
-        # Unable to determine ST
-        return [0, False]
+        return rows
+
+
+@timeit
+def parse_ariba(basic_report, detailed_report):
+    '''
+    Basic Ariba Report (tabs not spaces)
+    ST  arcC    aroE    glpF    gmk pta tpi yqiL
+    22  7   6   1   5   8   8   6
+    '''
+    basic_report = read_table(basic_report)
+
+    '''
+    Parse Detailed Report (tabs not spaces)
+    gene    allele  cov pc  ctgs    depth   hetmin  hets
+    arcC    7   100.0   100.0   1   51.2    .   .
+    aroE    6   100.0   100.0   1   51.0    .   .
+    glpF    1   100.0   100.0   1   36.7    .   .
+    gmk 5   100.0   100.0   1   45.7    .   .
+    pta 8   100.0   100.0   1   61.5    .   .
+    tpi 8   100.0   100.0   1   47.9    .   .
+    yqiL    6   100.0   100.0   1   52.6    .   .
+    '''
+    detailed_report = read_table(detailed_report)
+
+    return [basic_report, detailed_report]
+
+
+@timeit
+def parse_mentalist(basic_report, tie_report, vote_report):
+    '''
+    Basic Mentalist Report (tabs not spaces)
+    Sample  arcC    aroE    glpF    gmk pta tpi yqiL    ST  clonal_complex
+    ERX1666310  7   6   1   5   8   8   6   22
+    '''
+    basic_report = read_table(basic_report)
+    detailed_report = {
+        'ties': read_table(tie_report),
+        'votes': read_table(vote_report)
+    }
+
+    return [basic_report, detailed_report]
+
+
+@timeit
+def parse_blast(basic_report):
+    detailed_report = None
+    with open(basic_report, 'r') as fh:
+        detailed_report = json.load(fh)
+
+    basic_report = {
+        'arcc': int(detailed_report['arcC']['sseqid'].split('.')[1]),
+        'aroe': int(detailed_report['aroE']['sseqid'].split('.')[1]),
+        'glpf': int(detailed_report['glpF']['sseqid'].split('.')[1]),
+        'gmk': int(detailed_report['gmk']['sseqid'].split('.')[1]),
+        'pta': int(detailed_report['pta']['sseqid'].split('.')[1]),
+        'tpi': int(detailed_report['tpi']['sseqid'].split('.')[1]),
+        'yqil': int(detailed_report['yqiL']['sseqid'].split('.')[1]),
+    }
+
+    # Determine ST based on hits
+    try:
+        st = SequenceTypes.objects.get(**basic_report)
+        basic_report['ST'] = st.st
+    except SequenceTypes.DoesNotExist:
+        basic_report['ST'] = 0
+
+    return [basic_report, detailed_report]
+
+
+@timeit
+@transaction.atomic
+def insert_mlst(sample, version, results, force=False):
+    '''Insert sequence type into database.'''
+    st = {
+        'st': 0,
+        'ariba': int(results['ariba']['ST']) if results['ariba'] else 0,
+        'blast': int(results['blast']['ST']),
+        'mentalist': int(results['mentalist']['ST']),
+    }
+
+    # Overlap, three digits (ariba, mentalist, blast)
+    # If all agree: 111
+    if st['ariba'] == st['mentalist'] and st['mentalist'] == st['blast']:
+        st['st'] = st['ariba']
+    elif st['ariba'] == st['mentalist'] and not st['blast']:
+        st['st'] = st['ariba']
+    elif st['mentalist'] and not st['ariba'] and not st['blast']:
+        st['st'] = st['mentalist']
+    elif st['ariba'] and not st['mentalist'] and not st['blast']:
+        st['st'] = st['ariba']
+
+    try:
+        if force:
+            MLST.objects.update_or_create(sample=sample, version=version, **st)
+            print(f'Updated MLST calls for {sample.name}')
+        else:
+            MLST.objects.create(sample=sample, version=version, **st)
+            print(f'Inserted MLST calls for {sample.name}')
+    except IntegrityError as e:
+        raise CommandError(
+            f'Duplicate entry, will not update unless --force is used.'
+        )
+
+
+@timeit
+@transaction.atomic
+def insert_report(sample, version, reports, force=False):
+    '''Insert detailed report of mlst calls into database.'''
+    try:
+        if force:
+            Report.objects.update_or_create(sample=sample, version=version,
+                                            **reports)
+            print(f'Updated MLST reports for {sample.name}')
+        else:
+            Report.objects.create(sample=sample, version=version, **reports)
+            print(f'Inserted MLST reports for {sample.name}')
+    except IntegrityError as e:
+        raise CommandError(
+            f'Duplicate entry, will not update unless --force is used.'
+        )

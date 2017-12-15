@@ -3,7 +3,7 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand
 
-from sample.models import Docker
+from version.models import Version
 
 
 class Command(BaseCommand):
@@ -24,7 +24,7 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         """Add a docker image tag to the database."""
         try:
-            Docker.objects.create(
+            Version.objects.create(
                 repo=opts['repo'],
                 tag=opts['tag'],
                 sha256=opts['sha256']

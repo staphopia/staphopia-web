@@ -1,28 +1,58 @@
 """Insert MLST results into database."""
-from django.db import transaction
 from django.core.management.base import BaseCommand
 
-from sample.tools import get_sample
-from mlst.tools import insert_mlst_blast, insert_mlst_srst2
+from mlst.tools import (
+    insert_mlst,
+    insert_report,
+    parse_ariba,
+    parse_blast,
+    parse_mentalist
+)
+from sample.tools import get_analysis_status, get_sample
+from version.tools import get_pipeline_version
 
 
 class Command(BaseCommand):
     """Insert results into database."""
 
-    help = 'Insert the analysis results into the database.'
+    help = 'Insert the MLST results into the database.'
 
     def add_arguments(self, parser):
         """Command line arguements."""
-        parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
-                            help='Sample tag of the data.')
-        parser.add_argument('blast', metavar='BLAST_OUTPUT',
-                            help='BLASTN output of MLST results.')
-        parser.add_argument('srst', metavar='SRST2_OUTPUT',
-                            help='SRST output of MLST results.')
+        parser.add_argument('user', metavar='USERNAME',
+                            help=('User name for the owner of the sample.'))
+        parser.add_argument('sample_dir', metavar='SAMPLE_DIRECTORY',
+                            help=('User name for the owner of the sample.'))
+        parser.add_argument('name', metavar='SAMPLE_NAME',
+                            help=('Sample tag associated with sample.'))
+        parser.add_argument('--force', action='store_true',
+                            help='Force updates for existing entries.')
 
-    @transaction.atomic
     def handle(self, *args, **opts):
         """Insert results to database."""
-        sample = get_sample(opts['sample_tag'])
-        insert_mlst_blast(opts['blast'], sample)
-        insert_mlst_srst2(opts['srst'], sample)
+        # Validate all files are present, will cause error if files are missing
+        files, missing = get_analysis_status(opts['name'], opts['sample_dir'])
+
+        sample = get_sample(opts['user'], opts['name'],
+                            files['fastq_original_md5'])
+        version = get_pipeline_version(files['version'])
+
+        st = {'ariba': None}
+        report = {'ariba': None}
+        if 'fastq_r2' in files:
+            # Ariba only works on paired end reads
+            st['ariba'], report['ariba'] = parse_ariba(
+                files['mlst_ariba_mlst_report'],
+                files['mlst_ariba_details']
+            )
+
+        st['mentalist'], report['mentalist'] = parse_mentalist(
+            files['mlst_mentalist'],
+            files['mlst_mentalist_ties'],
+            files['mlst_mentalist_votes']
+        )
+
+        st['blast'], report['blast'] = parse_blast(files['mlst_blastn'])
+
+        insert_mlst(sample, version, st, force=opts['force'])
+        insert_report(sample, version, report, force=opts['force'])

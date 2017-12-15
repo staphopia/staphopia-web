@@ -41,6 +41,7 @@ INSTALLED_APPS = (
     'django_datatables_view',
 
     # Staphopia Related
+    'staphopia',
     'autofill',
     'assembly',
     'ena',
@@ -55,9 +56,9 @@ INSTALLED_APPS = (
     'sccmec',
     'search',
     'sequence',
-    'staphopia',
     'tag',
     'variant',
+    'version',
     'virulence'
 )
 
