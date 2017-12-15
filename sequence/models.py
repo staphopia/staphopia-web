@@ -7,6 +7,7 @@ samples.
 from django.db import models
 
 from sample.models import Sample
+from version.models import Version
 
 
 class Stage(models.Model):
@@ -18,6 +19,8 @@ class Summary(models.Model):
     """Summary statistics of input FASTQ file."""
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
                                related_name='sequence_summary_sample')
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='sequence_summary_version')
     is_paired = models.BooleanField(default=False, db_index=True)
     stage = models.ForeignKey('Stage', on_delete=models.CASCADE)
     rank = models.PositiveSmallIntegerField(db_index=True)
@@ -45,7 +48,7 @@ class Summary(models.Model):
     qual_per_base = models.TextField()
 
     class Meta:
-        unique_together = ('sample', 'stage')
+        unique_together = ('sample', 'version', 'stage')
 
     def sample_tag(self):
         """Display sample tag in admin view."""

@@ -54,11 +54,12 @@ def insert_sequence_stats(files, sample, version, force=False):
         else:
             stage = create_stage(stage_name)
 
-        json_data = read_json(stat)
-        stat_objects.append(Stat(
+        json_data = read_json(files[stat])
+        stat_objects.append(Summary(
             sample=sample,
             version=version,
             stage=stage,
+            is_paired=is_paired,
             rank=__get_rank(json_data["qc_stats"]),
             read_lengths=json.dumps(json_data["read_lengths"], sort_keys=True),
             qual_per_base=json.dumps(json_data["per_base_quality"],
@@ -66,15 +67,21 @@ def insert_sequence_stats(files, sample, version, force=False):
             **json_data["qc_stats"]
         ))
 
-    Stat.objects.bulk_create(stat_objects, batch_size=5)
-    print(f'Inserted sequence stats for {sample.name} ({sample.id})')
+    try:
+        Summary.objects.bulk_create(stat_objects, batch_size=5)
+        print(f'Inserted sequence stats for {sample.name} ({sample.id})')
+    except IntegrityError as e:
+        raise CommandError(' '.join([
+            f'Unable to insert stats for {sample.name} ({sample.id}).',
+            f'Please use --force to update stats. Error: {e}'
+        ]))
 
 
 @transaction.atomic
 def delete_stats(sample, version):
     """Force update, so remove from table."""
-    print("\tForce used, emptying FASTQ related results.")
-    Stat.objects.filter(sample=sample, version=version).delete()
+    print("Force used, emptying FASTQ related results.")
+    Summary.objects.filter(sample=sample, version=version).delete()
 
 
 def __get_rank(data):
