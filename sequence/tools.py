@@ -34,7 +34,7 @@ def create_stage(name):
 
 @timeit
 @transaction.atomic
-def insert_sequence_stats(files, sample, version, force=False):
+def insert_sequence_stats(sample, version, files, force=False):
     """Insert seqeunce quality metrics into database."""
     if force:
         delete_stats(sample, version)

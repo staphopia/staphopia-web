@@ -33,7 +33,6 @@ def read_table(table, header=True, sep='\t', ):
         return rows
 
 
-@timeit
 def parse_ariba(basic_report, detailed_report):
     '''
     Basic Ariba Report (tabs not spaces)
@@ -67,7 +66,6 @@ def parse_ariba(basic_report, detailed_report):
     return [basic_report, detailed_report]
 
 
-@timeit
 def parse_mentalist(basic_report, tie_report, vote_report):
     '''
     Basic Mentalist Report (tabs not spaces)
@@ -83,7 +81,6 @@ def parse_mentalist(basic_report, tie_report, vote_report):
     return [basic_report, detailed_report]
 
 
-@timeit
 def parse_blast(basic_report):
     detailed_report = None
     with open(basic_report, 'r') as fh:
@@ -133,7 +130,6 @@ def insert_mlst_results(sample, version, files, force=False):
     insert_report(sample, version, report, force=force)
 
 
-@timeit
 @transaction.atomic
 def insert_mlst(sample, version, results, force=False):
     '''Insert sequence type into database.'''
@@ -178,7 +174,6 @@ def insert_mlst(sample, version, results, force=False):
         raise CommandError(e)
 
 
-@timeit
 @transaction.atomic
 def insert_report(sample, version, reports, force=False):
     '''Insert detailed report of mlst calls into database.'''
@@ -195,5 +190,5 @@ def insert_report(sample, version, reports, force=False):
             print(f'Inserted MLST reports for {sample.name}')
     except IntegrityError as e:
         raise CommandError(
-            f'{sample.name} exists, will not update unless --force is used. {e}'
+            f'{sample.name} found, will not update unless --force is used. {e}'
         )

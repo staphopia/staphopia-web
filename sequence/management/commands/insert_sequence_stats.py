@@ -1,10 +1,7 @@
 """Insert the sumamry statistics for sample sequence."""
+from django.core.management.base import BaseCommand
 
-import json
-from django.core.management.base import BaseCommand, CommandError
-
-from sample.tools import get_analysis_status, get_sample
-from version.tools import get_pipeline_version
+from sample.tools import prep_insert
 from sequence.tools import insert_sequence_stats
 
 
@@ -27,11 +24,7 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         """Insert the results of sample analysis into the database."""
         # Validate all files are present, will cause error if files are missing
-        files, missing = get_analysis_status(opts['name'], opts['sample_dir'])
-
-        sample = get_sample(opts['user'], opts['name'],
-                            files['fastq_original_md5'])
-        version = get_pipeline_version(files['version'])
-
-        # Insert analysis results
-        insert_sequence_stats(files, sample, version, force=opts['force'])
+        sample, version, files = prep_insert(
+            opts['user'], opts['name'], opts['sample_dir']
+        )
+        insert_sequence_stats(sample, version, files, force=opts['force'])
