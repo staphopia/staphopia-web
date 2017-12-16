@@ -202,12 +202,12 @@ def get_sample(username, name, md5file):
         return sample
 
 
-def prep_insert(username, name, directory):
+def prep_insert(username, name, directory, optional=False):
     """
     Verify all is good to begin data insert. All files exist, sample exists
     and the version exists.
     """
-    files, missing = get_analysis_status(name, directory)
+    files, missing = get_analysis_status(name, directory, optional=optional)
     sample = get_sample(username, name, files['fastq_original_md5'])
     version = get_pipeline_version(files['version'])
 
