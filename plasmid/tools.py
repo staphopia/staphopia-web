@@ -10,7 +10,7 @@ from django.core.management.base import CommandError
 
 from staphopia.utils import read_fasta, read_json, timeit
 
-from plasmid.models import Contig, Summary
+from plasmid.models import Contig, Sequence, Summary
 
 
 @timeit
@@ -20,7 +20,7 @@ def insert_plasmid_stats(sample, version, files, force=False):
     if force:
         delete_stats(sample, version)
 
-    if files['plasmid_contig_stats']:
+    if files['plasmid']:
         try:
             json_data = read_json(files['plasmid_contig_stats'])
             Summary.objects.create(sample=sample, version=version, **json_data)
@@ -42,48 +42,54 @@ def delete_stats(sample, version):
 
 @timeit
 @transaction.atomic
-def insert_plasmid_assembly(assembly, sample, is_plasmids=False, force=False,
-                            skip=False):
+def insert_plasmid_contigs(sample, version, files, force=False):
     """Insert the assembled scaffolds to the database."""
-    save = True
     if force:
-        print("\tForce used, emptying Assembly sequence related results.")
-        Contig.objects.filter(sample=sample, is_plasmids=is_plasmids).delete()
-    elif skip:
-        try:
-            Contig.objects.get(sample=sample, is_plasmids=is_plasmids)
-            # Single contig/plasmid
-            print("\tSkip reloading existing Assembly Contigs.")
-            save = False
-        except Contig.MultipleObjectsReturned:
-            # Multiple contigs
-            print("\tSkip reloading existing Assembly Contigs.")
-            save = False
-        except Contig.DoesNotExist:
-            pass
+        delete_contigs(sample, version)
 
-    if save:
-        assembly = read_fasta(assembly, compressed=True)
-        contigs = []
-        for name, seq in assembly.items():
-            contigs.append(Contig(
+    if files['plasmid']:
+        assembly = read_fasta(files['plasmid_contigs'], compressed=True)
+        graph = read_fasta(files['plasmid_graph'], compressed=True)
+
+        fasta = {}
+        contig_objects = []
+        for spades, sequence in assembly.items():
+            # Example SPAdes name: NODE_37_length_341_cov_381.897727
+            cols = spades.split('_')
+            staphopia = ''.join([
+                f'{sample.id}|{sample.name}|{cols[1]}|plasmid ',
+                f'coverage={cols[5]} length={cols[3]} ',
+                f'analysis_version={version.tag}'
+            ])
+
+            # Update FASTA entry, and create Contig object
+            fasta[staphopia] = sequence
+            contig_objects.append(Contig(
                 sample=sample,
-                name=name,
-                sequence=seq
+                version=version,
+                spades=spades,
+                staphopia=staphopia
             ))
-
         try:
-            Contig.objects.bulk_create(contigs, batch_size=100)
-            print('\tAssembly sequences saved.')
+            Contig.objects.bulk_create(contig_objects, batch_size=500)
+            print(f'{sample.name}: Plasmid contig names saved.')
         except IntegrityError as e:
-            raise CommandError('{0} Assembly Contigs Error: {1}'.format(
-                sample.sample_tag, e)
+            raise CommandError(f'{sample.name} Contig Name Error: {e}')
+        try:
+            Sequence.objects.create(
+                sample=sample,
+                version=version,
+                fasta=fasta,
+                graph=graph
             )
+        except IntegrityError as e:
+            raise CommandError(f'{sample.name} Fasta save error: {e}')
+    else:
+        print(f'{sample.name} does not have a plasmid assembly, skipping.')
 
 
-def get_contig(sample, name):
-    """return a contig instance."""
-    try:
-        return Contig.objects.get(sample=sample, is_plasmids=False, name=name)
-    except Contig.DoesNotExist:
-        return Contig.objects.get(name="none")
+def delete_contigs(sample, version):
+    """Force update, so remove from table."""
+    print(f'{sample.name}: Force used, emptying assembly related results.')
+    Contig.objects.filter(sample=sample, version=version).delete()
+    Sequence.objects.filter(sample=sample, version=version).delete()

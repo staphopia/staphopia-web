@@ -5,6 +5,8 @@ These are models to store information on the assembly quality of Staphopia
 samples.
 """
 from django.db import models
+from django.contrib.postgres.fields import JSONField
+
 from sample.models import Sample
 from version.models import Version
 
@@ -15,11 +17,24 @@ class Contig(models.Model):
                                related_name='plasmid_contig_sample')
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='plasmid_contig_version')
-    name = models.TextField(db_index=True)
-    sequence = models.TextField()
+    spades = models.TextField(db_index=True)
+    staphopia = models.TextField(db_index=True)
 
     class Meta:
-        unique_together = ('sample', 'version', 'name')
+        unique_together = ('sample', 'version', 'spades')
+
+
+class Sequence(models.Model):
+    """Assembled contigs for each sample renamed by PROKKA."""
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
+                               related_name='plasmid_sequence_sample')
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='plasmid_sequence_version')
+    fasta = JSONField()
+    graph = JSONField()
+
+    class Meta:
+        unique_together = ('sample', 'version')
 
 
 class Summary(models.Model):

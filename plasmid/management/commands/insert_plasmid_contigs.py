@@ -1,14 +1,14 @@
-"""Insert JSON formatted assembly results into database."""
+"""Insert the assembled contigs into the database."""
 from django.core.management.base import BaseCommand
 
 from sample.tools import prep_insert
-from assembly.tools import insert_assembly_stats
+from plasmid.tools import insert_plasmid_contigs
 
 
 class Command(BaseCommand):
-    """Insert results into database."""
+    """Insert the assembled contigs into the database."""
 
-    help = 'Insert the assembly results into the database.'
+    help = 'Insert the assembled contigs into the database.'
 
     def add_arguments(self, parser):
         """Command line arguements."""
@@ -26,4 +26,4 @@ class Command(BaseCommand):
         sample, version, files = prep_insert(
             opts['user'], opts['name'], opts['sample_dir']
         )
-        insert_assembly_stats(sample, version, files, force=opts['force'])
+        insert_plasmid_contigs(sample, version, files, force=opts['force'])

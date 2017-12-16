@@ -46,12 +46,19 @@ def jf_query(jf, fasta):
     return stdout
 
 
+def byte_to_string(b):
+    if b:
+        return b.decode("utf-8")
+    else:
+        return ''
+
+
 def gziplines(fname):
     """Use zcat to deliver lines from gzipped input."""
     from subprocess import Popen, PIPE
     f = Popen(['zcat', fname], stdout=PIPE)
     for line in f.stdout:
-        yield line
+        yield byte_to_string(line)
 
 
 def file_exists(input):
