@@ -110,6 +110,30 @@ def parse_blast(basic_report):
 
 
 @timeit
+def insert_mlst_results(sample, version, files, force=False):
+    """Insert mlst results and the reports."""
+    st = {'ariba': 0}
+    report = {'ariba': 'empty'}
+    if 'fastq_r2' in files:
+        # Ariba only works on paired end reads
+        st['ariba'], report['ariba'] = parse_ariba(
+            files['mlst_ariba_mlst_report'],
+            files['mlst_ariba_details']
+        )
+
+    st['mentalist'], report['mentalist'] = parse_mentalist(
+        files['mlst_mentalist'],
+        files['mlst_mentalist_ties'],
+        files['mlst_mentalist_votes']
+    )
+
+    st['blast'], report['blast'] = parse_blast(files['mlst_blastn'])
+
+    insert_mlst(sample, version, st, force=force)
+    insert_report(sample, version, report, force=force)
+
+
+@timeit
 @transaction.atomic
 def insert_mlst(sample, version, results, force=False):
     '''Insert sequence type into database.'''
