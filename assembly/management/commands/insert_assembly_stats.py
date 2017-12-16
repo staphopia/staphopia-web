@@ -2,7 +2,7 @@
 from django.db import transaction
 from django.core.management.base import BaseCommand
 
-from sample.tools import get_sample
+from sample.tools import prep_insert
 from assembly.tools import insert_assembly_stats
 
 
@@ -13,17 +13,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Command line arguements."""
-        parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
-                            help='Sample tag of the data.')
-        parser.add_argument('input', metavar='JSON_INPUT',
-                            help='JSON formated file to be inserted')
-        parser.add_argument('--scaffolds', action='store_true',
-                            help='Input is scaffolds. (Default: contigs')
+        parser.add_argument('user', metavar='USERNAME',
+                            help=('User name for the owner of the sample.'))
+        parser.add_argument('sample_dir', metavar='SAMPLE_DIRECTORY',
+                            help=('User name for the owner of the sample.'))
+        parser.add_argument('name', metavar='SAMPLE_NAME',
+                            help=('Sample tag associated with sample.'))
+        parser.add_argument('--force', action='store_true',
+                            help='Force updates for existing entries.')
 
-    @transaction.atomic
     def handle(self, *args, **opts):
-        """Insert results to database."""
-        sample = get_sample(opts['sample_tag'])
-        if insert_assembly_stats(opts['input'], sample,
-                                 is_scaffolds=opts['scaffolds']):
-            print("Assembly statistics written to database.")
+        # Validate all files are present, will cause error if files are missing
+        sample, version, files = prep_insert(
+            opts['user'], opts['name'], opts['sample_dir']
+        )
+        insert_assembly_stats(sample, version, files, force=opts['force'])

@@ -9,37 +9,30 @@ from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
 from staphopia.utils import read_fasta, read_json, timeit
-
 from assembly.models import Contig, Summary
 
 
 @timeit
 @transaction.atomic
-def insert_assembly_stats(assembly, sample, is_scaffolds=False, force=False,
-                          is_plasmids=False, skip=False):
+def insert_assembly_stats(sample, version, files, force=False):
     """Insert assembly statistics for a given sample."""
-    json_data = read_json(assembly)
-    try:
-        save = True
-        if force:
-            print("\tForce used, emptying Assembly related results.")
-            Summary.objects.filter(sample=sample).delete()
-        elif skip:
-            try:
-                Summary.objects.get(sample=sample)
-                print("\tSkip reloading existing Assembly Summary.")
-                save = False
-            except Summary.DoesNotExist:
-                pass
+    if force:
+        delete_stats(sample, version)
 
-        if save:
-            assembly = Summary(sample=sample, **json_data)
-            assembly.save()
-        return True
+    try:
+        json_data = read_json(files['assembly_contig_stats'])
+        Summary.objects.create(sample=sample, version=version, **json_data)
     except IntegrityError as e:
-        raise CommandError(
-            'An error occured when inserting assembly. Error {0}'.format(e)
-        )
+        raise CommandError(' '.join([
+            f'Unable to insert stats for {sample.name} ({sample.id}).',
+            f'Please use --force to update stats. Error: {e}'
+        ]))
+
+@transaction.atomic
+def delete_stats(sample, version):
+    """Force update, so remove from table."""
+    print(f'{sample.name}: Force used, emptying assembly related results.')
+    Summary.objects.filter(sample=sample, version=version).delete()
 
 
 @timeit
