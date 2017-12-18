@@ -2,7 +2,7 @@
 from django.core.management.base import BaseCommand
 
 from sample.tools import prep_insert
-from plasmid.tools import insert_plasmid_contigs
+from plasmid.tools import insert_plasmid
 
 
 class Command(BaseCommand):
@@ -26,4 +26,4 @@ class Command(BaseCommand):
         sample, version, files = prep_insert(
             opts['user'], opts['name'], opts['sample_dir']
         )
-        insert_plasmid_contigs(sample, version, files, force=opts['force'])
+        insert_plasmid(sample, version, files, force=opts['force'])

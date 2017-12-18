@@ -74,7 +74,7 @@ def print_percent(val):
 
 
 @timeit
-def generate_asembly_stats(fasta):
+def generate_assembly_stats(fasta):
     lengths = sorted([len(seq) for seq in fasta], key=int, reverse=True)
     length_totals = contig_lengths(lengths)
     total_contig = len(fasta)
@@ -178,8 +178,7 @@ def insert_assembly(sample, version, files, force=False):
 
     try:
         # Generate stats based on filtered contigs < 200bp
-        stats = generate_asembly_stats(list(fasta.values()))
-        print(json.dumps(stats, indent=4, sort_keys=True))
+        stats = generate_assembly_stats(list(fasta.values()))
         Summary.objects.create(sample=sample, version=version, **stats)
     except IntegrityError as e:
         raise CommandError(' '.join([
