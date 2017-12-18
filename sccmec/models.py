@@ -33,7 +33,6 @@ class Coverage(models.Model):
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='sccmec_coverage_version')
     cassette = models.ForeignKey('Cassette', on_delete=models.CASCADE)
-
     total = models.DecimalField(max_digits=7, decimal_places=2)
 
     minimum = models.PositiveIntegerField()
@@ -42,11 +41,11 @@ class Coverage(models.Model):
     maximum = models.PositiveIntegerField()
 
     meca_total = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-
     meca_minimum = models.PositiveIntegerField(default=0)
     meca_mean = models.DecimalField(max_digits=7, decimal_places=2, default=0)
     meca_median = models.PositiveIntegerField(default=0)
     meca_maximum = models.PositiveIntegerField(default=0)
+
     per_base_coverage = models.TextField()
 
     def sample_tag(self):
@@ -65,7 +64,6 @@ class Primers(models.Model):
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='sccmec_primers_version')
     contig = models.ForeignKey(Contig, on_delete=models.CASCADE)
-
     query = models.ForeignKey(BlastQuery, on_delete=models.CASCADE)
 
     bitscore = models.PositiveSmallIntegerField()
@@ -94,7 +92,6 @@ class Subtypes(models.Model):
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='sccmec_subtypes_version')
     contig = models.ForeignKey(Contig, on_delete=models.CASCADE)
-
     query = models.ForeignKey(BlastQuery, on_delete=models.CASCADE)
 
     bitscore = models.PositiveSmallIntegerField()
@@ -123,7 +120,6 @@ class Proteins(models.Model):
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='sccmec_proteins_version')
     contig = models.ForeignKey(Contig, on_delete=models.CASCADE)
-
     query = models.ForeignKey(BlastQuery, on_delete=models.CASCADE)
 
     bitscore = models.PositiveSmallIntegerField()

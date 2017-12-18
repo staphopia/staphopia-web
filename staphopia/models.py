@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token
 
 from assembly.models import Contig
 from sample.models import Sample
+from version.models import Version
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -34,6 +35,7 @@ class GenericBlast(models.Model):
     """Unique 31-mer strings stored as strings."""
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    version = models.ForeignKey(Version, on_delete=models.CASCADE)
     contig = models.ForeignKey(Contig, on_delete=models.CASCADE)
     query = models.ForeignKey('staphopia.BlastQuery', on_delete=models.CASCADE)
 

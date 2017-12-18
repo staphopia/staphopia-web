@@ -195,5 +195,10 @@ def delete_assembly(sample, version):
     Summary.objects.filter(sample=sample, version=version).delete()
 
 
-def get_contig(soemthing):
-    print('delete me')
+def get_contigs(sample, version):
+    contigs = None
+    try:
+        contigs = Contig.objects.filter(sample=sample, version=version)
+    except IntegrityError as e:
+        raise CommandError(f'{sample.name} contigs not found. Error: {e}')
+    return contigs
