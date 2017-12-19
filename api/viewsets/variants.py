@@ -15,15 +15,12 @@ from api.validators import validate_positive_integer, validate_list_of_ids
 
 from variant.models import (
     SNP,
-    ToSNP,
     Indel,
-    ToIndel,
     Annotation,
     Comment,
     Feature,
     Filter,
-    Reference,
-    Counts
+    Reference
 )
 from api.serializers.variants import (
     SNPSerializer,
@@ -32,8 +29,7 @@ from api.serializers.variants import (
     CommentSerializer,
     FilterSerializer,
     FeatureSerializer,
-    ReferenceSerializer,
-    CountsSerializer
+    ReferenceSerializer
 )
 
 
@@ -59,6 +55,7 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
 
         return self.paginate(queryset, serializer=SNPSerializer)
 
+    '''
     @detail_route(methods=['get'])
     def samples(self, request, pk=None):
         """Return a list of samples with a given snp."""
@@ -66,6 +63,7 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
             'sample_id', flat=True
         )
         return Response(format_results(hits))
+    '''
 
     @list_route(methods=['post'])
     def bulk(self, request):
@@ -117,6 +115,7 @@ class InDelViewSet(CustomReadOnlyModelViewSet):
     queryset = Indel.objects.all()
     serializer_class = InDelSerializer
 
+    '''
     @detail_route(methods=['get'])
     def samples(self, request, pk=None):
         """Return a list of samples with a given snp."""
@@ -124,6 +123,7 @@ class InDelViewSet(CustomReadOnlyModelViewSet):
             'sample_id', flat=True
         )
         return Response(format_results(hits))
+    '''
 
     @list_route(methods=['post'])
     def bulk(self, request):
@@ -264,25 +264,3 @@ class ReferenceViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Reference.objects.all()
     serializer_class = ReferenceSerializer
-
-
-class CountsViewSet(CustomReadOnlyModelViewSet):
-    """A simple ViewSet for listing or retrieving Variant Counts."""
-
-    queryset = Counts.objects.all()
-    serializer_class = CountsSerializer
-
-    @list_route(methods=['post'])
-    def bulk_by_sample(self, request):
-        """Given a list of Sample IDs, return SNP and InDel Counts."""
-        if request.method == 'POST':
-            validator = validate_list_of_ids(request.data, max_query=500)
-            if validator['has_errors']:
-                return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
-            else:
-                return self.formatted_response(get_variant_counts_by_samples(
-                    request.data['ids'],
-                ))

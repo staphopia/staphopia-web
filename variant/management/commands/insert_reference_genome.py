@@ -2,6 +2,7 @@
 import sys
 
 from django.db import connection, transaction
+from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
 from staphopia.utils import read_fasta
@@ -22,36 +23,19 @@ class Command(BaseCommand):
         parser.add_argument('--empty', action='store_true',
                             help='Empty tables and reset counts.')
 
+    @transaction.atomic
     def handle(self, *args, **opts):
         """Insert results to database."""
-        if opts['empty']:
-            # Empty Tables
-            self.empty_tables()
-            sys.exit()
-
         fasta = read_fasta(opts['input'], compressed=opts['compressed'])
         for ref, sequence in fasta.items():
+            if opts['empty']:
+                print("Emptying Variant Reference Table")
+                Reference.objects.filter(name=ref).delete()
             try:
-                reference = Reference.objects.get(name=ref)
-            except Reference.DoesNotExist:
-                raise CommandError('Missing Reference: {0} == Exiting.'.format(
-                    ref
-                ))
-
-            reference.sequence = sequence
-            reference.save()
-
-    @transaction.atomic
-    def empty_tables(self):
-        """Empty Tables and Reset id counters to 1."""
-        tables = ['variant_referencegenome']
-
-        for table in tables:
-            self.empty_table(table)
-
-    def empty_table(self, table):
-        """Empty Table and Reset id counters to 1."""
-        print("Emptying {0}...".format(table))
-        query = "TRUNCATE TABLE {0} RESTART IDENTITY CASCADE;".format(table)
-        cursor = connection.cursor()
-        cursor.execute(query)
+                Reference.objects.create(
+                    name=ref,
+                    length=len(sequence),
+                    sequence=sequence
+                )
+            except IntegrityError as e:
+                raise CommandError(f'{e}')

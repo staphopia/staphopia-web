@@ -4,7 +4,7 @@ Useful functions associated with variant.
 To use:
 from variant.tools import UTIL1, UTIL2, etc...
 """
-from __future__ import print_function
+from collections import OrderedDict
 import sys
 import time
 import vcf
@@ -22,65 +22,31 @@ from variant.models import (
     Indel,
     Reference,
     SNP,
-    ToIndel,
-    ToSNP,
-    Counts
+    Variant
 )
 
 
 @timeit
-def insert_variant_results(input, sample, force=False, skip=False):
+def insert_variants(sample, version, files, force=False):
     """Insert VCF formatted variants."""
-    save = True
-    if skip:
-        snp = True
-        indel = True
-        count = True
-        try:
-            ToSNP.objects.get(sample=sample)
-        except ToSNP.MultipleObjectsReturned:
-            pass
-        except ToSNP.DoesNotExist:
-            snp = False
+    if force:
+        print(f'{sample.name}: Force used, emptying variant related results.')
+        Variant.objects.filter(sample=sample, version=version).delete()
 
-        try:
-            ToIndel.objects.get(sample=sample)
-        except ToIndel.MultipleObjectsReturned:
-            pass
-        except ToIndel.DoesNotExist:
-            indel = False
-
-        try:
-            Counts.objects.get(sample=sample)
-        except Counts.MultipleObjectsReturned:
-            pass
-        except Counts.DoesNotExist:
-            count = False
-
-        if snp and indel and count:
-            print("\tSkip reloading existing Variants.")
-            save = False
-        else:
-            print("\tVariant load is incomplete, reloading...")
-            force = True
-
-    if save:
-        v = Variants(input, sample)
-        if force:
-            print("\tForce used, emptying Variant related results.")
-            v.delete_objects()
-        v.insert_variants()
+    v = Variants(sample, version, files['variants'])
+    v.insert_variants()
 
 
 class Variants(object):
     """Insert VCF into the database."""
-
-    def __init__(self, input, sample):
+    def __init__(self, sample, version, variants):
         """Initialize variables."""
         self.sample = sample
+        self.name = sample.name
+        self.version = version
 
         # Read VCF and get required data from database
-        self.open_vcf(input)
+        self.open_vcf(variants)
         self.get_reference_instance()
         self.get_annotation_instances()
         self.get_feature_instances()
@@ -98,17 +64,29 @@ class Variants(object):
         # Read through VCF
         self.read_vcf()
 
+    @transaction.atomic
+    @timeit
     def insert_variants(self):
-        """Insert variants into the database."""
-        self.insert_snps()
-        self.insert_indels()
-        self.insert_counts()
+        """Insert variant counts."""
+        try:
+            Variant.objects.create(
+                sample=self.sample,
+                version=self.version,
+                reference=self.reference,
+                snp_count=len(self.snps),
+                indel_count=len(self.indels),
+                snp=self.snps,
+                indel=self.indels
+            )
+        except IntegrityError:
+            raise CommandError(f'{self.name} Error saving variants {e}')
 
     @timeit
-    def open_vcf(self, input):
+    def open_vcf(self, vcf_file):
         """Read input VCF file."""
         try:
-            self.vcf_reader = vcf.Reader(open(input, 'r'), compressed=True)
+            self.vcf_reader = vcf.Reader(filename=vcf_file, compressed=True,
+                                         encoding='utf-8')
             self.records = [record for record in self.vcf_reader]
         except IOError:
             raise CommandError('{0} does not exist'.format(input))
@@ -117,7 +95,7 @@ class Variants(object):
     def get_reference_instance(self):
         """Get reference instance."""
         try:
-            r = self.vcf_reader.contigs.keys()[0]
+            r = list(self.vcf_reader.contigs.keys())[0]
             self.reference, created = Reference.objects.get_or_create(
                 name=r
             )
@@ -303,6 +281,7 @@ class Variants(object):
             is_genic=record.INFO['IsGenic'],
         )
 
+    @timeit
     def get_snps(self):
         """Get all the snps in the database, for positions to be inserted."""
         self.all_snps = {}
@@ -365,11 +344,11 @@ class Variants(object):
                     reference_base=record.REF,
                     alternate_base=(record.ALT if len(record.ALT) > 1 else
                                     record.ALT[0]),
-                )
+                ).pk
             except Indel.DoesNotExist:
                 try:
                     indel = self.create_indel(record, reference, annotation,
-                                              feature)
+                                              feature).pk
                 except IntegrityError:
                     print("trying Indel ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT
@@ -388,6 +367,15 @@ class Variants(object):
             annotation = self.get_annotation(record)
             feature = self.get_feature(record.INFO['FeatureType'][0])
             record_filters = self.get_filter(record.FILTER)
+            variant = OrderedDict()
+            if record.is_snp:
+                comment = self.get_comment(record.INFO['Comments'][0])
+                variant['snp_id'] = self.get_snp(record, self.reference,
+                                                 annotation, feature)
+                variant['comment'] = comment.pk
+            else:
+                variant['indel_id'] = self.get_indel(record, self.reference,
+                                                     annotation, feature)
 
             # Store variant confidence
             sample_data = record.samples[0].data
@@ -412,83 +400,70 @@ class Variants(object):
             except AttributeError:
                 PL = ""
 
-            confidence = {
-                'AC': str(record.INFO['AC']),
-                'AD': str(AD),
-                'AF': str(record.INFO['AF'][0]),
-                'DP': str(record.INFO['DP']),
-                'GQ': str(GQ),
-                'GT': str(GT),
-                'MQ': str(record.INFO['MQ']),
-                'PL': str(PL),
-                'QD': str(QD),
-                'quality': str(record.QUAL)
-            }
+            variant['filter_id'] = record_filters.pk
+            variant['AC'] = record.INFO['AC'],
+            variant['AD'] = AD,
+            variant['AF'] = record.INFO['AF'][0],
+            variant['DP'] = record.INFO['DP'],
+            variant['GQ'] = GQ,
+            variant['GT'] = GT,
+            variant['MQ'] = record.INFO['MQ'],
+            variant['PL'] = PL,
+            variant['QD'] = QD,
+            variant['quality'] = record.QUAL
 
-            # Insert SNP/Indel
             if record.is_snp:
-                comment = self.get_comment(record.INFO['Comments'][0])
-                snp = self.get_snp(record, self.reference, annotation, feature)
-
-                # Store SNP
-                try:
-                    self.snps.append(
-                        ToSNP(
-                            sample=self.sample,
-                            snp_id=snp,
-                            comment=comment,
-                            filters=record_filters,
-                            confidence=confidence
-                        )
-                    )
-                except IntegrityError as e:
-                    raise CommandError('ToSNP Error: {0}'.format(e))
+                self.snps.append(variant)
             else:
-                indel = self.get_indel(record, self.reference, annotation,
-                                       feature)
+                self.indels.append(variant)
 
-                # Insert InDel
-                try:
-                    self.indels.append(
-                        ToIndel(
-                            sample=self.sample,
-                            indel=indel,
-                            filters=record_filters,
-                            confidence=confidence
-                        )
-                    )
-                except IntegrityError as e:
-                    raise CommandError('ToIndel Error: {0}'.format(e))
 
-    @transaction.atomic
-    @timeit
-    def delete_objects(self):
-        """Delete all objects for a given sample."""
-        ToSNP.objects.filter(sample=self.sample).delete()
-        ToIndel.objects.filter(sample=self.sample).delete()
-        Counts.objects.filter(sample=self.sample).delete()
+@timeit
+def generate_reference_snps(path, name, sequence):
+    """
+    Generate all possible SNPs in a given reference genome.
 
-    @transaction.atomic
-    @timeit
-    def insert_snps(self):
-        """Insert to snps in bulk."""
-        ToSNP.objects.bulk_create(self.snps, batch_size=50000)
-        return None
+    ##fileformat=VCFv4.1
+    ##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes,
+    for each ALT allele, in the same order as listed">
+    ##reference=file:///staphopia/ebs/analysis-pipeline/tool-data/snp/n315.fasta
+    ##contig=<ID=gi|29165615|ref|NC_002745.2|,length=2814816>
+    #CHROM  POS ID  REF ALT QUAL    FILTER  INFO    FORMAT  GATK
+    CHROM   gi|29165615|ref|NC_002745.2|
+    POS     7
+    ID      .
+    REF     A
+    ALT     G
+    QUAL    27.77
+    FILTER  LowQual
+    INFO    AC=1;AF=0.5;AN=2;...;VariantType=SNP
+    FORMAT  GT:AD:DP:GQ:PL
+    GATK    0/1:5,2:7:56:56,0,176
+    """
+    # Open Reference FASTA
+    vcf = []
+    vcf.append('##fileformat=VCFv4.1')
+    vcf.append(f'##reference=file:///{path}')
+    vcf.append(''.join([
+          '##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in '
+          'genotypes, for each ALT allele, in the same order as listed">'
+    ]))
+    vcf.append(''.join([
+        '##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths '
+        'for the ref and alt alleles in the order listed">'
+    ]))
+    vcf.append('##FILTER=<ID=LowQual,Description="Low quality">')
+    vcf.append(f'##contig=<ID={name},length={len(sequence)}>')
+    vcf.append("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tGATK")
 
-    @transaction.atomic
-    @timeit
-    def insert_indels(self):
-        """Insert to indels in bulk."""
-        ToIndel.objects.bulk_create(self.indels, batch_size=50000)
-        return None
-
-    @transaction.atomic
-    @timeit
-    def insert_counts(self):
-        """Insert variant counts."""
-        Counts.objects.create(
-            sample=self.sample,
-            snp=len(self.snps),
-            indel=len(self.indels),
-        )
-        return None
+    bases = ['A', 'C', 'G', 'T']
+    for pos, ref_base in enumerate(sequence):
+        for base in bases:
+            if base == ref_base:
+                continue
+            else:
+                vcf.append('\t'.join([
+                    name, str(pos + 1), '.', ref_base, base, '0.00',
+                    'LowQual', 'AC=1', 'AD', '1'
+                ]))
+    return vcf

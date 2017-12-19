@@ -1,11 +1,13 @@
 """Insert variant analysis results into database."""
 import sys
 import vcf
+import time
 
 from django.db import connection, transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
+from staphopia.utils import timeit
 from variant.models import Annotation, Feature, Comment, Reference, SNP
 
 
@@ -48,6 +50,7 @@ class Command(BaseCommand):
         self.snps = []
 
         # Read through VCF
+        self.time = time.time()
         self.read_vcf()
 
         # Ready to insert variants
@@ -58,6 +61,7 @@ class Command(BaseCommand):
         try:
             self.vcf_reader = vcf.Reader(open(input, 'r'),
                                          compressed=compressed)
+
         except IOError:
             raise CommandError('{0} does not exist'.format(input))
 
@@ -65,7 +69,7 @@ class Command(BaseCommand):
     def get_reference_instance(self):
         """Get the set of reference instances."""
         try:
-            r = self.vcf_reader.contigs.keys()[0]
+            r = list(self.vcf_reader.contigs.keys())[0]
             self.reference, created = Reference.objects.get_or_create(
                 name=r,
                 length=self.vcf_reader.contigs[r].length
@@ -216,6 +220,7 @@ class Command(BaseCommand):
     def read_vcf(self):
         """Read throught VCF Records."""
         count = 0
+
         for record in self.vcf_reader:
             # Get annotation, filter, comment
             annotation = self.get_annotation(record)
@@ -227,7 +232,13 @@ class Command(BaseCommand):
                 self.create_snp(record, self.reference, annotation, feature)
                 count += 1
                 if count % 100000 == 0:
-                    print("Processed {0} SNPs".format(count))
+                    total_time = f'{time.time() - self.time:.2f}'
+                    rate = f'{100000 / float(total_time):.2f}'
+                    print(''.join([
+                        f'Processed 10k, Total {count} SNPs ',
+                        f'(took {total_time}s, {rate} snp/s")'
+                    ]))
+                    self.time = time.time()
 
     @transaction.atomic
     def insert_snps(self):
@@ -240,8 +251,8 @@ class Command(BaseCommand):
         """Empty Tables and Reset id counters to 1."""
         tables = ['variant_toindel', 'variant_tosnp', 'variant_snp',
                   'variant_indel', 'variant_annotation', 'variant_comment',
-                  'variant_confidence', 'variant_counts', 'variant_feature',
-                  'variant_filter', 'variant_reference', 'variant_snpcounts']
+                  'variant_counts', 'variant_feature',
+                  'variant_filter', 'variant_snpcounts']
 
         for table in tables:
             self.empty_table(table)

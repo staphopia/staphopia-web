@@ -10,24 +10,23 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 
 from sample.models import Sample
+from version.models import Version
 
 
-class ToIndel(models.Model):
+class Variant(models.Model):
     """A linking table between samples and InDels."""
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    indel = models.ForeignKey('Indel', on_delete=models.CASCADE)
-    filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
-    confidence = JSONField()
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='toindel_version')
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    snp_count = models.PositiveIntegerField(default=0)
+    indel_count = models.PositiveIntegerField(default=0)
+    snp = JSONField()
+    indel = JSONField()
 
     class Meta:
-        unique_together = ('sample', 'indel')
-
-    def indel_id(self):
-        """Display InDel id in admin view."""
-        return self.indel.pk
-    indel_id.short_description = 'InDel ID'
-    indel_id.admin_order_field = 'indel'
+        unique_together = ('sample', 'version', 'reference')
 
 
 class Indel(models.Model):
@@ -58,36 +57,6 @@ class Indel(models.Model):
         return fasta.replace('.FASTA', '')
     reference_strain.short_description = 'Reference Strain'
     reference_strain.admin_order_field = 'reference'
-
-
-class ToSNP(models.Model):
-    """A linking table between samples and SNPs."""
-
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
-    comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
-    filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
-    confidence = JSONField()
-
-    class Meta:
-        unique_together = ('sample', 'snp')
-
-    def sample_tag(self):
-        """Display sample_tag in admin view."""
-        return self.variant.sample.sample_tag
-    sample_tag.short_description = 'Sample Tag'
-    sample_tag.admin_order_field = 'variant'
-
-    def snp_id(self):
-        """Display InDel id in admin view."""
-        return self.snp.pk
-    snp_id.short_description = 'SNP ID'
-    snp_id.admin_order_field = 'snp'
-
-    def snp_count(self):
-        """Display snp_counts in admin view."""
-        return self.objects.filter(variant=self.variant).count()
-    snp_count.short_description = 'SNP Count'
 
 
 class SNP(models.Model):
@@ -131,14 +100,6 @@ class SNP(models.Model):
         return fasta.replace('.FASTA', '')
     reference_strain.short_description = 'Reference Strain'
     reference_strain.admin_order_field = 'reference'
-
-
-class Counts(models.Model):
-    """Counts for quick reference."""
-
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    snp = models.PositiveIntegerField(default=0)
-    indel = models.PositiveIntegerField(default=0)
 
 
 class SNPCounts(models.Model):

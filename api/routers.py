@@ -48,8 +48,7 @@ from api.viewsets.variants import (
     CommentViewSet,
     FeatureViewSet,
     FilterViewSet,
-    ReferenceViewSet,
-    CountsViewSet
+    ReferenceViewSet
 )
 
 # Test Related
@@ -113,7 +112,6 @@ router.register(r'variant/comment', CommentViewSet)
 router.register(r'variant/feature', FeatureViewSet)
 router.register(r'variant/filter', FilterViewSet)
 router.register(r'variant/reference', ReferenceViewSet)
-router.register(r'variant/count', CountsViewSet)
 
 # Test Related Tables
 router.register(r'tests', TestsViewSet, base_name='tests')
