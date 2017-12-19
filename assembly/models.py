@@ -44,7 +44,7 @@ class Summary(models.Model):
                                related_name='assembly_summary_sample')
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='assembly_summary_version')
-    total_contig = models.PositiveSmallIntegerField()
+    total_contig = models.PositiveIntegerField()
     total_contig_length = models.PositiveIntegerField()
 
     min_contig_length = models.PositiveIntegerField()
@@ -53,14 +53,14 @@ class Summary(models.Model):
     max_contig_length = models.PositiveIntegerField()
 
     n50_contig_length = models.PositiveIntegerField(default=0)
-    l50_contig_count = models.PositiveSmallIntegerField(default=0)
+    l50_contig_count = models.PositiveIntegerField(default=0)
     ng50_contig_length = models.PositiveIntegerField(default=0)
-    lg50_contig_count = models.PositiveSmallIntegerField(default=0)
+    lg50_contig_count = models.PositiveIntegerField(default=0)
 
-    contigs_greater_1k = models.PositiveSmallIntegerField()
-    contigs_greater_10k = models.PositiveSmallIntegerField()
-    contigs_greater_100k = models.PositiveSmallIntegerField()
-    contigs_greater_1m = models.PositiveSmallIntegerField()
+    contigs_greater_1k = models.PositiveIntegerField()
+    contigs_greater_10k = models.PositiveIntegerField()
+    contigs_greater_100k = models.PositiveIntegerField()
+    contigs_greater_1m = models.PositiveIntegerField()
 
     percent_contigs_greater_1k = models.DecimalField(max_digits=5,
                                                      decimal_places=2)
@@ -77,7 +77,7 @@ class Summary(models.Model):
     contig_percent_c = models.DecimalField(max_digits=5, decimal_places=2)
     contig_percent_n = models.DecimalField(max_digits=5, decimal_places=2)
     contig_non_acgtn = models.DecimalField(max_digits=5, decimal_places=2)
-    num_contig_non_acgtn = models.PositiveSmallIntegerField()
+    num_contig_non_acgtn = models.PositiveIntegerField()
 
     def sample_tag(self):
         """Display sample tag in admin view."""
