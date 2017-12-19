@@ -353,7 +353,7 @@ class Variants(object):
                     print("trying Indel ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT
                     ), file=sys.stderr)
-                    time.sleep(1)
+                    time.sleep(0.33)
                     continue
 
         return indel

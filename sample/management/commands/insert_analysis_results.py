@@ -6,12 +6,12 @@ from django.db import transaction
 from django.core.management.base import BaseCommand
 
 from sample.tools import prep_insert
-from assembly.tools import insert_assembly_stats, insert_assembly_contigs
+from assembly.tools import insert_assembly
 from mlst.tools import insert_mlst_results
-from plasmid.tools import insert_plasmid_stats, insert_plasmid_contigs
-from sccmec.tools import insert_sccmec_coverage, insert_sccmec_blast
+from plasmid.tools import insert_plasmid
+from sccmec.tools import insert_sccmec
 from sequence.tools import insert_sequence_stats
-from variant.tools import insert_variant_results
+from variant.tools import insert_variants
 
 
 class Command(BaseCommand):
@@ -43,33 +43,21 @@ class Command(BaseCommand):
         insert_sequence_stats(sample, version, files, force=opts['force'])
 
         print(f'{sample.name}: Inserting Assembly Stats...')
-        insert_assembly_stats(sample, version, files, force=opts['force'])
-        insert_assembly_contigs(sample, version, files, force=opts['force'])
+        insert_assembly(sample, version, files, force=opts['force'])
 
         if files['plasmid']:
             print(f'{sample.name}: Inserting Plasmid Assembly Stats...')
-            insert_plasmid_stats(sample, version, files, force=opts['force'])
-            insert_plasmid_contigs(sample, version, files, force=opts['force'])
+            insert_plasmid(sample, version, files, force=opts['force'])
 
         print(f'{sample.name}: Inserting MLST Results...')
         insert_mlst_results(sample, version, files, force=opts['force'])
 
+        print(f'{sample.name}: Inserting SCCmec Results...')
+        insert_sccmec(sample, version, files, force=opts['force'])
+
+        print(f'{sample.name}: Inserting Variant Results...')
+        insert_variants(sample, version, files, force=opts['force'])
         '''
-        print("Inserting SCCmec Coverage Stats...")
-        insert_sccmec_coverage(files['sccmec_coverage'], sample,
-                               force=opts['force'], skip=opts['skip_existing'])
-        insert_sccmec_blast(files['sccmec_primers'], sample, is_primers=True,
-                            force=opts['force'], skip=opts['skip_existing'])
-        insert_sccmec_blast(files['sccmec_proteins'], sample, is_primers=False,
-                            force=opts['force'], skip=opts['skip_existing'])
-        insert_sccmec_blast(files['sccmec_subtypes'], sample, is_primers=False,
-                            is_subtype=True, force=opts['force'],
-                            skip=opts['skip_existing'])
-
-        print("Inserting Variants...")
-        insert_variant_results(files['variants'], sample, force=opts['force'],
-                               skip=opts['skip_existing'])
-
         print("Inserting Gene Annotations...")
         insert_gene_annotations(
             files['annotation_genes'], files['annotation_proteins'],

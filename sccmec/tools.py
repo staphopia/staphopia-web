@@ -98,12 +98,12 @@ def insert_coverage(sample, version, files):
             maximum=max(stats['coverage']),
             # mecA
             meca_total=float(f'{meca_total:.2f}'),
-            meca_minimum=min(meca) if meca_array else 0,
-            meca_median=numpy.median(meca_array) if meca_array else 0,
+            meca_minimum=min(meca) if meca_total else 0,
+            meca_median=numpy.median(meca_array) if meca_total else 0,
             meca_mean=(
-                float(f'{numpy.mean(meca_array):.2f}') if meca_array else 0.00
+                float(f'{numpy.mean(meca_array):.2f}') if meca_total else 0.00
             ),
-            meca_maximum=max(meca) if meca_array else 0,
+            meca_maximum=max(meca) if meca_total else 0,
             per_base_coverage=json.dumps(stats['per_base_coverage'],
                                          sort_keys=True)
         ))
@@ -124,44 +124,46 @@ def insert_blast(sample, version, blast, table, contigs):
     for entry in json_data['BlastOutput2']:
         hit = entry['report']['results']['search']
         if len(hit['hits']):
-            # Get query and contig
-            query = get_blast_query(hit['query_title'], hit['query_len'])
-            contig = contigs[hit['hits'][0]['description'][0]['title']]
+            # Filter results on a contig <= 200bp
+            if hit['hits'][0]['description'][0]['title'] in contigs:
+                # Get query and contig
+                query = get_blast_query(hit['query_title'], hit['query_len'])
+                contig = contigs[hit['hits'][0]['description'][0]['title']]
 
-            # Only storing the top hit
-            hsp = hit['hits'][0]['hsps'][0]
+                # Only storing the top hit
+                hsp = hit['hits'][0]['hsps'][0]
 
-            # Includes mismatches and gaps
-            mismatch = hsp['align_len'] - hsp['identity']
+                # Includes mismatches and gaps
+                mismatch = hsp['align_len'] - hsp['identity']
 
-            # Hamming distance
-            hd = mismatch
-            if hit['query_len'] > hsp['align_len']:
-                # Include those bases that weren't aligned
-                hd = hit['query_len'] - hsp['align_len'] + mismatch
+                # Hamming distance
+                hd = mismatch
+                if hit['query_len'] > hsp['align_len']:
+                    # Include those bases that weren't aligned
+                    hd = hit['query_len'] - hsp['align_len'] + mismatch
 
-            hits.append(table(
-                sample=sample,
-                version=version,
-                contig=contig,
-                query=query,
+                hits.append(table(
+                    sample=sample,
+                    version=version,
+                    contig=contig,
+                    query=query,
 
-                bitscore=int(hsp['bit_score']),
-                evalue=hsp['evalue'],
-                identity=hsp['identity'],
-                mismatch=mismatch,
-                gaps=hsp['gaps'],
-                hamming_distance=hd,
-                query_from=hsp['query_from'],
-                query_to=hsp['query_to'],
-                hit_from=hsp['hit_from'],
-                hit_to=hsp['hit_to'],
-                align_len=hsp['align_len'],
+                    bitscore=int(hsp['bit_score']),
+                    evalue=hsp['evalue'],
+                    identity=hsp['identity'],
+                    mismatch=mismatch,
+                    gaps=hsp['gaps'],
+                    hamming_distance=hd,
+                    query_from=hsp['query_from'],
+                    query_to=hsp['query_to'],
+                    hit_from=hsp['hit_from'],
+                    hit_to=hsp['hit_to'],
+                    align_len=hsp['align_len'],
 
-                qseq=hsp['qseq'],
-                hseq=hsp['hseq'],
-                midline=hsp['midline']
-            ))
+                    qseq=hsp['qseq'],
+                    hseq=hsp['hseq'],
+                    midline=hsp['midline']
+                ))
 
     try:
         table.objects.bulk_create(hits, batch_size=5000)
