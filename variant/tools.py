@@ -377,6 +377,7 @@ class Variants(object):
         print(f'{self.name}, Found {len(self.all_indels)} existing indels.')
 
     @timeit
+    @transaction.atomic
     def process_indels(self):
         self.get_indels()
         new_indels = []
@@ -421,6 +422,10 @@ class Variants(object):
             # Store variant confidence
             AD = f'{record.gt_ref_depths[0]},{record.gt_alt_depths[0]}'
             PL = f'{record.gt_phred_ll_homref[0]}, {record.gt_phred_ll_het[0]}'
+            try:
+                QD = f'{record.INFO["QD"]:.2f}'
+            except KeyError:
+                QD = '.'
             variant['AC'] = record.INFO.get('AC'),
             variant['AD'] = AD,
             variant['AF'] = record.INFO['AF'],
@@ -429,7 +434,7 @@ class Variants(object):
             variant['GT'] = f'{record.gt_depths[0]}',
             variant['MQ'] = f'{record.INFO["MQ"]:.2f}',
             variant['PL'] = PL,
-            variant['QD'] = f'{record.INFO["QD"]:.2f}',
+            variant['QD'] = QD,
             variant['quality'] = f'{record.QUAL:.2f}'
 
             if record.is_snp:
