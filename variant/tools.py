@@ -401,15 +401,15 @@ class Variants(object):
                 PL = ""
 
             variant['filter_id'] = record_filters.pk
-            variant['AC'] = record.INFO['AC'],
-            variant['AD'] = AD,
-            variant['AF'] = record.INFO['AF'][0],
-            variant['DP'] = record.INFO['DP'],
-            variant['GQ'] = GQ,
-            variant['GT'] = GT,
-            variant['MQ'] = record.INFO['MQ'],
-            variant['PL'] = PL,
-            variant['QD'] = QD,
+            variant['AC'] = str(record.INFO['AC']),
+            variant['AD'] = str(AD),
+            variant['AF'] = str(record.INFO['AF'][0]),
+            variant['DP'] = str(record.INFO['DP']),
+            variant['GQ'] = str(GQ),
+            variant['GT'] = str(GT),
+            variant['MQ'] = str(record.INFO['MQ']),
+            variant['PL'] = str(PL),
+            variant['QD'] = str(QD),
             variant['quality'] = record.QUAL
 
             if record.is_snp:
