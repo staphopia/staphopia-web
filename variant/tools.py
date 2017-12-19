@@ -34,6 +34,7 @@ def insert_variants(sample, version, files, force=False):
         Variant.objects.filter(sample=sample, version=version).delete()
 
     v = Variants(sample, version, files['variants'])
+    v.process_indels()
     v.insert_variants()
 
 
@@ -59,6 +60,9 @@ class Variants(object):
 
         # Lists for bulk creation
         self.snps = []
+        self.temp_indels = []
+        self.indel_queries = []
+        self.indel_positions = []
         self.indels = []
 
         # Read through VCF
@@ -245,38 +249,6 @@ class Variants(object):
 
         return comment
 
-    @transaction.atomic
-    @timeit
-    def create_snp(self, record, reference, annotation, feature):
-        """Create a new snp."""
-        print(record.POS, feature.feature)
-        return SNP.objects.create(
-            reference=reference,
-            annotation=annotation,
-            feature=feature,
-            reference_position=record.POS,
-            reference_base=record.REF,
-            alternate_base=record.ALT[0],
-
-            reference_codon=('.' if record.INFO['RefCodon'][0] is None
-                             else record.INFO['RefCodon'][0]),
-            alternate_codon=('.' if record.INFO['AltCodon'][0] is None
-                             else record.INFO['AltCodon'][0]),
-            reference_amino_acid=('.' if record.INFO['RefAminoAcid'][0] is None
-                                  else record.INFO['RefAminoAcid'][0]),
-            alternate_amino_acid=('.' if record.INFO['AltAminoAcid'][0] is None
-                                  else record.INFO['AltAminoAcid'][0]),
-            codon_position=(0 if record.INFO['CodonPosition'] is None
-                            else record.INFO['CodonPosition']),
-            snp_codon_position=(0 if record.INFO['SNPCodonPosition'] is None
-                                else record.INFO['SNPCodonPosition']),
-            amino_acid_change=('.' if record.INFO['AminoAcidChange'][0] is None
-                               else record.INFO['AminoAcidChange'][0]),
-            is_synonymous=record.INFO['IsSynonymous'],
-            is_transition=record.INFO['IsTransition'],
-            is_genic=record.INFO['IsGenic'],
-        )
-
     @timeit
     def get_snps(self):
         """Get all the snps in the database, for positions to be inserted."""
@@ -292,6 +264,7 @@ class Variants(object):
             )
             self.all_snps[key] = snp.pk
 
+    @transaction.atomic
     def get_snp(self, record, reference, annotation, feature):
         """Get an individual snp."""
         snp = False
@@ -304,55 +277,135 @@ class Variants(object):
                 )]
             except KeyError:
                 try:
-                    snp = self.create_snp(record, reference, annotation,
-                                          feature).pk
+                    print(record.POS, feature.feature)
+                    snp = SNP.objects.create(
+                        reference=reference,
+                        annotation=annotation,
+                        feature=feature,
+                        reference_position=record.POS,
+                        reference_base=record.REF,
+                        alternate_base=record.ALT[0],
+
+                        reference_codon=(
+                            '.' if record.INFO['RefCodon'][0] is None
+                            else record.INFO['RefCodon'][0]
+                        ),
+                        alternate_codon=(
+                            '.' if record.INFO['AltCodon'][0] is None
+                            else record.INFO['AltCodon'][0]
+                        ),
+                        reference_amino_acid=(
+                            '.' if record.INFO['RefAminoAcid'][0] is None
+                            else record.INFO['RefAminoAcid'][0]
+                        ),
+                        alternate_amino_acid=(
+                            '.' if record.INFO['AltAminoAcid'][0] is None
+                            else record.INFO['AltAminoAcid'][0]
+                        ),
+                        codon_position=(
+                            0 if record.INFO['CodonPosition'] is None
+                            else record.INFO['CodonPosition']
+                        ),
+                        snp_codon_position=(
+                            0 if record.INFO['SNPCodonPosition'] is None
+                            else record.INFO['SNPCodonPosition']
+                        ),
+                        amino_acid_change=(
+                            '.' if record.INFO['AminoAcidChange'][0] is None
+                            else record.INFO['AminoAcidChange'][0]
+                        ),
+                        is_synonymous=record.INFO['IsSynonymous'],
+                        is_transition=record.INFO['IsTransition'],
+                        is_genic=record.INFO['IsGenic'],
+                    )
                 except IntegrityError:
-                    print("trying SNP ({0},{1}->{2}) again".format(
+                    print("Trying SNP ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT[0]
                     ), file=sys.stderr)
-                    time.sleep(1)
+                    time.sleep(0.33)
                     continue
 
         return snp
 
+    @timeit
     @transaction.atomic
-    def create_indel(self, record, reference, annotation, feature):
-        """Create a new indel."""
-        return Indel.objects.create(
-            reference=reference,
-            annotation=annotation,
-            feature=feature,
-            reference_position=record.POS,
-            reference_base=record.REF,
-            alternate_base=(record.ALT if len(record.ALT) > 1 else
-                            record.ALT[0]),
-            is_deletion=record.is_deletion
-        )
-
     def get_indel(self, record, reference, annotation, feature):
         """Get or create InDel."""
         indel = False
         while not indel:
             try:
-                indel = Indel.objects.get(
-                    reference=reference,
-                    reference_position=record.POS,
-                    reference_base=record.REF,
-                    alternate_base=(record.ALT if len(record.ALT) > 1 else
-                                    record.ALT[0]),
-                ).pk
-            except Indel.DoesNotExist:
+                indel = self.all_indels[(
+                    record.POS,
+                    record.REF,
+                    str(record.ALT[0])
+                )]
+            except KeyError:
                 try:
-                    indel = self.create_indel(record, reference, annotation,
-                                              feature).pk
-                except IntegrityError:
-                    print("trying Indel ({0},{1}->{2}) again".format(
-                        record.POS, record.REF, record.ALT
+                    indel = Indel.objects.create(
+                        reference=reference,
+                        annotation=annotation,
+                        feature=feature,
+                        reference_position=record.POS,
+                        reference_base=record.REF,
+                        alternate_base=(record.ALT if len(record.ALT) > 1 else
+                                        record.ALT[0]),
+                        is_deletion=record.is_deletion
+                    ).pk
+                except IntegrityError as e:
+                    print("Trying Indel ({0},{1}->{2}) again: {3}".format(
+                        record.POS, record.REF, record.ALT[0], e
                     ), file=sys.stderr)
-                    time.sleep(1)
+                    time.sleep(0.33)
                     continue
 
         return indel
+
+    @timeit
+    def get_indels(self):
+        """Get all the snps in the database, for positions to be inserted."""
+        self.all_indels = {}
+        for indel in Indel.objects.filter(
+            reference=self.reference,
+            reference_position__in=self.indel_positions
+        ):
+            key = (
+                indel.reference_position,
+                indel.reference_base,
+                indel.alternate_base
+            )
+            self.all_indels[key] = indel.pk
+        print(f'{self.name}, Found {len(self.all_indels)} existing indels.')
+
+    @timeit
+    def process_indels(self):
+        self.get_indels()
+        new_indels = []
+        for row in self.indel_queries:
+            indel = list(row.keys())[0]
+            vals = row[indel]
+            if indel not in self.all_indels:
+                new_indels.append(Indel(
+                    reference=vals['reference'],
+                    annotation=vals['annotation'],
+                    feature=vals['feature'],
+                    reference_position=vals['record'].POS,
+                    reference_base=vals['record'].REF,
+                    alternate_base=(
+                        vals['record'].ALT if len(vals['record'].ALT) > 1
+                        else vals['record'].ALT[0]
+                    ),
+                    is_deletion=vals['record'].is_deletion
+                ))
+
+        if len(new_indels):
+            print(f'{self.name}, adding {len(new_indels)} new indels.')
+            Indel.objects.bulk_create(new_indels)
+            self.get_indels()
+
+        for indel in self.temp_indels:
+            variant = indel['data']
+            variant['indel_id'] = self.all_indels[indel['key']]
+            self.indels.append(variant)
 
     @timeit
     def read_vcf(self):
@@ -363,17 +416,8 @@ class Variants(object):
             annotation = self.get_annotation(record)
             feature = self.get_feature(record.INFO['FeatureType'][0])
             record_filters = self.get_filter(record.FILTER)
-            variant = OrderedDict()
-            if record.is_snp:
-                comment = self.get_comment(record.INFO['Comments'][0])
-                variant['snp_id'] = self.get_snp(record, self.reference,
-                                                 annotation, feature)
-                variant['comment'] = comment.pk
-            else:
-                variant['indel_id'] = self.get_indel(record, self.reference,
-                                                     annotation, feature)
+            variant = {}
             variant['filter_id'] = record_filters.pk
-
             # Store variant confidence
             AD = f'{record.gt_ref_depths[0]},{record.gt_alt_depths[0]}'
             PL = f'{record.gt_phred_ll_homref[0]}, {record.gt_phred_ll_het[0]}'
@@ -389,9 +433,23 @@ class Variants(object):
             variant['quality'] = f'{record.QUAL:.2f}'
 
             if record.is_snp:
+                comment = self.get_comment(record.INFO['Comments'][0])
+                variant['snp_id'] = self.get_snp(record, self.reference,
+                                                 annotation, feature)
+                variant['comment'] = comment.pk
                 self.snps.append(variant)
             else:
-                self.indels.append(variant)
+                key = (record.POS, record.REF, str(record.ALT[0]))
+                self.indel_positions.append(record.POS)
+                self.indel_queries.append({
+                    key: {
+                        'record': record,
+                        'reference': self.reference,
+                        'annotation': annotation,
+                        'feature': feature,
+                    }
+                })
+                self.temp_indels.append({'key': key, 'data': variant})
 
 
 @timeit
