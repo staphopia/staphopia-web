@@ -369,34 +369,36 @@ class Variants(object):
     @timeit
     def process_indels(self):
         new_indels = []
+        self.get_indels()
         for row in self.indel_queries:
             indel = list(row.keys())[0]
             vals = row[indel]
-            new_indels.append("({0},{1},{2},{3},'{4}','{5}',{6})".format(
-                vals['reference'].pk,
-                vals['annotation'].pk,
-                vals['feature'].pk,
-                vals['record'].POS,
-                vals['record'].REF,
-                (
-                    vals['record'].ALT if len(vals['record'].ALT) > 1
-                    else vals['record'].ALT[0]
-                ),
-                vals['record'].is_deletion
-            ))
+            if indel not in self.all_indels:
+                new_indels.append("({0},{1},{2},{3},'{4}','{5}',{6})".format(
+                    vals['reference'].pk,
+                    vals['annotation'].pk,
+                    vals['feature'].pk,
+                    vals['record'].POS,
+                    vals['record'].REF,
+                    (
+                        vals['record'].ALT if len(vals['record'].ALT) > 1
+                        else vals['record'].ALT[0]
+                    ),
+                    vals['record'].is_deletion
+                ))
 
         if len(new_indels):
             success = False
             while not success:
                 try:
                     success = self.upsert_indels(new_indels)
+                    self.get_indels()
                 except IntegrityError as e:
                     print(f"{self.name} Trying Bulk Indel Insert Again, {e}",
                           file=sys.stderr)
                     time.sleep(0.33)
                     continue
 
-        self.get_indels()
         for indel in self.temp_indels:
             variant = indel['data']
             variant['indel_id'] = self.all_indels[indel['key']]
