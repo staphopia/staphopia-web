@@ -19,7 +19,7 @@ requests
 
 # Needs Testing
 django-datatables-view==1.14.0
-PyVCF==0.6.8
+cyvcf2
 
 # Not Django 2.0 or Python 3.6 compatible
 # django-email-changer==0.1.2

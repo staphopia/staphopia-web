@@ -7,7 +7,7 @@ from variant.tools import UTIL1, UTIL2, etc...
 from collections import OrderedDict
 import sys
 import time
-import vcf
+from cyvcf2 import VCF
 
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -85,8 +85,7 @@ class Variants(object):
     def open_vcf(self, vcf_file):
         """Read input VCF file."""
         try:
-            self.vcf_reader = vcf.Reader(filename=vcf_file, compressed=True,
-                                         encoding='utf-8')
+            self.vcf_reader = VCF(vcf_file)
             self.records = [record for record in self.vcf_reader]
         except IOError:
             raise CommandError('{0} does not exist'.format(input))
@@ -95,7 +94,7 @@ class Variants(object):
     def get_reference_instance(self):
         """Get reference instance."""
         try:
-            r = list(self.vcf_reader.contigs.keys())[0]
+            r = self.vcf_reader.seqnames[0]
             self.reference, created = Reference.objects.get_or_create(
                 name=r
             )
@@ -213,21 +212,18 @@ class Variants(object):
         return annotation
 
     @transaction.atomic
-    def get_filter(self, filter):
+    def get_filter(self, name):
         """Get the GATK filter applid to the entry."""
         record_filters = None
-        f = None
-        if len(filter) == 0:
-            f = 'PASS'
-        else:
-            f = ', '.join(filter)
+        if not name:
+            name = 'PASS'
 
-        if f in self.filters:
-            pk = self.filters[f]
+        if name in self.filters:
+            pk = self.filters[name]
             record_filters = self.filter_instances[pk]
         else:
-            record_filters = Filter.objects.create(name=f)
-            self.filters[f] = record_filters.pk
+            record_filters = Filter.objects.create(name=name)
+            self.filters[name] = record_filters.pk
             self.filter_instances[record_filters.pk] = record_filters
 
         return record_filters
@@ -353,7 +349,7 @@ class Variants(object):
                     print("trying Indel ({0},{1}->{2}) again".format(
                         record.POS, record.REF, record.ALT
                     ), file=sys.stderr)
-                    time.sleep(0.33)
+                    time.sleep(1)
                     continue
 
         return indel
@@ -376,41 +372,21 @@ class Variants(object):
             else:
                 variant['indel_id'] = self.get_indel(record, self.reference,
                                                      annotation, feature)
+            variant['filter_id'] = record_filters.pk
 
             # Store variant confidence
-            sample_data = record.samples[0].data
-            QD = record.INFO['QD'] if 'QD' in record.INFO else 0.0
-            try:
-                AD = sample_data.AD
-            except AttributeError:
-                AD = ""
-
-            try:
-                GQ = sample_data.GQ
-            except AttributeError:
-                GQ = 0
-
-            try:
-                GT = sample_data.GT
-            except AttributeError:
-                GT = ""
-
-            try:
-                PL = sample_data.PL
-            except AttributeError:
-                PL = ""
-
-            variant['filter_id'] = record_filters.pk
-            variant['AC'] = str(record.INFO['AC']),
-            variant['AD'] = str(AD),
-            variant['AF'] = str(record.INFO['AF'][0]),
-            variant['DP'] = str(record.INFO['DP']),
-            variant['GQ'] = str(GQ),
-            variant['GT'] = str(GT),
-            variant['MQ'] = str(record.INFO['MQ']),
-            variant['PL'] = str(PL),
-            variant['QD'] = str(QD),
-            variant['quality'] = record.QUAL
+            AD = f'{record.gt_ref_depths[0]},{record.gt_alt_depths[0]}'
+            PL = f'{record.gt_phred_ll_homref[0]}, {record.gt_phred_ll_het[0]}'
+            variant['AC'] = record.INFO.get('AC'),
+            variant['AD'] = AD,
+            variant['AF'] = record.INFO['AF'],
+            variant['DP'] = record.INFO['DP'],
+            variant['GQ'] = f'{record.gt_quals[0]:.2f}',
+            variant['GT'] = f'{record.gt_depths[0]}',
+            variant['MQ'] = f'{record.INFO["MQ"]:.2f}',
+            variant['PL'] = PL,
+            variant['QD'] = f'{record.INFO["QD"]:.2f}',
+            variant['quality'] = f'{record.QUAL:.2f}'
 
             if record.is_snp:
                 self.snps.append(variant)
