@@ -9,7 +9,7 @@ import sys
 import time
 from cyvcf2 import VCF
 
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
@@ -328,39 +328,6 @@ class Variants(object):
         return snp
 
     @timeit
-    @transaction.atomic
-    def get_indel(self, record, reference, annotation, feature):
-        """Get or create InDel."""
-        indel = False
-        while not indel:
-            try:
-                indel = self.all_indels[(
-                    record.POS,
-                    record.REF,
-                    str(record.ALT[0])
-                )]
-            except KeyError:
-                try:
-                    indel = Indel.objects.create(
-                        reference=reference,
-                        annotation=annotation,
-                        feature=feature,
-                        reference_position=record.POS,
-                        reference_base=record.REF,
-                        alternate_base=(record.ALT if len(record.ALT) > 1 else
-                                        record.ALT[0]),
-                        is_deletion=record.is_deletion
-                    ).pk
-                except IntegrityError as e:
-                    print("Trying Indel ({0},{1}->{2}) again: {3}".format(
-                        record.POS, record.REF, record.ALT[0], e
-                    ), file=sys.stderr)
-                    time.sleep(0.33)
-                    continue
-
-        return indel
-
-    @timeit
     def get_indels(self):
         """Get all the snps in the database, for positions to be inserted."""
         self.all_indels = {}
@@ -378,31 +345,58 @@ class Variants(object):
 
     @timeit
     @transaction.atomic
+    def upsert_indels(self, indels):
+        success = False
+        cursor = connection.cursor()
+        sql = """INSERT INTO variant_indel (
+                    reference_id, annotation_id, feature_id,
+                    reference_position, reference_base, alternate_base,
+                    is_deletion
+                )
+                 VALUES {0}
+                 ON CONFLICT DO NOTHING;""".format(','.join(indels))
+        cursor.execute(sql)
+        try:
+            # statusmessage is of form 'INSERT 0 1'
+            new_indels = int(cursor.statusmessage.split(' ').pop())
+            print(f'{self.name}, added {new_indels} new indels.')
+            success = True
+        except (IndexError, ValueError):
+            raise Exception(f'{self.name}, Indel Upsert failed')
+
+        return success
+
+    @timeit
     def process_indels(self):
-        self.get_indels()
         new_indels = []
         for row in self.indel_queries:
             indel = list(row.keys())[0]
             vals = row[indel]
-            if indel not in self.all_indels:
-                new_indels.append(Indel(
-                    reference=vals['reference'],
-                    annotation=vals['annotation'],
-                    feature=vals['feature'],
-                    reference_position=vals['record'].POS,
-                    reference_base=vals['record'].REF,
-                    alternate_base=(
-                        vals['record'].ALT if len(vals['record'].ALT) > 1
-                        else vals['record'].ALT[0]
-                    ),
-                    is_deletion=vals['record'].is_deletion
-                ))
+            new_indels.append("({0},{1},{2},{3},'{4}','{5}',{6})".format(
+                vals['reference'].pk,
+                vals['annotation'].pk,
+                vals['feature'].pk,
+                vals['record'].POS,
+                vals['record'].REF,
+                (
+                    vals['record'].ALT if len(vals['record'].ALT) > 1
+                    else vals['record'].ALT[0]
+                ),
+                vals['record'].is_deletion
+            ))
 
         if len(new_indels):
-            print(f'{self.name}, adding {len(new_indels)} new indels.')
-            Indel.objects.bulk_create(new_indels)
-            self.get_indels()
+            success = False
+            while not success:
+                try:
+                    success = self.upsert_indels(new_indels)
+                except IntegrityError as e:
+                    print(f"{self.name} Trying Bulk Indel Insert Again, {e}",
+                          file=sys.stderr)
+                    time.sleep(0.33)
+                    continue
 
+        self.get_indels()
         for indel in self.temp_indels:
             variant = indel['data']
             variant['indel_id'] = self.all_indels[indel['key']]
