@@ -30,7 +30,6 @@ class Command(BaseCommand):
         parser.add_argument('--force', action='store_true',
                             help='Force updates for existing entries.')
 
-    @transaction.atomic
     def handle(self, *args, **opts):
         """Insert the results of sample analysis into the database."""
         # Validate all files are present, will cause error if files are missing
@@ -39,11 +38,11 @@ class Command(BaseCommand):
         )
 
         # Insert analysis results
+        print(f'{sample.name}: Inserting Variant Results...')
+        insert_variants(sample, version, files, force=opts['force'])
+
         print(f'{sample.name}: Inserting Sequence Stats...')
         insert_sequence_stats(sample, version, files, force=opts['force'])
-
-        print(f'{sample.name}: Inserting Assembly Stats...')
-        insert_assembly(sample, version, files, force=opts['force'])
 
         if files['plasmid']:
             print(f'{sample.name}: Inserting Plasmid Assembly Stats...')
@@ -52,11 +51,8 @@ class Command(BaseCommand):
         print(f'{sample.name}: Inserting MLST Results...')
         insert_mlst_results(sample, version, files, force=opts['force'])
 
-        print(f'{sample.name}: Inserting SCCmec Results...')
-        insert_sccmec(sample, version, files, force=opts['force'])
+        self.insert_dependents(sample, version, files, force=opts['force'])
 
-        print(f'{sample.name}: Inserting Variant Results...')
-        insert_variants(sample, version, files, force=opts['force'])
         '''
         print("Inserting Gene Annotations...")
         insert_gene_annotations(
@@ -84,3 +80,13 @@ class Command(BaseCommand):
             'comment': opts['comment']
         }))
         '''
+
+    @transaction.atomic
+    def insert_dependents(self, sample, version, files, force=False):
+        """These tables are linked together, so update/insert together."""
+        print(f'{sample.name}: Inserting Assembly Stats...')
+        insert_assembly(sample, version, files, force=force)
+
+        print(f'{sample.name}: Inserting SCCmec Results...')
+        insert_sccmec(sample, version, files, force=force)
+

@@ -6,13 +6,23 @@ from sample.tools import UTIL1, UTIL2, etc...
 """
 import os
 
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
 from sample.models import Sample, MD5
 from tag.models import Tag, ToSample
+
+from staphopia.utils import timeit
 from version.tools import get_pipeline_version
+
+
+@transaction.atomic
+def empty_results(table, sid, vid):
+    """Empty the results from a table related to a sample and version."""
+    cursor = connection.cursor()
+    sql = f'DELETE FROM {table} WHERE sample_id={sid} AND version_id={vid};'
+    cursor.execute(sql)
 
 
 def create_tag(user, tag, comment):

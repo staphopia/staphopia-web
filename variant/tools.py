@@ -14,6 +14,7 @@ from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
 from staphopia.utils import timeit
+from sample.tools import empty_results
 from variant.models import (
     Annotation,
     Comment,
@@ -31,7 +32,7 @@ def insert_variants(sample, version, files, force=False):
     """Insert VCF formatted variants."""
     if force:
         print(f'{sample.name}: Force used, emptying variant related results.')
-        Variant.objects.filter(sample=sample, version=version).delete()
+        empty_results('variant_variant', sample.pk, version.pk)
 
     v = Variants(sample, version, files['variants'])
     v.process_indels()
@@ -82,7 +83,7 @@ class Variants(object):
                 snp=self.snps,
                 indel=self.indels
             )
-        except IntegrityError:
+        except IntegrityError as e:
             raise CommandError(f'{self.name} Error saving variants {e}')
 
     @timeit
@@ -270,60 +271,53 @@ class Variants(object):
         snp = False
         while not snp:
             try:
-                snp = self.all_snps[(
-                    record.POS,
-                    record.REF,
-                    str(record.ALT[0])
-                )]
-            except KeyError:
-                try:
-                    print(record.POS, feature.feature)
-                    snp = SNP.objects.create(
-                        reference=reference,
-                        annotation=annotation,
-                        feature=feature,
-                        reference_position=record.POS,
-                        reference_base=record.REF,
-                        alternate_base=record.ALT[0],
+                print(record.POS, feature.feature)
+                snp = SNP.objects.create(
+                    reference=reference,
+                    annotation=annotation,
+                    feature=feature,
+                    reference_position=record.POS,
+                    reference_base=record.REF,
+                    alternate_base=record.ALT[0],
 
-                        reference_codon=(
-                            '.' if record.INFO['RefCodon'][0] is None
-                            else record.INFO['RefCodon'][0]
-                        ),
-                        alternate_codon=(
-                            '.' if record.INFO['AltCodon'][0] is None
-                            else record.INFO['AltCodon'][0]
-                        ),
-                        reference_amino_acid=(
-                            '.' if record.INFO['RefAminoAcid'][0] is None
-                            else record.INFO['RefAminoAcid'][0]
-                        ),
-                        alternate_amino_acid=(
-                            '.' if record.INFO['AltAminoAcid'][0] is None
-                            else record.INFO['AltAminoAcid'][0]
-                        ),
-                        codon_position=(
-                            0 if record.INFO['CodonPosition'] is None
-                            else record.INFO['CodonPosition']
-                        ),
-                        snp_codon_position=(
-                            0 if record.INFO['SNPCodonPosition'] is None
-                            else record.INFO['SNPCodonPosition']
-                        ),
-                        amino_acid_change=(
-                            '.' if record.INFO['AminoAcidChange'][0] is None
-                            else record.INFO['AminoAcidChange'][0]
-                        ),
-                        is_synonymous=record.INFO['IsSynonymous'],
-                        is_transition=record.INFO['IsTransition'],
-                        is_genic=record.INFO['IsGenic'],
-                    )
-                except IntegrityError:
-                    print("Trying SNP ({0},{1}->{2}) again".format(
-                        record.POS, record.REF, record.ALT[0]
-                    ), file=sys.stderr)
-                    time.sleep(0.33)
-                    continue
+                    reference_codon=(
+                        '.' if record.INFO['RefCodon'][0] is None
+                        else record.INFO['RefCodon'][0]
+                    ),
+                    alternate_codon=(
+                        '.' if record.INFO['AltCodon'][0] is None
+                        else record.INFO['AltCodon'][0]
+                    ),
+                    reference_amino_acid=(
+                        '.' if record.INFO['RefAminoAcid'][0] is None
+                        else record.INFO['RefAminoAcid'][0]
+                    ),
+                    alternate_amino_acid=(
+                        '.' if record.INFO['AltAminoAcid'][0] is None
+                        else record.INFO['AltAminoAcid'][0]
+                    ),
+                    codon_position=(
+                        0 if record.INFO['CodonPosition'] is None
+                        else record.INFO['CodonPosition']
+                    ),
+                    snp_codon_position=(
+                        0 if record.INFO['SNPCodonPosition'] is None
+                        else record.INFO['SNPCodonPosition']
+                    ),
+                    amino_acid_change=(
+                        '.' if record.INFO['AminoAcidChange'][0] is None
+                        else record.INFO['AminoAcidChange'][0]
+                    ),
+                    is_synonymous=record.INFO['IsSynonymous'],
+                    is_transition=record.INFO['IsTransition'],
+                    is_genic=record.INFO['IsGenic'],
+                )
+            except IntegrityError:
+                print("Trying SNP ({0},{1}->{2}) again".format(
+                    record.POS, record.REF, record.ALT[0]
+                ), file=sys.stderr)
+                time.sleep(0.33)
+                continue
 
         return snp
 
@@ -411,7 +405,7 @@ class Variants(object):
         for record in self.records:
             # Get annotation, filter, comment
             annotation = self.get_annotation(record)
-            feature = self.get_feature(record.INFO['FeatureType'][0])
+            feature = self.get_feature(record.INFO['FeatureType'])
             record_filters = self.get_filter(record.FILTER)
             variant = {}
             variant['filter_id'] = record_filters.pk
@@ -435,8 +429,15 @@ class Variants(object):
 
             if record.is_snp:
                 comment = self.get_comment(record.INFO['Comments'][0])
-                variant['snp_id'] = self.get_snp(record, self.reference,
-                                                 annotation, feature)
+                try:
+                    variant['snp_id'] = self.all_snps[(
+                        record.POS,
+                        record.REF,
+                        str(record.ALT[0])
+                    )]
+                except KeyError:
+                    variant['snp_id'] = self.get_snp(record, self.reference,
+                                                     annotation, feature)
                 variant['comment'] = comment.pk
                 self.snps.append(variant)
             else:
