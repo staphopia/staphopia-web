@@ -51,13 +51,13 @@ def read_coverage(coverage, mec_types):
         sccmec[mec] = {'coverage': [], 'per_base_coverage': {}, 'total': 0}
 
     for line in gziplines(coverage):
-        cassette, position, coverage = line = line.rstrip().split('\t')
-        if int(coverage):
+        cassette, position, coverage = line.rstrip().split('\t')
+        coverage = int(coverage)
+        position = int(position)
+        if coverage:
             sccmec[cassette]['total'] += 1
-
-        sccmec[cassette]['coverage'].append(int(coverage))
-        sccmec[cassette]['per_base_coverage'][position] = coverage
-
+            sccmec[cassette]['per_base_coverage'][position] = coverage
+        sccmec[cassette]['coverage'].append(coverage)
     return sccmec
 
 
