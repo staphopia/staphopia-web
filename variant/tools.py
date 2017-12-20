@@ -60,11 +60,11 @@ class Variants(object):
         self.get_snps()
 
         # Lists for bulk creation
-        self.snps = []
+        self.snps = {}
         self.temp_indels = []
         self.indel_queries = []
         self.indel_positions = []
-        self.indels = []
+        self.indels = {}
 
         # Read through VCF
         self.read_vcf()
@@ -395,8 +395,8 @@ class Variants(object):
 
         for indel in self.temp_indels:
             variant = indel['data']
-            variant['indel_id'] = self.all_indels[indel['key']]
-            self.indels.append(variant)
+            indel_id = self.all_indels[indel['key']]
+            self.indels[indel_id] = variant
 
     @timeit
     def read_vcf(self):
@@ -430,16 +430,16 @@ class Variants(object):
             if record.is_snp:
                 comment = self.get_comment(record.INFO['Comments'][0])
                 try:
-                    variant['snp_id'] = self.all_snps[(
+                    snp_id = self.all_snps[(
                         record.POS,
                         record.REF,
                         str(record.ALT[0])
                     )]
                 except KeyError:
-                    variant['snp_id'] = self.get_snp(record, self.reference,
-                                                     annotation, feature)
+                    snp_id = self.get_snp(record, self.reference, annotation,
+                                          feature)
                 variant['comment'] = comment.pk
-                self.snps.append(variant)
+                self.snps[snp_id] = variant
             else:
                 key = (record.POS, record.REF, str(record.ALT[0]))
                 self.indel_positions.append(record.POS)
