@@ -1,14 +1,14 @@
-"""Insert MLST results into database."""
+"""Insert the Ariba virulence results into the database."""
 from django.core.management.base import BaseCommand
 
-from mlst.tools import insert_mlst
 from sample.tools import prep_insert
+from virulence.tools import insert_virulence
 
 
 class Command(BaseCommand):
-    """Insert results into database."""
+    """Insert the Ariba virulence results into the database."""
 
-    help = 'Insert the MLST results into the database.'
+    help = 'Insert the Ariba virulence results into the database.'
 
     def add_arguments(self, parser):
         """Command line arguements."""
@@ -22,10 +22,11 @@ class Command(BaseCommand):
                             help='Force updates for existing entries.')
 
     def handle(self, *args, **opts):
-        """Insert results to database."""
         # Validate all files are present, will cause error if files are missing
         sample, version, files = prep_insert(
             opts['user'], opts['name'], opts['sample_dir']
         )
-
-        insert_mlst(sample, version, files, force=opts['force'])
+        if 'virulence_report' in files:
+            insert_virulence(sample, version, files, force=opts['force'])
+        else:
+            print(f'{sample.name}: No Ariba virulence results to report.')

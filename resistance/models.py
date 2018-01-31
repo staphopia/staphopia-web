@@ -2,85 +2,47 @@
 Resistance Application Models.
 
 These are models to store information on the predicted resistance phenotypes of
-Staphopia samples.
+Staphopia samples with the use of Ariba.
 """
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 from sample.models import Sample
-from gene.models import Clusters
-from variant.models import SNP
+from version.models import Version
 
 
-class Name(models.Model):
-    name = models.TextField()
+class Cluster(models.Model):
+    name = models.TextField(unique=True)
+    resistance_class = models.TextField(db_index=True)
+    mechanism = models.TextField()
+    ref_name = models.TextField()
+    database = models.TextField()
+    headers = models.TextField()
 
 
-class Publication(models.Model):
-    pmid = models.TextField()
+class ResistanceClass(models.Model):
+    name = models.TextField(unique=True)
 
 
-class Phenotype(models.Model):
-    name = models.ForeignKey('Name', on_delete=models.CASCADE)
-    publication = models.ForeignKey('Publication', on_delete=models.CASCADE)
-    predicted_mic = models.TextField()
-
-
-class Genotype(models.Model):
-    phenotype = models.ForeignKey('Phenotype', on_delete=models.CASCADE)
-    variant = models.ForeignKey('Variant', on_delete=models.CASCADE)
-
-
-class Variant(models.Model):
-    gene = models.ForeignKey('Gene', on_delete=models.CASCADE)
-    position = models.PositiveIntegerField()
-    substitution = models.TextField()
-
-
-class ToSNP(models.Model):
-    variant = models.ForeignKey('Variant', on_delete=models.CASCADE)
-    snp = models.ForeignKey(SNP, on_delete=models.CASCADE,
-                            related_name='resistance_snp')
-
-
-class Gene(models.Model):
-    cluster = models.ForeignKey(Clusters, on_delete=models.CASCADE, default=0)
-    name = models.TextField()
-    product = models.TextField()
-    dna = models.TextField()
-    aa = models.TextField()
-
-
-class ToSample(models.Model):
-    """Antibiotic resistance tests conducted on a Sample."""
-
+class Ariba(models.Model):
+    """Ariba resistance related results."""
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
-                               related_name='resistance_sample')
-    resistance = models.ForeignKey('Resistance', on_delete=models.CASCADE)
-    value = models.TextField()
-    phenotype = models.TextField()
-    specification = models.ForeignKey('ResistanceSpecification',
-                                      on_delete=models.CASCADE)
-
-
-class Resistance(models.Model):
-    """Antibiotic resitance tests."""
-
-    antibiotic = models.TextField()
-    test = models.TextField()
-    unit = models.TextField()
+                               related_name='resistance_ariba_sample')
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='resistance_ariba_version')
+    results = JSONField()
 
     class Meta:
-        unique_together = ('antibiotic', 'test', 'unit')
+        unique_together = ('sample', 'version')
 
 
-class ResistanceSpecification(models.Model):
-    """Basis for determining the phenotype of a test."""
-
-    susceptible = models.TextField()
-    intermediate = models.TextField()
-    resistant = models.TextField()
-    comment = models.TextField()
+class AribaSequence(models.Model):
+    """Ariba resistance related sequences."""
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
+                               related_name='resistance_aribaseq_sample')
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='resistance_aribaseq_version')
+    sequences = JSONField()
 
     class Meta:
-        unique_together = ('susceptible', 'intermediate', 'resistant',
-                           'comment')
+        unique_together = ('sample', 'version')

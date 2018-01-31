@@ -1,14 +1,14 @@
-"""Insert MLST results into database."""
+"""Insert CGMLST results into database."""
 from django.core.management.base import BaseCommand
 
-from mlst.tools import insert_mlst
+from cgmlst.tools import insert_cgmlst
 from sample.tools import prep_insert
 
 
 class Command(BaseCommand):
     """Insert results into database."""
 
-    help = 'Insert the MLST results into the database.'
+    help = 'Insert the CGMLST results into the database.'
 
     def add_arguments(self, parser):
         """Command line arguements."""
@@ -28,4 +28,4 @@ class Command(BaseCommand):
             opts['user'], opts['name'], opts['sample_dir']
         )
 
-        insert_mlst(sample, version, files, force=opts['force'])
+        insert_cgmlst(sample, version, files, force=opts['force'])

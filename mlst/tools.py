@@ -107,7 +107,7 @@ def parse_blast(basic_report):
 
 
 @timeit
-def insert_mlst_results(sample, version, files, force=False):
+def insert_mlst(sample, version, files, force=False):
     """Insert mlst results and the reports."""
     st = {'ariba': 0}
     report = {'ariba': 'empty'}
@@ -126,12 +126,12 @@ def insert_mlst_results(sample, version, files, force=False):
 
     st['blast'], report['blast'] = parse_blast(files['mlst_blastn'])
 
-    insert_mlst(sample, version, st, force=force)
+    insert_mlst_results(sample, version, st, force=force)
     insert_report(sample, version, report, force=force)
 
 
 @transaction.atomic
-def insert_mlst(sample, version, results, force=False):
+def insert_mlst_results(sample, version, results, force=False):
     '''Insert sequence type into database.'''
     st = {
         'st': 0,

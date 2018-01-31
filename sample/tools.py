@@ -288,9 +288,6 @@ def get_file_list(is_paired):
             'annotation_blastp_sprot': (
                 '{0}/annotation/blastp-sprot.json.gz'
             ),
-            'annotation_blastp_proteins': (
-               '{0}/annotation/blastp-proteins.json.gz'
-            ),
             'annotation_blastp_staph': (
                 '{0}/annotation/blastp-Staphylococcus.json.gz'
             ),
@@ -306,6 +303,8 @@ def get_file_list(is_paired):
             'assembly_scaffold_stats': '{0}/assembly/{1}.scaffolds.json',
 
             'cgmlst_mentalist': '{0}/mlst/mentalist/cgmlst.txt',
+            'cgmlst_mentalist_ties': '{0}/mlst/mentalist/mlst.txt.ties.txt',
+            'cgmlst_mentalist_votes': '{0}/mlst/mentalist/mlst.txt.votes.txt',
 
             'fastq_adapter': '{0}/illumina-cleanup/{1}.adapter.fastq.json',
             'fastq_cleanup': '{0}/illumina-cleanup/{1}.cleanup.fastq.json',
@@ -367,9 +366,6 @@ def get_file_list(is_paired):
             'annotation_blastp_sprot': (
                 '{0}/annotation/blastp-sprot.json.gz'
             ),
-            'annotation_blastp_proteins': (
-               '{0}/annotation/blastp-proteins.json.gz'
-            ),
             'annotation_blastp_staph': (
                 '{0}/annotation/blastp-Staphylococcus.json.gz'
             ),
@@ -385,6 +381,8 @@ def get_file_list(is_paired):
             'assembly_scaffold_stats': '{0}/assembly/{1}.scaffolds.json',
 
             'cgmlst_mentalist': '{0}/mlst/mentalist/cgmlst.txt',
+            'cgmlst_mentalist_ties': '{0}/mlst/mentalist/mlst.txt.ties.txt',
+            'cgmlst_mentalist_votes': '{0}/mlst/mentalist/mlst.txt.votes.txt',
 
             'fastq_adapter': '{0}/illumina-cleanup/{1}.adapter.fastq.json',
             'fastq_cleanup': '{0}/illumina-cleanup/{1}.cleanup.fastq.json',

@@ -6,12 +6,16 @@ from django.db import transaction
 from django.core.management.base import BaseCommand
 
 from sample.tools import prep_insert
+from annotation.tools import insert_annotation
 from assembly.tools import insert_assembly
-from mlst.tools import insert_mlst_results
+from cgmlst.tools import insert_cgmlst
+from mlst.tools import insert_mlst
 from plasmid.tools import insert_plasmid
+from resistance.tools import insert_resistance
 from sccmec.tools import insert_sccmec
 from sequence.tools import insert_sequence_stats
 from variant.tools import insert_variants
+from virulence.tools import insert_virulence
 
 
 class Command(BaseCommand):
@@ -48,38 +52,27 @@ class Command(BaseCommand):
             print(f'{sample.name}: Inserting Plasmid Assembly Stats...')
             insert_plasmid(sample, version, files, force=opts['force'])
 
-        print(f'{sample.name}: Inserting MLST Results...')
-        insert_mlst_results(sample, version, files, force=opts['force'])
+        print(f'{sample.name}: Inserting Annotation Results...')
+        insert_annotation(sample, version, files, force=opts['force'])
+
+        print(f'{sample.name}: Inserting MLST/cgMLST Results...')
+        insert_mlst(sample, version, files, force=opts['force'])
+        insert_cgmlst(sample, version, files, force=opts['force'])
+
+        print(f'{sample.name}: Inserting Resistance/Virulence Results...')
+        if 'resistance_report' in files:
+            insert_resistance(sample, version, files, force=opts['force'])
+        else:
+            print(f'{sample.name}: No Ariba resitance results to report.')
+
+        if 'virulence_report' in files:
+            insert_virulence(sample, version, files, force=opts['force'])
+        else:
+            print(f'{sample.name}: No Ariba virulence results to report.')
 
         self.insert_dependents(sample, version, files, force=opts['force'])
 
-        '''
-        print("Inserting Gene Annotations...")
-        insert_gene_annotations(
-            files['annotation_genes'], files['annotation_proteins'],
-            files['annotation_contigs'], files['annotation_gff'],
-            sample, compressed=True, force=opts['force'],
-            skip=opts['skip_existing']
-        )
-
-        blastp = [
-            files['annotation_blastp_proteins'],
-            files['annotation_blastp_staph'],
-            files['annotation_blastp_sprot']
-        ]
-        insert_blast_results(
-            blastp, files['annotation_gff'], sample, compressed=True,
-            force=opts['force'], skip=opts['skip_existing']
-        )
-
-        print(json.dumps({
-            'sample_id': sample.pk,
-            'sample_tag': sample.sample_tag,
-            'project_tag': opts['project_tag'],
-            'is_paired': sample.is_paired,
-            'comment': opts['comment']
-        }))
-        '''
+        print(f'{sample.name}: Done')
 
     @transaction.atomic
     def insert_dependents(self, sample, version, files, force=False):
@@ -89,4 +82,3 @@ class Command(BaseCommand):
 
         print(f'{sample.name}: Inserting SCCmec Results...')
         insert_sccmec(sample, version, files, force=force)
-

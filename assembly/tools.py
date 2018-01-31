@@ -149,7 +149,7 @@ def insert_assembly(sample, version, files, force=False):
                 f'length={cols[3]} analysis_version={version.tag}'
             ])
 
-            fasta[staphopia] = sequence
+            fasta[cols[1]] = sequence
             prokka = prokka_name[spades]
 
             contig_objects.append(Contig(
