@@ -28,6 +28,18 @@ class Annotation(models.Model):
         unique_together = ('sample', 'version')
 
 
+class Repeat(models.Model):
+    """Annotated repeat regions (CRISPRs) for each predicted gene."""
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE,
+                               related_name='annotation_repeat_sample')
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='annotation_repeat_version')
+    repeat = JSONField()
+
+    class Meta:
+        unique_together = ('sample', 'version')
+
+
 class Inference(models.Model):
     """Annotation inferences."""
     inference = models.TextField(db_index=True)

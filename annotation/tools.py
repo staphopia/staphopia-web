@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
-from annotation.models import Annotation, Inference, Feature
+from annotation.models import Annotation, Inference, Feature, Repeat
 from staphopia.utils import timeit, gziplines, read_fasta, read_json
 
 
@@ -21,8 +21,8 @@ def insert_annotation(sample, version, files, force=False):
     dna = read_fasta(files['annotation_genes'], compressed=True)
     blast_results = read_blast([files['annotation_blastp_sprot'],
                                 files['annotation_blastp_staph']])
-    info, gene, protein, rna, blast = read_gff(files['annotation_gff'], aa,
-                                               dna, blast_results)
+    info, gene, protein, rna, blast, repeat = read_gff(files['annotation_gff'],
+                                                       aa, dna, blast_results)
 
     try:
         Annotation.objects.create(
@@ -34,6 +34,12 @@ def insert_annotation(sample, version, files, force=False):
             rna=rna,
             blast=blast
         )
+        if len(repeat):
+            Repeat.objects.create(
+                sample=sample,
+                version=version,
+                repeat=repeat
+            )
     except IntegrityError as e:
         raise CommandError(f'{sample.name} Annotation save error: {e}')
 
@@ -43,12 +49,24 @@ def delete_annotation(sample, version):
     """Force update, so remove from table."""
     print(f'{sample.name}: Force used, emptying annotation related results.')
     Annotation.objects.filter(sample=sample, version=version).delete()
+    Repeat.objects.filter(sample=sample, version=version).delete()
 
 
 @transaction.atomic
 def insert_features(features):
     """Bulk insert a list of features."""
     Features.objects.bulk_create(features, batch_size=500)
+
+
+@transaction.atomic
+def create_inference(inference, product, note, name):
+    inference, created = Inference.objects.get_or_create(
+        inference=inference,
+        product=product,
+        note=note,
+        name=name
+    )
+    return inference
 
 
 def get_inferences():
@@ -115,6 +133,7 @@ def read_gff(gff, aa, dna, blast_results):
     gene = {}
     protein = {}
     blast = {}
+    repeat = []
     features = get_features()
     inferences = get_inferences()
 
@@ -156,66 +175,77 @@ def read_gff(gff, aa, dna, blast_results):
                     obj = Feature.objects.create(feature=feature)
                     features[feature] = obj
                 attributes = dict(a.split('=') for a in cols[8].split(';'))
-                locus_tag = attributes['locus_tag']
-                inference = feature
-                product = 'none'
-                note = 'none'
-                name = 'none'
-                is_rna = False
-
-                if 'RNA' in feature:
-                    is_rna = True
-                    rna[locus_tag] = dna[locus_tag]
+                if feature == 'repeat_region':
+                    repeat.append({
+                        'contig': cols[0],
+                        'source': cols[1],
+                        'type': cols[2],
+                        'start': int(cols[3]),
+                        'end': int(cols[4]),
+                        'score': cols[5],
+                        'strand': cols[6],
+                        'phase': cols[7],
+                        'note': attributes['note'],
+                        'family': attributes['rpt_family'],
+                        'type': attributes['rpt_type']
+                    })
                 else:
-                    gene[locus_tag] = dna[locus_tag]
-                    protein[locus_tag] = aa[locus_tag]
+                    locus_tag = attributes['locus_tag']
+                    inference = feature
+                    product = 'none'
+                    note = 'none'
+                    name = 'none'
+                    is_rna = False
 
-                if 'query_title' in attributes:
-                    if attributes['query_title'] not in blast_results:
-                        blast[locus_tag] = blast_results[attributes['query_title']]
+                    if 'RNA' in feature:
+                        is_rna = True
+                        rna[locus_tag] = dna[locus_tag]
                     else:
-                        blast[locus_tag] = {'message': 'No hits found'}
-                else:
-                    blast[locus_tag] = {'message': 'blast not applicable'}
+                        gene[locus_tag] = dna[locus_tag]
+                        protein[locus_tag] = aa[locus_tag]
 
-                if 'inference' in attributes:
-                    if 'RefSeq' in attributes['inference']:
-                        inference = attributes['inference'].split('RefSeq:')[1]
-                    elif feature == 'CDS':
-                        inference = 'hypothetical'
+                    if 'query_title' in attributes:
+                        if attributes['query_title'] not in blast_results:
+                            blast[locus_tag] = blast_results[
+                                attributes['query_title']
+                            ]
+                        else:
+                            blast[locus_tag] = {'message': 'No hits found'}
+                    else:
+                        blast[locus_tag] = {'message': 'blast not applicable'}
 
-                if product in attributes:
-                    product = attributes['product']
-                if note in attributes:
-                    note = attributes['note']
-                if name in attributes:
-                    name = attributes['name']
+                    if 'inference' in attributes:
+                        if 'RefSeq' in attributes['inference']:
+                            inference = attributes['inference'].split('RefSeq:')[1]
+                        elif feature == 'CDS':
+                            inference = 'hypothetical'
 
-                inference_key = f'{inference}|{product}|{note}|{name}'
-                if inference_key in inferences:
+                    if 'product' in attributes:
+                        product = attributes['product']
+                    if 'note' in attributes:
+                        note = attributes['note']
+                    if 'Name' in attributes:
+                        name = attributes['Name']
+
+                    inference_key = f'{inference}|{product}|{note}|{name}'
+                    if inference_key not in inferences:
+                        inferences[inference_key] = create_inference(
+                            inference, product, note, name
+                        )
                     inference = inferences[inference_key]
-                else:
-                    inference = Inference.objects.create(
-                        inference=inference,
-                        product=product,
-                        note=note,
-                        name=name
-                    )
-                    inferences[inference_key] = inference
+                    if cols[7] == '.':
+                        # tRNA gives '.' for phase,lets make it 9
+                        cols[7] = 9
 
-                if cols[7] == '.':
-                    # tRNA gives '.' for phase,lets make it 9
-                    cols[7] = 9
+                    info[locus_tag] = {
+                        'contig': cols[0].split('_')[1],
+                        'start': int(cols[3]),
+                        'end': int(cols[4]),
+                        'strand': 1 if cols[6] == '+' else -1,
+                        'phase': int(cols[7]),
+                        'type': 'RNA' if is_rna else feature,
+                        feature: True,
+                        'inference': inference.id,
+                    }
 
-                info[locus_tag] = {
-                    'contig': cols[0].split('_')[1],
-                    'start': int(cols[3]),
-                    'end': int(cols[4]),
-                    'strand': 1 if cols[6] == '+' else -1,
-                    'phase': int(cols[7]),
-                    'type': 'RNA' if is_rna else feature,
-                    feature: True,
-                    'inference': inference.id,
-                }
-
-    return [info, gene, protein, rna, blast]
+    return [info, gene, protein, rna, blast, repeat]
