@@ -1,6 +1,7 @@
 """Models associated with Sample."""
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import JSONField
 
 
 class Sample(models.Model):
@@ -22,3 +23,18 @@ class MD5(models.Model):
     """
     sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
     md5sum = models.CharField(max_length=32, unique=True)
+
+
+class Metadata(models.Model):
+    """
+    Store metadata associated with each sample.
+    """
+    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    metadata = JSONField()
+    history = JSONField()
+
+
+class MetadataFields(models.Model):
+    """Metadata related fields and descriptions."""
+    field = models.TextField(unique=True)
+    description = models.TextField(db_index=True, default='')

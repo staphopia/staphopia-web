@@ -105,30 +105,11 @@ class Command(BaseCommand):
     def get_annotation(self, record):
         """Get or create annotations."""
         annotation = None
-        locus_tag = record.INFO['LocusTag'][0]
+        locus_tag = record.INFO['LocusTag']
         if locus_tag in self.locus_tags:
             pk = self.locus_tags[locus_tag]
             annotation = self.annotations[pk]
-        elif locus_tag is not None:
-            protein_id = record.INFO['ProteinID'][0]
-            if not protein_id:
-                protein_id = "not_applicable"
-
-            annotation = Annotation.objects.create(
-                reference=self.reference,
-                locus_tag=locus_tag,
-                protein_id=protein_id,
-                gene=('.' if record.INFO['Gene'][0] is None
-                      else record.INFO['Gene'][0]),
-                product=('.' if record.INFO['Product'][0] is None
-                         else record.INFO['Product'][0]),
-                note=('.' if record.INFO['Note'][0] is None
-                      else record.INFO['Note'][0]),
-                is_pseudo=record.INFO['IsPseudo']
-            )
-            self.locus_tags[locus_tag] = annotation.pk
-            self.annotations[annotation.pk] = annotation
-        elif locus_tag is None:
+        elif locus_tag == '.':
             if 'inter_genic' not in self.locus_tags:
                 annotation = Annotation.objects.create(
                     reference=self.reference,
@@ -144,6 +125,25 @@ class Command(BaseCommand):
             else:
                 pk = self.locus_tags['inter_genic']
                 annotation = self.annotations[pk]
+        else:
+            protein_id = record.INFO['ProteinID']
+            if protein_id == '.':
+                protein_id = "not_applicable"
+
+            annotation = Annotation.objects.create(
+                reference=self.reference,
+                locus_tag=locus_tag,
+                protein_id=protein_id,
+                gene=('.' if record.INFO['Gene'] is None
+                      else record.INFO['Gene']),
+                product=('.' if record.INFO['Product'] is None
+                         else record.INFO['Product']),
+                note=('.' if record.INFO['Note'] is None
+                      else record.INFO['Note']),
+                is_pseudo=record.INFO['IsPseudo']
+            )
+            self.locus_tags[locus_tag] = annotation.pk
+            self.annotations[annotation.pk] = annotation
 
         return annotation
 
@@ -240,7 +240,7 @@ class Command(BaseCommand):
 
             # Insert SNP/Indel
             if record.is_snp:
-                self.get_comment(record.INFO['Comments'][0])
+                self.get_comment(record.INFO['Comments'])
                 self.create_snp(record, self.reference, annotation, feature)
                 count += 1
                 if count % 100000 == 0:

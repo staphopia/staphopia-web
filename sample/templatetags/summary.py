@@ -8,8 +8,7 @@ from django.utils.safestring import mark_safe
 
 from ena.models import CenterNames, Experiment
 from sample.models import Sample
-from assembly.models import Stats
-from mlst.models import Srst2
+from assembly.models import Summary
 
 register = template.Library()
 
@@ -133,7 +132,6 @@ def get_publications(sample_id):
         WHERE s.sample_id={0};
         """.format(sample_id)
     )
-
 
 
 @register.simple_tag

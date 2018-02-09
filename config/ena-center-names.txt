@@ -63,3 +63,12 @@ Lausanne University Hospital	Lausanne University Hospital	https://www.unil.ch/gt
 PHE	Public Health England	https://www.gov.uk/government/organisations/public-health-england
 RIVM	Dutch National Institute for Public Health and the Environment	http://www.rivm.nl/en
 ANIMAL AND PLANT HEALTH AGENCY	Animal & Plant Health Agency	https://www.gov.uk/government/organisations/animal-and-plant-health-agency
+CANTAB	Department of Medicine, University of Cambridge	http://www.med.cam.ac.uk/
+IMPERIAL COLLEGE LONDON	Imperial College London	https://www.imperial.ac.uk/
+INSTITUTE FOR MOLECULAR BIOSCIENCE UQ	Institute for Molecular Bioscience - University of Queensland	https://imb.uq.edu.au/
+NISC	NIH Intramural Sequencing Center	https://www.nisc.nih.gov/
+STATENS SERUM INSTITUT	Statens Serum Institut	http://www.ssi.dk/english.aspx
+SUB1026520	Statens Serum Institut	http://www.ssi.dk/english.aspx
+University of Bath	University of Bath	http://www.bath.ac.uk/
+UNIVERSITY OF BIRMINGHAM	University of Birmingham	http://www.birmingham.ac.uk/
+UNIVERSITY OF COPENHAGEN	University of Copenhagen	http://www.ku.dk/english/

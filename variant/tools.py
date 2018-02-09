@@ -60,11 +60,11 @@ class Variants(object):
         self.get_snps()
 
         # Lists for bulk creation
-        self.snps = {}
+        self.snps = []
         self.temp_indels = []
         self.indel_queries = []
         self.indel_positions = []
-        self.indels = {}
+        self.indels = []
 
         # Read through VCF
         self.read_vcf()
@@ -174,30 +174,11 @@ class Variants(object):
     def get_annotation(self, record):
         """Check if annotation is already in db, if not insert it."""
         annotation = None
-        locus_tag = record.INFO['LocusTag'][0]
+        locus_tag = record.INFO['LocusTag']
         if locus_tag in self.locus_tags:
             pk = self.locus_tags[locus_tag]
             annotation = self.annotations[pk]
-        elif locus_tag is not None:
-            protein_id = record.INFO['ProteinID'][0]
-            if not protein_id:
-                protein_id = "not_applicable"
-
-            annotation = Annotation.objects.create(
-                reference=self.reference,
-                locus_tag=locus_tag,
-                protein_id=protein_id,
-                gene=('.' if record.INFO['Gene'][0] is None
-                      else record.INFO['Gene'][0]),
-                product=('.' if record.INFO['Product'][0] is None
-                         else record.INFO['Product'][0]),
-                note=('.' if record.INFO['Note'][0] is None
-                      else record.INFO['Note'][0]),
-                is_pseudo=record.INFO['IsPseudo']
-            )
-            self.locus_tags[locus_tag] = annotation.pk
-            self.annotations[annotation.pk] = annotation
-        elif locus_tag is None:
+        elif locus_tag == '.':
             if 'inter_genic' not in self.locus_tags:
                 annotation = Annotation.objects.create(
                     reference=self.reference,
@@ -213,6 +194,25 @@ class Variants(object):
             else:
                 pk = self.locus_tags['inter_genic']
                 annotation = self.annotations[pk]
+        else:
+            protein_id = record.INFO['ProteinID']
+            if protein_id == '.':
+                protein_id = "not_applicable"
+
+            annotation = Annotation.objects.create(
+                reference=self.reference,
+                locus_tag=locus_tag,
+                protein_id=protein_id,
+                gene=('.' if record.INFO['Gene'] is None
+                      else record.INFO['Gene']),
+                product=('.' if record.INFO['Product'] is None
+                         else record.INFO['Product']),
+                note=('.' if record.INFO['Note'] is None
+                      else record.INFO['Note']),
+                is_pseudo=record.INFO['IsPseudo']
+            )
+            self.locus_tags[locus_tag] = annotation.pk
+            self.annotations[annotation.pk] = annotation
 
         return annotation
 
@@ -263,7 +263,7 @@ class Variants(object):
                 snp.reference_base,
                 snp.alternate_base
             )
-            self.all_snps[key] = snp.pk
+            self.all_snps[key] = snp
 
     @transaction.atomic
     def get_snp(self, record, reference, annotation, feature):
@@ -334,7 +334,7 @@ class Variants(object):
                 indel.reference_base,
                 indel.alternate_base
             )
-            self.all_indels[key] = indel.pk
+            self.all_indels[key] = indel
         print(f'{self.name}, Found {len(self.all_indels)} existing indels.')
 
     @timeit
@@ -395,8 +395,10 @@ class Variants(object):
 
         for indel in self.temp_indels:
             variant = indel['data']
-            indel_id = self.all_indels[indel['key']]
-            self.indels[indel_id] = variant
+            indel_obj = self.all_indels[indel['key']]
+            variant['annotation_id'] = indel_obj.annotation.pk
+            variant['indel_id'] = indel_obj.pk
+            self.indels.append(variant)
 
     @timeit
     def read_vcf(self):
@@ -430,16 +432,18 @@ class Variants(object):
             if record.is_snp:
                 comment = self.get_comment(record.INFO['Comments'][0])
                 try:
-                    snp_id = self.all_snps[(
+                    snp_obj = self.all_snps[(
                         record.POS,
                         record.REF,
                         str(record.ALT[0])
                     )]
                 except KeyError:
-                    snp_id = self.get_snp(record, self.reference, annotation,
-                                          feature)
+                    snp_obj = self.get_snp(record, self.reference, annotation,
+                                           feature)
                 variant['comment'] = comment.pk
-                self.snps[snp_id] = variant
+                variant['annotation_id'] = snp_obj.annotation.pk
+                variant['snp_id'] = snp_obj.pk
+                self.snps.append(variant)
             else:
                 key = (record.POS, record.REF, str(record.ALT[0]))
                 self.indel_positions.append(record.POS)

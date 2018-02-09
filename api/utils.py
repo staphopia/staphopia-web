@@ -1,10 +1,17 @@
 """API utilities shared across viewsets."""
+import time
 from collections import OrderedDict
 
 from django.db import connection
 
 
-def format_results(results, time=None, limit=None):
+def timeit(fun, *args, **kw):
+    start_time = time.time()
+    results = fun(*args, **kw)
+    return [results, (time.time() - start_time) * 1000]
+
+
+def format_results(results, query_time=None, limit=None):
     """Format query results to be similar to Django Rest Framework output."""
     message = "success"
     if limit:
@@ -13,10 +20,10 @@ def format_results(results, time=None, limit=None):
         )
         results = results[0:limit]
 
-    if time:
+    if query_time:
         return OrderedDict((
-            ("took", time),
-
+            ("message", message),
+            ("took", f'{float(query_time):.2f} ms'),
             ("count", len(results)),
             ("results", results)
         ))

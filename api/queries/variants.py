@@ -9,65 +9,77 @@ def get_indels_by_sample(sample_id, user_id, annotation_id=None):
     """Return indels associated with a sample."""
     sql = None
     if annotation_id:
-        sql = """SELECT v.sample_id, v.indel_id, i.reference_position,
-                        i.reference_base, i.alternate_base, i.is_deletion,
-                        v.confidence, i.annotation_id, i.feature_id,
-                        i.reference_id, v.filters_id
-                 FROM variant_toindel AS v
-                 LEFT JOIN variant_indel as i
-                 ON v.indel_id=i.id
+        sql = """SELECT v.sample_id, v.indel
+                 FROM variant_variant AS v
                  LEFT JOIN sample_sample AS s
                  ON v.sample_id=s.id
                  WHERE v.sample_id IN ({0}) AND
-                       (s.is_public=TRUE OR s.user_id={1}) AND
-                       i.annotation_id={2}
-                 ORDER BY v.sample_id ASC, v.indel_id ASC;""".format(
+                       (s.is_public=TRUE OR s.user_id={1});""".format(
             ','.join([str(i) for i in sample_id]),
-            user_id,
-            annotation_id
+            user_id
         )
     else:
-        sql = """SELECT v.sample_id, v.indel_id, i.reference_position,
-                        i.reference_base, i.alternate_base, i.is_deletion,
-                        v.confidence, i.annotation_id, i.feature_id,
-                        i.reference_id, v.filters_id
-                 FROM variant_toindel AS v
-                 LEFT JOIN variant_indel as i
-                 ON v.indel_id=i.id
+        sql = """SELECT v.sample_id, v.indel
+                 FROM variant_variant AS v
                  LEFT JOIN sample_sample AS s
                  ON v.sample_id=s.id
                  WHERE v.sample_id IN ({0}) AND
-                      (s.is_public=TRUE OR s.user_id={1})
-                 ORDER BY v.sample_id ASC, v.indel_id ASC;""".format(
+                       (s.is_public=TRUE OR s.user_id={1});""".format(
             ','.join([str(i) for i in sample_id]),
             user_id
         )
 
-    results = []
+    rows = {}
+    indel_id = []
     for row in query_database(sql):
-        confidence = row['confidence']
-        results.append(OrderedDict([
-            ('sample_id', row['sample_id']),
-            ('indel_id', row['indel_id']),
-            ('annotation_id', row['annotation_id']),
-            ('reference_position', row['reference_position']),
-            ('reference_base', row['reference_base']),
-            ('alternate_base', row['alternate_base']),
-            ('is_deletion', row['is_deletion']),
-            ('feature_id', row['feature_id']),
-            ('reference_id', row['reference_id']),
-            ('AC', confidence['AC']),
-            ('GT', confidence['GT']),
-            ('AD', confidence['AD']),
-            ('GQ', confidence['GQ']),
-            ('AF', confidence['AF']),
-            ('MQ', confidence['MQ']),
-            ('PL', confidence['PL']),
-            ('DP', confidence['DP']),
-            ('QD', confidence['QD']),
-            ('quality', confidence['quality']),
-            ('filters_id', row['filters_id']),
-        ]))
+        rows[row['sample_id']] = row['indel']
+        indels = []
+        for indel in row['indel']:
+            indels.append(indel['indel_id'])
+        indel_id = set(indel_id + list(indels))
+
+    indel_info = {}
+    if annotation_id:
+        sql = """SELECT *
+                 FROM variant_indel
+                 WHERE id IN ({0}) AND annotation_id={1}""".format(
+            ','.join([str(i) for i in indel_id]), annotation_id
+        )
+    else:
+        sql = "SELECT * FROM variant_indel WHERE id IN ({0})".format(
+            ','.join([str(i) for i in indel_id])
+        )
+    for row in query_database(sql):
+        indel_info[row['id']] = row
+
+    results = []
+    for sample, indels in rows.items():
+        for indel in indels:
+            indel_id = int(indel['indel_id'])
+            if indel_id in indel_info:
+                results.append(OrderedDict([
+                    ('sample_id', sample),
+                    ('indel_id', indel_id),
+                    ('annotation_id', indel['annotation_id']),
+                    ('reference_position',
+                     indel_info[indel_id]['reference_position']),
+                    ('reference_base', indel_info[indel_id]['reference_base']),
+                    ('alternate_base', indel_info[indel_id]['alternate_base']),
+                    ('is_deletion', indel_info[indel_id]['is_deletion']),
+                    ('feature_id', indel_info[indel_id]['feature_id']),
+                    ('reference_id', indel_info[indel_id]['reference_id']),
+                    ('AC', indel['AC'][0]),
+                    ('GT', indel['GT'][0]),
+                    ('AD', indel['AD'][0]),
+                    ('GQ', indel['GQ'][0]),
+                    ('AF', indel['AF'][0]),
+                    ('MQ', indel['MQ'][0]),
+                    ('PL', indel['PL'][0]),
+                    ('DP', indel['DP'][0]),
+                    ('QD', indel['QD'][0]),
+                    ('quality', indel['quality']),
+                    ('filter_id', indel['filter_id']),
+                ]))
     return results
 
 
@@ -75,80 +87,89 @@ def get_snps_by_sample(sample_id, user_id, annotation_id=None):
     """Return snps associated with a sample."""
     sql = None
     if annotation_id:
-        sql = """SELECT v.sample_id, v.snp_id, s.annotation_id,
-                        s.reference_position, s.reference_base,
-                        s.alternate_base,
-                        s.reference_codon, s.alternate_codon,
-                        s.reference_amino_acid, s.alternate_amino_acid,
-                        s.amino_acid_change, s.is_synonymous, s.is_transition,
-                        s.is_genic, v.confidence, s.feature_id,
-                        s.reference_id, v.filters_id
-                 FROM variant_tosnp AS v
-                 LEFT JOIN variant_snp AS s
-                 ON v.snp_id=s.id
-                 LEFT JOIN sample_sample AS a
-                 ON v.sample_id=a.id
+        sql = """SELECT v.sample_id, v.snp
+                 FROM variant_variant AS v
+                 LEFT JOIN sample_sample AS s
+                 ON v.sample_id=s.id
                  WHERE v.sample_id IN ({0}) AND
-                       (a.is_public=TRUE OR a.user_id={1}) AND
-                       s.annotation_id={2}
-                 ORDER BY v.sample_id ASC, v.snp_id ASC;""".format(
+                       (s.is_public=TRUE OR s.user_id={1});""".format(
             ','.join([str(i) for i in sample_id]),
-            user_id,
-            annotation_id
+            user_id
         )
     else:
-        sql = """SELECT v.sample_id, v.snp_id, s.annotation_id,
-                        s.reference_position, s.reference_base,
-                        s.alternate_base,
-                        s.reference_codon, s.alternate_codon,
-                        s.reference_amino_acid, s.alternate_amino_acid,
-                        s.amino_acid_change, s.is_synonymous, s.is_transition,
-                        s.is_genic, v.confidence, s.feature_id,
-                        s.reference_id, v.filters_id
-                 FROM variant_tosnp AS v
-                 LEFT JOIN variant_snp AS s
-                 ON v.snp_id=s.id
-                 LEFT JOIN sample_sample AS a
-                 ON v.sample_id=a.id
+        sql = """SELECT v.sample_id, v.snp
+                 FROM variant_variant AS v
+                 LEFT JOIN sample_sample AS s
+                 ON v.sample_id=s.id
                  WHERE v.sample_id IN ({0}) AND
-                       (a.is_public=TRUE OR a.user_id={1})
-                 ORDER BY v.sample_id ASC, v.snp_id ASC;""".format(
+                       (s.is_public=TRUE OR s.user_id={1});""".format(
             ','.join([str(i) for i in sample_id]),
             user_id
         )
 
-    results = []
+    rows = {}
+    snp_id = []
     for row in query_database(sql):
-        confidence = row['confidence']
-        results.append(OrderedDict([
-            ('sample_id', row['sample_id']),
-            ('snp_id', row['snp_id']),
-            ('annotation_id', row['annotation_id']),
-            ('reference_position', row['reference_position']),
-            ('reference_base', row['reference_base']),
-            ('alternate_base', row['alternate_base']),
-            ('reference_codon', row['reference_codon']),
-            ('alternate_codon', row['alternate_codon']),
-            ('reference_amino_acid', row['reference_amino_acid']),
-            ('alternate_amino_acid', row['alternate_amino_acid']),
-            ('amino_acid_change', row['amino_acid_change']),
-            ('is_synonymous', row['is_synonymous']),
-            ('is_transition', row['is_transition']),
-            ('is_genic', row['is_genic']),
-            ('AC', confidence['AC']),
-            ('GT', confidence['GT']),
-            ('AD', confidence['AD']),
-            ('GQ', confidence['GQ']),
-            ('AF', confidence['AF']),
-            ('MQ', confidence['MQ']),
-            ('PL', confidence['PL']),
-            ('DP', confidence['DP']),
-            ('QD', confidence['QD']),
-            ('quality', confidence['quality']),
-            ('feature_id', row['feature_id']),
-            ('reference_id', row['reference_id']),
-            ('filters_id', row['filters_id']),
-        ]))
+        rows[row['sample_id']] = row['snp']
+        snps = []
+        for snp in row['snp']:
+            snps.append(snp['snp_id'])
+        snp_id = set(snp_id + list(snps))
+
+    snp_info = {}
+    if annotation_id:
+        sql = """SELECT *
+                 FROM variant_snp
+                 WHERE id IN ({0}) AND annotation_id={1}""".format(
+            ','.join([str(i) for i in snp_id]), annotation_id
+        )
+    else:
+        sql = "SELECT * FROM variant_snp WHERE id IN ({0})".format(
+            ','.join([str(i) for i in snp_id])
+        )
+
+    for row in query_database(sql):
+        snp_info[row['id']] = row
+
+    results = []
+    for sample, snps in rows.items():
+        for snp in snps:
+            snp_id = int(snp['snp_id'])
+            if snp_id in snp_info:
+                results.append(OrderedDict([
+                    ('sample_id', sample),
+                    ('snp_id', snp_id),
+                    ('annotation_id', snp['annotation_id']),
+                    ('reference_position',
+                     snp_info[snp_id]['reference_position']),
+                    ('reference_base', snp_info[snp_id]['reference_base']),
+                    ('alternate_base', snp_info[snp_id]['alternate_base']),
+                    ('reference_codon', snp_info[snp_id]['reference_codon']),
+                    ('alternate_codon', snp_info[snp_id]['alternate_codon']),
+                    ('reference_amino_acid',
+                     snp_info[snp_id]['reference_amino_acid']),
+                    ('alternate_amino_acid',
+                     snp_info[snp_id]['alternate_amino_acid']),
+                    ('amino_acid_change',
+                     snp_info[snp_id]['amino_acid_change']),
+                    ('is_synonymous', snp_info[snp_id]['is_synonymous']),
+                    ('is_transition', snp_info[snp_id]['is_transition']),
+                    ('is_genic', snp_info[snp_id]['is_genic']),
+                    ('feature_id', snp_info[snp_id]['feature_id']),
+                    ('reference_id', snp_info[snp_id]['reference_id']),
+                    ('AC', snp['AC'][0]),
+                    ('GT', snp['GT'][0]),
+                    ('AD', snp['AD'][0]),
+                    ('GQ', snp['GQ'][0]),
+                    ('AF', snp['AF'][0]),
+                    ('MQ', snp['MQ'][0]),
+                    ('PL', snp['PL'][0]),
+                    ('DP', snp['DP'][0]),
+                    ('QD', snp['QD'][0]),
+                    ('quality', snp['quality']),
+                    ('filter_id', snp['filter_id']),
+                ]))
+
     return results
 
 
