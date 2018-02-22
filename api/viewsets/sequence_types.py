@@ -3,23 +3,20 @@ from rest_framework.decorators import list_route
 from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
-from api.serializers.sequence_types import BlastSerializer
-from api.queries.sequence_types import (
-    get_blast_sequence_type,
-    get_srst2_sequence_type
-)
+from api.serializers.sequence_types import MLSTSerializer
+from api.queries.sequence_types import get_sequence_type
 from api.validators import validate_list_of_ids
+from mlst.models import MLST
 
-'''
-from mlst.models import Blast
+from api.utils import timeit
 
 
-class MlstBlastViewSet(CustomReadOnlyModelViewSet):
+class MLSTViewSet(CustomReadOnlyModelViewSet):
     """
     A simple ViewSet for listing or retrieving Samples.
     """
-    queryset = Blast.objects.all()
-    serializer_class = BlastSerializer
+    queryset = MLST.objects.all()
+    serializer_class = MLSTSerializer
 
     @list_route(methods=['post'])
     def bulk_by_sample(self, request):
@@ -31,8 +28,10 @@ class MlstBlastViewSet(CustomReadOnlyModelViewSet):
                             "message": validator['message'],
                             "data": request.data
                         })
-            else:
-                return self.formatted_response(get_blast_sequence_type(
-                    request.data['ids'], request.user.pk
-                ))
-'''
+
+            result, qt = timeit(
+                get_sequence_type,
+                request.data['ids'],
+                request.user.pk
+            )
+            return self.formatted_response(result, query_time=qt)

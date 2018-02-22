@@ -45,7 +45,9 @@ def get_genes_by_sample(sample_id, user_id, product_id=None):
             new['sample_id'] = row['sample_id']
             new['locus_tag'] = locus_tag
             for k, v in info.items():
-                if k == 'inference':
+                if k == 'CDS' or 'RNA' in k:
+                    continue
+                elif k == 'inference':
                     new['inference'] = inference[v]['inference']
                     new['product'] = inference[v]['product']
                     new['product_id'] = v

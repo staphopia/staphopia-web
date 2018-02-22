@@ -144,8 +144,9 @@ def get_sample_metadata(sample_id, user_id):
     results = []
     rows = {}
     for row in query_database(sql):
-        cols = set(cols + list(row['metadata'].keys()))
-        rows[row['sample_id']] = row['metadata']
+        if 'metadata' in row:
+            cols = list(set(cols + list(row['metadata'].keys())))
+            rows[row['sample_id']] = row['metadata']
 
     for sample, metadata in rows.items():
         result = OrderedDict()

@@ -36,7 +36,7 @@ def get_indels_by_sample(sample_id, user_id, annotation_id=None):
         indels = []
         for indel in row['indel']:
             indels.append(indel['indel_id'])
-        indel_id = set(indel_id + list(indels))
+        indel_id = list(set(indel_id + list(indels)))
 
     indel_info = {}
     if annotation_id:
@@ -114,7 +114,7 @@ def get_snps_by_sample(sample_id, user_id, annotation_id=None):
         snps = []
         for snp in row['snp']:
             snps.append(snp['snp_id'])
-        snp_id = set(snp_id + list(snps))
+        snp_id = list(set(snp_id + list(snps)))
 
     snp_info = {}
     if annotation_id:

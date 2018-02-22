@@ -7,8 +7,15 @@ from variant.models import (
     Comment,
     Feature,
     Filter,
-    Reference
+    Reference,
+    Variant
 )
+
+
+class VariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = '__all__'
+        model = Variant
 
 
 class SNPSerializer(serializers.ModelSerializer):

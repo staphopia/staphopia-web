@@ -34,7 +34,7 @@ def get_assembly_stats(sample_id, user_id, is_plasmids=None):
     return query_database(sql)
 
 
-def get_assembled_contigs(sample_id, user_id, is_plasmids='FALSE'):
+def get_assembly_contigs(sample_id, user_id, is_plasmids=False):
     """Return assembled contigs for a set of sample ids."""
     # Get contigs
     table = 'plasmid_sequence' if is_plasmids else 'assembly_sequence'

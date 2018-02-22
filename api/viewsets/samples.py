@@ -5,20 +5,23 @@ from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
-from api.serializers.samples import SampleSerializer
+from api.serializers.samples import SampleSerializer, MetadataSerializer
 
-from api.queries.assemblies import get_assembly_stats, get_assembled_contigs
+from api.queries.assemblies import get_assembly_stats, get_assembly_contigs
 from api.queries.samples import (
     get_resistance_by_samples,
     get_samples,
-    get_samples_by_tag,
-    get_tags_by_sample,
     get_public_samples,
     get_sample_metadata
 )
 
+from api.queries.tags import get_tags_by_sample
 from api.queries.genes import get_genes_by_sample
-from api.queries.resistances import get_ariba_resistance
+from api.queries.resistances import (
+    get_ariba_resistance,
+    get_ariba_resistance_report
+)
+
 from api.queries.sequences import get_sequencing_stats
 from api.queries.sequence_types import (
     get_unique_st_samples,
@@ -33,10 +36,9 @@ from api.queries.sccmecs import (
 from api.queries.variants import get_indels_by_sample, get_snps_by_sample
 from api.queries.virulences import get_ariba_virulence
 from api.utils import timeit
-from api.validators import validate_positive_integer
+from api.validators import validate_positive_integer, validate_list_of_ids
 
-from sample.models import Sample
-start_time = time.time()
+from sample.models import Sample, Metadata
 
 
 class SampleViewSet(CustomReadOnlyModelViewSet):
@@ -45,7 +47,6 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     """
     queryset = Sample.objects.all()
     serializer_class = SampleSerializer
-    start_time = start_time
 
     def retrieve(self, request, pk=None):
         validator = validate_positive_integer(pk)
@@ -107,7 +108,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             request.user.pk,
             is_plasmids=True if 'plasmids' in request.GET else False
         )
-        return self.formatted_response(results, query_time=query_time)
+        return self.formatted_response(results, query_time=qt)
 
     @detail_route(methods=['get'])
     def plasmid(self, request, pk=None):
@@ -122,7 +123,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     @detail_route(methods=['get'])
     def contigs(self, request, pk=None):
         results, qt = timeit(
-            get_assembled_contigs,
+            get_assembly_contigs,
             [pk],
             request.user.pk,
             is_plasmids=True if 'plasmids' in request.GET else False
@@ -200,11 +201,18 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def resistance(self, request, pk=None):
-        result, qt = timeit(
-            get_ariba_resistance,
-            [pk],
-            request.user.pk
-        )
+        if 'report' in request.GET:
+            result, qt = timeit(
+                get_ariba_resistance_report,
+                [pk],
+                request.user.pk
+            )
+        else:
+            result, qt = timeit(
+                get_ariba_resistance,
+                [pk],
+                request.user.pk
+            )
         return self.formatted_response(result, query_time=qt)
 
     @detail_route(methods=['get'])
@@ -298,31 +306,39 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
         )
         return self.formatted_response(result, query_time=qt)
 
-'''
-class TagViewSet(CustomReadOnlyModelViewSet):
-    """
-    A simple ViewSet for listing or retrieving Samples.
-    """
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
+
+class MetadataViewSet(CustomReadOnlyModelViewSet):
+    """Metadata related viewset."""
+
+    queryset = Metadata.objects.all()
+    serializer_class = MetadataSerializer
 
     def list(self, request):
-        if 'tag' in request.GET:
-            queryset = Tag.objects.filter(tag=request.GET['tag'])
-        else:
-            queryset = Tag.objects.all()
+        """
+        Stored metadata information for a given sample.
+        """
+        urls = {
+            'msg': 'Must use bulk_by_sample to get metadata information',
+        }
 
-        if len(queryset) == 1:
-            serializer = TagSerializer(queryset[0])
-            return Response(serializer.data)
-        else:
-            return self.paginate(queryset, serializer=TagSerializer)
+        return Response(urls)
 
-    @detail_route(methods=['get'])
-    def samples(self, request, pk=None):
-        return self.formatted_response(get_samples_by_tag(pk))
+    @list_route(methods=['post'])
+    def bulk_by_sample(self, request):
+        """Given a list of Sample IDs, return metadata for each Sample."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
 
+            result, qt = timeit(get_sample_metadata, request.data['ids'],
+                                request.user.pk)
+            return self.formatted_response(result, query_time=qt)
 
+'''
 class PublicationViewSet(viewsets.ReadOnlyModelViewSet):
     """
     A simple ViewSet for listing or retrieving Publications.
@@ -378,36 +394,5 @@ class ResistanceViewSet(CustomReadOnlyModelViewSet):
                     query = request.GET['resistance_id']
                 return self.formatted_response(get_resistance_by_samples(
                     request.data['ids'], resistance_id=query
-                ))
-
-
-class MetaDataViewSet(CustomReadOnlyModelViewSet):
-    """Metadata related viewset."""
-
-    queryset = ''
-
-    def list(self, request):
-        """
-        Stored metadata information for a given sample.
-        """
-        urls = {
-            'msg': 'Must use bulk_by_sample to get metadata information',
-        }
-
-        return Response(urls)
-
-    @list_route(methods=['post'])
-    def bulk_by_sample(self, request):
-        """Given a list of Sample IDs, return metadata for each Sample."""
-        if request.method == 'POST':
-            validator = validate_list_of_ids(request.data, max_query=500)
-            if validator['has_errors']:
-                return Response({
-                    "message": validator['message'],
-                    "data": request.data
-                })
-            else:
-                return self.formatted_response(get_sample_metadata(
-                    request.data['ids'], single=False
                 ))
 '''

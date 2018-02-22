@@ -5,6 +5,7 @@ from api.pagination import CustomReadOnlyModelViewSet
 from api.serializers.sequences import SequenceStatSerializer
 from api.queries.sequences import get_sequencing_stats
 from api.validators import validate_list_of_ids
+from api.utils import timeit
 
 from sequence.models import Summary
 
@@ -26,14 +27,14 @@ class SequenceStatViewSet(CustomReadOnlyModelViewSet):
                     "message": validator['message'],
                     "data": request.data
                 })
-            else:
-                is_original = 'TRUE' if 'original' in request.GET else 'FALSE'
-                qual_per_base = True if 'bases' in request.GET else False
-                read_lengths = True if 'lengths' in request.GET else False
-                return self.formatted_response(get_sequencing_stats(
-                    request.data['ids'],
-                    request.user.pk,
-                    is_original=is_original,
-                    qual_per_base=qual_per_base,
-                    read_lengths=read_lengths
-                ))
+
+            stage = request.GET['stage'] if 'stage' in request.GET else False
+            result, qt = timeit(
+                get_sequencing_stats,
+                request.data['ids'],
+                request.user.pk,
+                stage=stage,
+                qual_per_base=True if 'bases' in request.GET else False,
+                read_lengths=True if 'lengths' in request.GET else False
+            )
+            return self.formatted_response(result, query_time=qt)

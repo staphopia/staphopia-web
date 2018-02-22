@@ -95,7 +95,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def search(self, accession):
         links = 0
-        search_query = scholarly.search_pubs_query(accession)
+        search_query = scholarly.search_pubs_query(f'"{accession}"')
         for r in search_query:
             links += 1
 
