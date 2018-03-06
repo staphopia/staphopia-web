@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import format_results, get_ids_in_bulk
 from api.queries.variants import (
+    get_variant_counts,
     get_samples_by_snp,
     get_samples_by_indel,
     get_indels_by_sample,
@@ -20,6 +21,7 @@ from variant.models import (
     SNP,
     Indel,
     Annotation,
+    Counts,
     Comment,
     Feature,
     Filter,
@@ -31,12 +33,63 @@ from api.serializers.variants import (
     SNPSerializer,
     InDelSerializer,
     AnnotationSerializer,
+    VariantCountsSerializer,
     CommentSerializer,
     FilterSerializer,
     FeatureSerializer,
     ReferenceSerializer
 )
 
+
+class VariantCountsViewSet(CustomReadOnlyModelViewSet):
+    """Break down of variant counts by reference position."""
+    queryset = Counts.objects.all()
+    serializer_class = VariantCountsSerializer
+
+    def list(self, request):
+        annotation_id = None
+        if 'annotation_id' in request.GET:
+            validator = validate_positive_integer(
+                request.GET['annotation_id']
+            )
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                annotation_id = request.GET['annotation_id']
+
+        if annotation_id:
+            results, qt = timeit(
+                get_variant_counts,
+                [annotation_id],
+                is_annotation=True
+            )
+            return self.formatted_response(results, query_time=qt)
+        else:
+            return self.paginate(Counts.objects.order_by('position'),
+                                 serializer=VariantCountsSerializer,
+                                 page_size=200)
+
+    @list_route(methods=['post'])
+    def bulk(self, request):
+        """Given a list of reference positions, return variant counts."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=1000)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            else:
+                is_annotation = False
+                if 'is_annotation' in request.GET:
+                    is_annotation = True
+
+                results, qt = timeit(
+                    get_variant_counts,
+                    request.data['ids'],
+                    is_annotation=is_annotation
+                )
+                return self.formatted_response(results, query_time=qt)
 
 class VariantViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving variants."""
@@ -74,6 +127,14 @@ class VariantViewSet(CustomReadOnlyModelViewSet):
                     request.user.pk,
                     annotation_id=annotation_id
                 ))
+
+        results, qt = timeit(
+            get_samples_by_snp,
+            [pk],
+            request.user.pk
+        )
+        return self.paginate(results, page_size=2000, is_serialized=True)
+
 
     @list_route(methods=['post'])
     def indel_bulk_by_sample(self, request):

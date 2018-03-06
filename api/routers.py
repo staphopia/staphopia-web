@@ -44,7 +44,8 @@ from api.viewsets.variants import (
     FeatureViewSet,
     FilterViewSet,
     ReferenceViewSet,
-    VariantViewSet
+    VariantViewSet,
+    VariantCountsViewSet
 )
 
 # Test Related
@@ -100,10 +101,10 @@ router.register(r'sccmec/subtype', SCCmecSubtypeViewSet, base_name='subtype')
 
 # Seqeunce quality related table
 router.register(r'sequence-quality', SequenceStatViewSet)
-
 router.register(r'status', StatusViewSet, base_name='status')
 
 # Variant Related Tables
+router.register(r'variant/counts', VariantCountsViewSet)
 router.register(r'variant/snp', SNPViewSet)
 router.register(r'variant/indel', InDelViewSet)
 router.register(r'variant/annotation', VariantAnnotationViewSet)

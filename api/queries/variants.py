@@ -6,6 +6,20 @@ from api.queries.samples import get_samples
 from staphopia.utils import reverse_complement
 
 
+def get_variant_counts(ids, is_annotation=False):
+    sql = """SELECT id, position, reference_id, annotation_id,
+                    is_mlst_set, nongenic_indel, nongenic_snp, indel,
+                    synonymous, nonsynonymous, total
+             FROM variant_counts
+             WHERE {0} IN ({1})
+             ORDER BY position;""".format(
+        'annotation_id' if is_annotation else 'position',
+        ','.join([str(i) for i in ids])
+    )
+
+    return query_database(sql)
+
+
 def get_samples_by_indel(indel_id, user_id, bulk=False):
     sql = """SELECT indel_id, members, count
              FROM variant_indelmember

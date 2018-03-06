@@ -95,7 +95,6 @@ class SNP(models.Model):
     is_synonymous = models.PositiveSmallIntegerField()
     is_transition = models.PositiveSmallIntegerField()
     is_genic = models.PositiveSmallIntegerField()
-    members = JSONField(default=[])
 
     class Meta:
         unique_together = ('reference', 'reference_position', 'reference_base',
@@ -131,6 +130,7 @@ class Counts(models.Model):
     """Variant counts across all samples for quick reference."""
 
     reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    annotation = models.ForeignKey('Annotation', on_delete=models.CASCADE)
     position = models.PositiveIntegerField(db_index=True)
     is_mlst_set = models.BooleanField(default=False, db_index=True)
     nongenic_indel = models.PositiveIntegerField()
