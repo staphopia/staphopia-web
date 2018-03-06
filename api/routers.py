@@ -31,7 +31,7 @@ from api.viewsets.sccmecs import (
 
 from api.viewsets.search import SearchViewSet
 from api.viewsets.sequences import SequenceStatViewSet
-from api.viewsets.sequence_types import MLSTViewSet
+from api.viewsets.sequence_types import MLSTViewSet, CGMLSTViewSet
 
 from api.viewsets.top import TopViewSet
 from api.viewsets.info import InfoViewSet, StatusViewSet
@@ -83,8 +83,9 @@ router.register(r'top', TopViewSet, base_name='top')
 # Kmer related tables
 router.register(r'kmer', KmerViewSet)
 
-# Seqeunce Type (MLST) Related Tables
+# Seqeunce Type (MLST, cgMLST) Related Tables
 router.register(r'mlst', MLSTViewSet)
+router.register(r'cgmlst', CGMLSTViewSet)
 
 # Resistance Related Tables
 router.register(r'resistance/ariba', ResistanceAribaViewSet,

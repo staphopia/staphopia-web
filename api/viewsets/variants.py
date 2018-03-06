@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import format_results, get_ids_in_bulk
 from api.queries.variants import (
+    get_samples_by_snp,
+    get_samples_by_indel,
     get_indels_by_sample,
     get_snps_by_sample,
     get_variant_counts_by_samples,
@@ -123,6 +125,36 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
 
         return self.paginate(queryset, serializer=SNPSerializer)
 
+    @detail_route(methods=['get'])
+    def samples(self, request, pk=None):
+        """Return list of samples associated with a given SNP id."""
+        results, qt = timeit(
+            get_samples_by_snp,
+            [pk],
+            request.user.pk
+        )
+        return self.paginate(results, page_size=2000, is_serialized=True)
+
+
+    @list_route(methods=['post'])
+    def bulk_samples(self, request):
+        """Return list of samples associated with a given list of SNP ids."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=100)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                results, qt = timeit(
+                    get_samples_by_snp,
+                    request.data['ids'],
+                    request.user.pk,
+                    bulk=True
+                )
+                return self.formatted_response(results, query_time=qt)
+
     @list_route(methods=['post'])
     def bulk(self, request):
         """Given a list of SNP IDs, return table info for each SNP."""
@@ -130,9 +162,9 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
             validator = validate_list_of_ids(request.data, max_query=10000)
             if validator['has_errors']:
                 return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
+                    "message": validator['message'],
+                    "data": request.data
+                })
             else:
                 return self.formatted_response(get_ids_in_bulk(
                     'variant_snp',
@@ -146,9 +178,9 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
             validator = validate_list_of_ids(request.data, max_query=10)
             if validator['has_errors']:
                 return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
+                    "message": validator['message'],
+                    "data": request.data
+                })
             else:
                 annotation_id = None
                 if 'annotation_id' in request.GET:
@@ -172,6 +204,35 @@ class InDelViewSet(CustomReadOnlyModelViewSet):
 
     queryset = Indel.objects.all()
     serializer_class = InDelSerializer
+
+    @detail_route(methods=['get'])
+    def samples(self, request, pk=None):
+        """Return list of samples associated with a given Indel id."""
+        results, qt = timeit(
+            get_samples_by_indel,
+            [pk],
+            request.user.pk
+        )
+        return self.paginate(results, page_size=2000, is_serialized=True)
+
+    @list_route(methods=['post'])
+    def bulk_samples(self, request):
+        """Return list of samples associated with a given list of Indel ids."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=100)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                results, qt = timeit(
+                    get_samples_by_indel,
+                    request.data['ids'],
+                    request.user.pk,
+                    bulk=True
+                )
+                return self.formatted_response(results, query_time=qt)
 
     @list_route(methods=['post'])
     def bulk(self, request):

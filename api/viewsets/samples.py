@@ -25,7 +25,8 @@ from api.queries.resistances import (
 from api.queries.sequences import get_sequencing_stats
 from api.queries.sequence_types import (
     get_unique_st_samples,
-    get_sequence_type
+    get_sequence_type,
+    get_cgmlst
 )
 
 from api.queries.sccmecs import (
@@ -293,7 +294,16 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
         result, qt = timeit(
             get_sequence_type,
             [pk],
-            request.user.pk
+            request.user
+        )
+        return self.formatted_response(result, query_time=qt)
+
+    @detail_route(methods=['get'])
+    def cgmlst(self, request, pk=None):
+        result, qt = timeit(
+            get_cgmlst,
+            [pk],
+            request.user
         )
         return self.formatted_response(result, query_time=qt)
 

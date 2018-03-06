@@ -35,6 +35,13 @@ def format_results(results, query_time=None, limit=None):
         ))
 
 
+def get_sample_permisions(user):
+    if user.username == 'demo':
+        return f's.user_id={user.pk}'
+    else:
+        return f's.is_public=TRUE OR s.user_id={user.pk}'
+
+
 def query_database(sql):
     """Submit SQL query to the database."""
     cursor = connection.cursor()

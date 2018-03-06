@@ -2,7 +2,30 @@
 from collections import OrderedDict
 
 from api.utils import query_database
+from api.queries.samples import get_samples
 from staphopia.utils import reverse_complement
+
+
+def get_samples_by_indel(indel_id, user_id, bulk=False):
+    sql = """SELECT indel_id, members, count
+             FROM variant_indelmember
+             WHERE indel_id IN ({0});""".format(
+        ','.join([str(i) for i in indel_id])
+    )
+
+    results = []
+    for row in query_database(sql):
+        if bulk:
+            for sample_id in row['members']:
+                results.append({
+                    "indel_id": row['indel_id'],
+                    "sample_id": sample_id
+                })
+        else:
+            if len(row['members']):
+                results = get_samples(user_id, sample_ids=row['members'])
+            break
+    return results
 
 
 def get_indels_by_sample(sample_id, user_id, annotation_id=None):
@@ -82,6 +105,27 @@ def get_indels_by_sample(sample_id, user_id, annotation_id=None):
                 ]))
     return results
 
+
+def get_samples_by_snp(snp_id, user_id, bulk=False):
+    sql = """SELECT snp_id, members
+             FROM variant_snpmember
+             WHERE snp_id IN ({0});""".format(
+        ','.join([str(i) for i in snp_id])
+    )
+
+    results = []
+    for row in query_database(sql):
+        if bulk:
+            for sample_id in row['members']:
+                results.append({
+                    "snp_id": row['snp_id'],
+                    "sample_id": sample_id
+                })
+        else:
+            if len(row['members']):
+                results = get_samples(user_id, sample_ids=row['members'])
+            break
+    return results
 
 def get_snps_by_sample(sample_id, user_id, annotation_id=None):
     """Return snps associated with a sample."""

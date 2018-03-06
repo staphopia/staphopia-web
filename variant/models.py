@@ -59,6 +59,18 @@ class Indel(models.Model):
     reference_strain.admin_order_field = 'reference'
 
 
+class IndelMember(models.Model):
+    """Indels and which public samples they are found in."""
+
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    indel = models.OneToOneField('Indel', on_delete=models.CASCADE)
+    count = models.PositiveIntegerField(db_index=True)
+    members = JSONField(default=[])
+
+    class Meta:
+        unique_together = ('reference', 'indel')
+
+
 class SNP(models.Model):
     """Information unique to the SNP."""
 
@@ -83,6 +95,7 @@ class SNP(models.Model):
     is_synonymous = models.PositiveSmallIntegerField()
     is_transition = models.PositiveSmallIntegerField()
     is_genic = models.PositiveSmallIntegerField()
+    members = JSONField(default=[])
 
     class Meta:
         unique_together = ('reference', 'reference_position', 'reference_base',
@@ -102,11 +115,34 @@ class SNP(models.Model):
     reference_strain.admin_order_field = 'reference'
 
 
-class SNPCounts(models.Model):
-    """SNP counts across all samples for quick reference."""
+class SNPMember(models.Model):
+    """SNPs and which public samples they are found in."""
 
-    snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
-    count = models.PositiveIntegerField(default=0, db_index=True)
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    snp = models.OneToOneField('SNP', on_delete=models.CASCADE)
+    count = models.PositiveIntegerField(db_index=True)
+    members = JSONField(default=[])
+
+    class Meta:
+        unique_together = ('reference', 'snp')
+
+
+class Counts(models.Model):
+    """Variant counts across all samples for quick reference."""
+
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    position = models.PositiveIntegerField(db_index=True)
+    is_mlst_set = models.BooleanField(default=False, db_index=True)
+    nongenic_indel = models.PositiveIntegerField()
+    nongenic_snp = models.PositiveIntegerField()
+    indel = models.PositiveIntegerField()
+    synonymous = models.PositiveIntegerField()
+    nonsynonymous = models.PositiveIntegerField()
+    total = models.PositiveIntegerField()
+
+
+    class Meta:
+        unique_together = ('reference', 'position', 'is_mlst_set')
 
 
 class Comment(models.Model):
