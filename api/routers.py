@@ -48,6 +48,8 @@ from api.viewsets.variants import (
     VariantCountsViewSet
 )
 
+from api.viewsets.virulences import VirulenceAribaViewSet
+
 # Test Related
 from api.tests import TestsViewSet
 
@@ -113,6 +115,10 @@ router.register(r'variant/feature', FeatureViewSet)
 router.register(r'variant/filter', FilterViewSet)
 router.register(r'variant/reference', ReferenceViewSet)
 router.register(r'variant', VariantViewSet)
+
+# Virulence related tables
+router.register(r'virulence/ariba', VirulenceAribaViewSet,
+                base_name='virulence_ariba')
 
 # Test Related Tables
 router.register(r'tests', TestsViewSet, base_name='tests')

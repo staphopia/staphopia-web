@@ -21,7 +21,7 @@ class ResistanceAribaViewSet(CustomReadOnlyModelViewSet):
 
     @list_route(methods=['post'])
     def bulk_by_sample(self, request):
-        """Given a list of Sample IDs, return assembly info for each Sample."""
+        """Given a list of Sample IDs, return resistance info for each Sample."""
         if request.method == 'POST':
             validator = validate_list_of_ids(request.data, max_query=500)
             if validator['has_errors']:
