@@ -82,6 +82,7 @@ def test_files_exist(directory, sample, files, optional=False):
     """Read a dict of files, and test if they exist."""
     missing = []
     full_path = {'plasmid': True, 'virulence': True}
+
     for key, file in files.items():
         path = directory
         if key == 'timeline' or key == 'version':
@@ -186,7 +187,7 @@ def insert_md5s(sample, md5s):
             raise CommandError(f'Error, unable to create MD5 object. {e}')
 
 
-def get_sample(username, name, md5file):
+def get_sample(username, name, md5file, sample_info=None, project_info=None):
     """Return Sample object is it exists, else raise error."""
     # Get FASTQ MD5
     md5s = []
@@ -200,25 +201,39 @@ def get_sample(username, name, md5file):
     # Check if sample exists
     sample = get_sample_by_name(username, name)
 
-    if sample.id != sample_md5:
-        # Error, trying to update a sample when MD5 exists for another
-        # sample
-        raise CommandError(
-            f'MD5s exist for sample {sample_md5}, but sample '
-             '{sample.id} is being updated. Cannot continue.'
-        )
-        sys.exit(1)
+    if sample and sample_md5:
+        if sample.id != sample_md5:
+            # Error, trying to update a sample when MD5 exists for another
+            # sample
+            raise CommandError(
+                f'MD5s exist for sample {sample_md5}, but sample '
+                 '{sample.id} is being updated. Cannot continue.'
+            )
+            sys.exit(1)
+        else:
+            return sample
     else:
+        # Create a new sample
+        sample = handle_sample(
+            sample_info, username, force=True, project_info=project_info
+        )
+
+        if not sample_md5:
+            insert_md5s(sample, md5s)
+
         return sample
 
 
-def prep_insert(username, name, directory, optional=False):
+def prep_insert(username, name, directory, optional=False, sample_info=None,
+                project_info=None):
     """
     Verify all is good to begin data insert. All files exist, sample exists
     and the version exists.
     """
+    print(directory)
     files, missing = get_analysis_status(name, directory, optional=optional)
-    sample = get_sample(username, name, files['fastq_original_md5'])
+    sample = get_sample(username, name, files['fastq_original_md5'],
+                        sample_info=sample_info, project_info=project_info)
     version = get_pipeline_version(files['version'])
 
     return [sample, version, files]

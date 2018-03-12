@@ -4,6 +4,7 @@ import json
 
 from django.db import transaction
 from django.core.management.base import BaseCommand
+from django.core.management.base import CommandError
 
 from sample.tools import prep_insert
 from annotation.tools import insert_annotation
@@ -33,12 +34,36 @@ class Command(BaseCommand):
                             help=('Sample tag associated with sample.'))
         parser.add_argument('--force', action='store_true',
                             help='Force updates for existing entries.')
+        parser.add_argument('--is_public', action='store_true',
+                            help='Sample should be made public.')
+        parser.add_argument('--is_published', action='store_true',
+                            help='Sample is published.')
+        parser.add_argument('--tag', type=str,
+                            help='A tag to associate the sampel with.')
+        parser.add_argument('--comment', type=str,
+                            help='Any comments about the sample.')
 
     def handle(self, *args, **opts):
         """Insert the results of sample analysis into the database."""
         # Validate all files are present, will cause error if files are missing
+        sample_info = {
+            'name': opts['name'],
+            'is_public': opts['is_public'],
+            'is_published': opts['is_published']
+        }
+
+        project_info = None
+        if opts['tag'] and opts['comment']:
+            project_info = {
+                'tag': opts['tag'],
+                'comment': opts['comment']
+            }
+        elif opts['tag'] or opts['comment']:
+            raise CommandError('--tag and --comment must be used together')
+
         sample, version, files = prep_insert(
-            opts['user'], opts['name'], opts['sample_dir']
+            opts['user'], opts['name'], opts['sample_dir'],
+            sample_info=sample_info, project_info=project_info
         )
 
         # Insert analysis results
