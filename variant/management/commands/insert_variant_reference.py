@@ -1,11 +1,13 @@
 """Insert variant analysis results into database."""
 import sys
-import vcf
+from cyvcf2 import VCF
+import time
 
 from django.db import connection, transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
+from staphopia.utils import timeit
 from variant.models import Annotation, Feature, Comment, Reference, SNP
 
 
@@ -32,7 +34,7 @@ class Command(BaseCommand):
             sys.exit()
 
         # Open VCF for reading
-        self.open_vcf(opts['input'], compressed=opts['compressed'])
+        self.open_vcf(opts['input'])
 
         # Get reference info
         self.get_reference_instance()
@@ -48,27 +50,27 @@ class Command(BaseCommand):
         self.snps = []
 
         # Read through VCF
+        self.time = time.time()
         self.read_vcf()
 
         # Ready to insert variants
         self.insert_snps()
 
-    def open_vcf(self, input, compressed=False):
-        """Read the VCF."""
+    @timeit
+    def open_vcf(self, vcf_file):
+        """Read input VCF file."""
         try:
-            self.vcf_reader = vcf.Reader(open(input, 'r'),
-                                         compressed=compressed)
+            self.vcf_reader = VCF(vcf_file)
         except IOError:
             raise CommandError('{0} does not exist'.format(input))
 
     @transaction.atomic
     def get_reference_instance(self):
-        """Get the set of reference instances."""
+        """Get reference instance."""
         try:
-            r = self.vcf_reader.contigs.keys()[0]
+            r = self.vcf_reader.seqnames[0]
             self.reference, created = Reference.objects.get_or_create(
-                name=r,
-                length=self.vcf_reader.contigs[r].length
+                name=r
             )
         except IntegrityError:
             raise CommandError('Error getting/saving reference information')
@@ -103,30 +105,11 @@ class Command(BaseCommand):
     def get_annotation(self, record):
         """Get or create annotations."""
         annotation = None
-        locus_tag = record.INFO['LocusTag'][0]
+        locus_tag = record.INFO['LocusTag']
         if locus_tag in self.locus_tags:
             pk = self.locus_tags[locus_tag]
             annotation = self.annotations[pk]
-        elif locus_tag is not None:
-            protein_id = record.INFO['ProteinID'][0]
-            if not protein_id:
-                protein_id = "not_applicable"
-
-            annotation = Annotation.objects.create(
-                reference=self.reference,
-                locus_tag=locus_tag,
-                protein_id=protein_id,
-                gene=('.' if record.INFO['Gene'][0] is None
-                      else record.INFO['Gene'][0]),
-                product=('.' if record.INFO['Product'][0] is None
-                         else record.INFO['Product'][0]),
-                note=('.' if record.INFO['Note'][0] is None
-                      else record.INFO['Note'][0]),
-                is_pseudo=record.INFO['IsPseudo']
-            )
-            self.locus_tags[locus_tag] = annotation.pk
-            self.annotations[annotation.pk] = annotation
-        elif locus_tag is None:
+        elif locus_tag == '.':
             if 'inter_genic' not in self.locus_tags:
                 annotation = Annotation.objects.create(
                     reference=self.reference,
@@ -142,6 +125,25 @@ class Command(BaseCommand):
             else:
                 pk = self.locus_tags['inter_genic']
                 annotation = self.annotations[pk]
+        else:
+            protein_id = record.INFO['ProteinID']
+            if protein_id == '.':
+                protein_id = "not_applicable"
+
+            annotation = Annotation.objects.create(
+                reference=self.reference,
+                locus_tag=locus_tag,
+                protein_id=protein_id,
+                gene=('.' if record.INFO['Gene'] is None
+                      else record.INFO['Gene']),
+                product=('.' if record.INFO['Product'] is None
+                         else record.INFO['Product']),
+                note=('.' if record.INFO['Note'] is None
+                      else record.INFO['Note']),
+                is_pseudo=record.INFO['IsPseudo']
+            )
+            self.locus_tags[locus_tag] = annotation.pk
+            self.annotations[annotation.pk] = annotation
 
         return annotation
 
@@ -194,20 +196,34 @@ class Command(BaseCommand):
             reference_base=record.REF,
             alternate_base=record.ALT[0],
 
-            reference_codon=('.' if record.INFO['RefCodon'][0] is None
-                             else record.INFO['RefCodon'][0]),
-            alternate_codon=('.' if record.INFO['AltCodon'][0] is None
-                             else record.INFO['AltCodon'][0]),
-            reference_amino_acid=('.' if record.INFO['RefAminoAcid'][0] is None
-                                  else record.INFO['RefAminoAcid'][0]),
-            alternate_amino_acid=('.' if record.INFO['AltAminoAcid'][0] is None
-                                  else record.INFO['AltAminoAcid'][0]),
-            codon_position=(0 if record.INFO['CodonPosition'] is None
-                            else record.INFO['CodonPosition']),
-            snp_codon_position=(0 if record.INFO['SNPCodonPosition'] is None
-                                else record.INFO['SNPCodonPosition']),
-            amino_acid_change=('.' if record.INFO['AminoAcidChange'][0] is None
-                               else record.INFO['AminoAcidChange'][0]),
+            reference_codon=(
+                '.' if record.INFO['RefCodon'][0] is None
+                else record.INFO['RefCodon'][0]
+            ),
+            alternate_codon=(
+                '.' if record.INFO['AltCodon'][0] is None
+                else record.INFO['AltCodon'][0]
+            ),
+            reference_amino_acid=(
+                record.INFO['RefAminoAcid'] if record.INFO['RefAminoAcid']
+                else '.'
+            ),
+            alternate_amino_acid=(
+                record.INFO['AltAminoAcid'] if record.INFO['AltAminoAcid']
+                else '.'
+            ),
+            codon_position=(
+                0 if record.INFO['CodonPosition'] is None
+                else record.INFO['CodonPosition']
+            ),
+            snp_codon_position=(
+                0 if record.INFO['SNPCodonPosition'] is None
+                else record.INFO['SNPCodonPosition']
+            ),
+            amino_acid_change=(
+                '.' if record.INFO['AminoAcidChange'][0] is None
+                else record.INFO['AminoAcidChange'][0]
+            ),
             is_synonymous=record.INFO['IsSynonymous'],
             is_transition=record.INFO['IsTransition'],
             is_genic=record.INFO['IsGenic'],
@@ -216,18 +232,25 @@ class Command(BaseCommand):
     def read_vcf(self):
         """Read throught VCF Records."""
         count = 0
+
         for record in self.vcf_reader:
             # Get annotation, filter, comment
             annotation = self.get_annotation(record)
-            feature = self.get_feature(record.INFO['FeatureType'][0])
+            feature = self.get_feature(record.INFO['FeatureType'])
 
             # Insert SNP/Indel
             if record.is_snp:
-                self.get_comment(record.INFO['Comments'][0])
+                self.get_comment(record.INFO['Comments'])
                 self.create_snp(record, self.reference, annotation, feature)
                 count += 1
                 if count % 100000 == 0:
-                    print("Processed {0} SNPs".format(count))
+                    total_time = f'{time.time() - self.time:.2f}'
+                    rate = f'{100000 / float(total_time):.2f}'
+                    print(''.join([
+                        f'Processed 100k, Total {count} SNPs ',
+                        f'(took {total_time}s, {rate} snp/s)'
+                    ]))
+                    self.time = time.time()
 
     @transaction.atomic
     def insert_snps(self):
@@ -238,10 +261,8 @@ class Command(BaseCommand):
     @transaction.atomic
     def empty_tables(self):
         """Empty Tables and Reset id counters to 1."""
-        tables = ['variant_toindel', 'variant_tosnp', 'variant_snp',
-                  'variant_indel', 'variant_annotation', 'variant_comment',
-                  'variant_confidence', 'variant_counts', 'variant_feature',
-                  'variant_filter', 'variant_reference', 'variant_snpcounts']
+        tables = ['variant_snp', 'variant_indel', 'variant_annotation',
+                  'variant_comment', 'variant_feature', 'variant_filter']
 
         for table in tables:
             self.empty_table(table)

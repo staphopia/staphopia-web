@@ -6,35 +6,162 @@ from rest_framework.response import Response
 from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import format_results, get_ids_in_bulk
 from api.queries.variants import (
+    get_variant_counts,
+    get_samples_by_snp,
+    get_samples_by_indel,
     get_indels_by_sample,
     get_snps_by_sample,
     get_variant_counts_by_samples,
     get_representative_sequence
 )
 from api.validators import validate_positive_integer, validate_list_of_ids
+from api.utils import timeit
 
 from variant.models import (
     SNP,
-    ToSNP,
     Indel,
-    ToIndel,
     Annotation,
+    Counts,
     Comment,
     Feature,
     Filter,
     Reference,
-    Counts
+    Variant
 )
 from api.serializers.variants import (
+    VariantSerializer,
     SNPSerializer,
     InDelSerializer,
     AnnotationSerializer,
+    VariantCountsSerializer,
     CommentSerializer,
     FilterSerializer,
     FeatureSerializer,
-    ReferenceSerializer,
-    CountsSerializer
+    ReferenceSerializer
 )
+
+
+class VariantCountsViewSet(CustomReadOnlyModelViewSet):
+    """Break down of variant counts by reference position."""
+    queryset = Counts.objects.all()
+    serializer_class = VariantCountsSerializer
+
+    def list(self, request):
+        annotation_id = None
+        if 'annotation_id' in request.GET:
+            validator = validate_positive_integer(
+                request.GET['annotation_id']
+            )
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                annotation_id = request.GET['annotation_id']
+
+        if annotation_id:
+            results, qt = timeit(
+                get_variant_counts,
+                [annotation_id],
+                is_annotation=True
+            )
+            return self.formatted_response(results, query_time=qt)
+        else:
+            return self.paginate(Counts.objects.order_by('position'),
+                                 serializer=VariantCountsSerializer,
+                                 page_size=200)
+
+    @list_route(methods=['post'])
+    def bulk(self, request):
+        """Given a list of reference positions, return variant counts."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=1000)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            else:
+                is_annotation = False
+                if 'is_annotation' in request.GET:
+                    is_annotation = True
+
+                results, qt = timeit(
+                    get_variant_counts,
+                    request.data['ids'],
+                    is_annotation=is_annotation
+                )
+                return self.formatted_response(results, query_time=qt)
+
+class VariantViewSet(CustomReadOnlyModelViewSet):
+    """A simple ViewSet for listing or retrieving variants."""
+    queryset = Variant.objects.all()
+    serializer_class = VariantSerializer
+
+    def list(self, request):
+        return Response({
+            "message": "Please use indel_bulk_by_sample or snp_bulk_by_sample"
+        })
+
+    @list_route(methods=['post'])
+    def snp_bulk_by_sample(self, request):
+        """Given a list of SNP IDs, return table info for each SNP."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=10)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            else:
+                annotation_id = None
+                if 'annotation_id' in request.GET:
+                    validator = validate_positive_integer(
+                        request.GET['annotation_id']
+                    )
+                    if validator['has_errors']:
+                        return Response(validator)
+                    else:
+                        annotation_id = request.GET['annotation_id']
+
+                return self.formatted_response(get_snps_by_sample(
+                    request.data['ids'],
+                    request.user.pk,
+                    annotation_id=annotation_id
+                ))
+
+        results, qt = timeit(
+            get_samples_by_snp,
+            [pk],
+            request.user.pk
+        )
+        return self.paginate(results, page_size=2000, is_serialized=True)
+
+
+    @list_route(methods=['post'])
+    def indel_bulk_by_sample(self, request):
+        """Given a list of InDel IDs, return table info for each InDel."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+            else:
+                annotation_id = None
+                if 'annotation_id' in request.GET:
+                    validator = validate_positive_integer(
+                        request.GET['annotation_id']
+                    )
+                    if validator['has_errors']:
+                        return Response(validator)
+                    else:
+                        annotation_id = request.GET['annotation_id']
+
+                return self.formatted_response(get_indels_by_sample(
+                    request.data['ids'],
+                    request.user.pk,
+                    annotation_id=annotation_id
+                ))
 
 
 class SNPViewSet(CustomReadOnlyModelViewSet):
@@ -61,11 +188,33 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def samples(self, request, pk=None):
-        """Return a list of samples with a given snp."""
-        hits = ToSNP.objects.filter(snp_id=pk).values_list(
-            'sample_id', flat=True
+        """Return list of samples associated with a given SNP id."""
+        results, qt = timeit(
+            get_samples_by_snp,
+            [pk],
+            request.user.pk
         )
-        return Response(format_results(hits))
+        return self.paginate(results, page_size=2000, is_serialized=True)
+
+
+    @list_route(methods=['post'])
+    def bulk_samples(self, request):
+        """Return list of samples associated with a given list of SNP ids."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=100)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                results, qt = timeit(
+                    get_samples_by_snp,
+                    request.data['ids'],
+                    request.user.pk,
+                    bulk=True
+                )
+                return self.formatted_response(results, query_time=qt)
 
     @list_route(methods=['post'])
     def bulk(self, request):
@@ -74,9 +223,9 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
             validator = validate_list_of_ids(request.data, max_query=10000)
             if validator['has_errors']:
                 return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
+                    "message": validator['message'],
+                    "data": request.data
+                })
             else:
                 return self.formatted_response(get_ids_in_bulk(
                     'variant_snp',
@@ -90,9 +239,9 @@ class SNPViewSet(CustomReadOnlyModelViewSet):
             validator = validate_list_of_ids(request.data, max_query=10)
             if validator['has_errors']:
                 return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
+                    "message": validator['message'],
+                    "data": request.data
+                })
             else:
                 annotation_id = None
                 if 'annotation_id' in request.GET:
@@ -119,11 +268,32 @@ class InDelViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def samples(self, request, pk=None):
-        """Return a list of samples with a given snp."""
-        hits = ToIndel.objects.filter(indel_id=pk).values_list(
-            'sample_id', flat=True
+        """Return list of samples associated with a given Indel id."""
+        results, qt = timeit(
+            get_samples_by_indel,
+            [pk],
+            request.user.pk
         )
-        return Response(format_results(hits))
+        return self.paginate(results, page_size=2000, is_serialized=True)
+
+    @list_route(methods=['post'])
+    def bulk_samples(self, request):
+        """Return list of samples associated with a given list of Indel ids."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=100)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                results, qt = timeit(
+                    get_samples_by_indel,
+                    request.data['ids'],
+                    request.user.pk,
+                    bulk=True
+                )
+                return self.formatted_response(results, query_time=qt)
 
     @list_route(methods=['post'])
     def bulk(self, request):
@@ -169,7 +339,7 @@ class InDelViewSet(CustomReadOnlyModelViewSet):
                 ))
 
 
-class AnnotationViewSet(CustomReadOnlyModelViewSet):
+class VariantAnnotationViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving SNP."""
 
     queryset = Annotation.objects.all()
@@ -264,25 +434,3 @@ class ReferenceViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Reference.objects.all()
     serializer_class = ReferenceSerializer
-
-
-class CountsViewSet(CustomReadOnlyModelViewSet):
-    """A simple ViewSet for listing or retrieving Variant Counts."""
-
-    queryset = Counts.objects.all()
-    serializer_class = CountsSerializer
-
-    @list_route(methods=['post'])
-    def bulk_by_sample(self, request):
-        """Given a list of Sample IDs, return SNP and InDel Counts."""
-        if request.method == 'POST':
-            validator = validate_list_of_ids(request.data, max_query=500)
-            if validator['has_errors']:
-                return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
-            else:
-                return self.formatted_response(get_variant_counts_by_samples(
-                    request.data['ids'],
-                ))

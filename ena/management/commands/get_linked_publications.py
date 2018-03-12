@@ -10,20 +10,21 @@ from bs4 import BeautifulSoup
 
 from django.core.mail import EmailMessage
 from django.db import transaction
-from django.core.management.base import BaseCommand
+from django.db.utils import IntegrityError
+from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from ena.models import Experiment, ToPublication, SraLink
-from sample.models import Publication
+from sample.models import Sample, Metadata
+from publication.models import ToSample as PubToSample, Publication
+from tag.models import ToSample as TagToSample, Tag
 
 EUTILS = 'http://www.ncbi.nlm.nih.gov/entrez/eutils'
 ESEARCH = EUTILS + '/esearch.fcgi?db=sra&term'
 ESUMMARY = EUTILS + '/esummary.fcgi?db=pubmed&id'
 EFETCH = EUTILS + '/efetch.fcgi?db=pubmed&retmode=xml&id'
 ELINK = EUTILS + '/elink.fcgi?dbfrom=sra&db=pubmed&id'
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
 
 
 class Command(BaseCommand):
@@ -38,6 +39,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Find links between SRA and Pubmed."""
+        user = User.objects.get(username='ena')
         experiments = Experiment.objects.all()
         i = 0
         total = experiments.count()
@@ -53,12 +55,22 @@ class Command(BaseCommand):
                 if pmids:
                     for pmid in pmids:
                         if pmid not in pubmed:
-                            pubmed_obj, created = self.get_pubmed_info(pmid)
+                            pubmed_obj, tag, created = self.get_pubmed_info(
+                                pmid, user
+                            )
                             print('{0} ({1})\t{2}'.format(
                                 pmid, created, pubmed_obj.title
                             ))
                             pubmed[pmid] = {'obj': pubmed_obj}
                         self.insert_ena_to_pub(experiment, pubmed[pmid]['obj'])
+                        sample = self.update_sample(
+                            experiment.experiment_accession, user
+                        )
+                        if sample:
+                            # These samples have been processed
+                            self.update_metadata(sample, user)
+                            self.update_sampletag(sample, tag)
+                            self.link_publication_to_sample(sample, pubmed_obj)
                         links += 1
                 sra_obj.is_queried = True
                 sra_obj.save()
@@ -123,6 +135,67 @@ class Command(BaseCommand):
         ))
 
         return topub
+
+    @transaction.atomic
+    def update_sample(self, name, user):
+        success = False
+        try:
+            # Update the sample
+            sample = Sample.objects.get(user=user, name=name)
+            sample.is_public = True
+            sample.save()
+            success = sample
+        except Sample.DoesNotExist:
+            print(f'Sample {name} does not exist, skipping')
+
+        return success
+
+    @transaction.atomic
+    def update_metadata(self, sample, user):
+        try:
+            # Update the metadata
+            metadata = Metadata.objects.get(sample=sample)
+            if not metadata.history:
+                metadata.history = []
+
+            if 'is_published' in metadata.metadata:
+                metadata.history.append({
+                    'user_id': user.id,
+                    'user_name': user.username,
+                    'field': 'is_published',
+                    'value': metadata.metadata['is_published'],
+                    'date': str(datetime.datetime.now())
+                })
+            else:
+                metadata.history.append({
+                    'user_id': user.id,
+                    'user_name': user.username,
+                    'field': 'is_published',
+                    'value': 'CREATED_FIELD',
+                    'date': str(datetime.datetime.now())
+                })
+            metadata.metadata['is_published'] = True
+            metadata.save()
+        except IntegrityError as e:
+            raise CommandError(f'Sample {name} error updating tag, {e}')
+
+    @transaction.atomic
+    def link_publication_to_sample(self, sample, publication):
+        try:
+            pub_obj, create = PubToSample.objects.get_or_create(
+                sample=sample,
+                publication=publication
+            )
+        except IntegrityError as e:
+            raise CommandError(f'Sample {name} error linking publication, {e}')
+
+    @transaction.atomic
+    def update_sampletag(self, sample, tag):
+        try:
+            # Link to tag
+            totag = TagToSample.objects.create(tag=tag, sample=sample)
+        except IntegrityError as e:
+            raise CommandError(f'Sample {name} does not exist, {e}')
 
     def cook_soup(self, url):
         """Query NCBI."""
@@ -209,10 +282,16 @@ class Command(BaseCommand):
         """Parse out article ids."""
         return '{0}={1}'.format(article['idtype'], article.get_text())
 
-    def get_pubmed_info(self, pmid):
+    def get_pubmed_info(self, pmid, user):
         """Fetch info (abstract, authors, etc...) related to pubmed id."""
+        tag_name = f'PMID:{pmid}'
+        created = False
         try:
-            return [Publication.objects.get(pmid=pmid), False]
+            publication = Publication.objects.get(pmid=pmid)
+            tag, created = Tag.objects.get_or_create(
+                user=user, tag=tag_name, comment=publication.title
+            )
+            return [publication, tag, False]
         except Publication.DoesNotExist:
             url = '{0}={1}'.format(EFETCH, pmid)
             soup = self.cook_soup(url)
@@ -223,10 +302,15 @@ class Command(BaseCommand):
             keywords = set(
                 [i.get_text() for i in soup.find_all(keyword_items)]
             )
-            return [self.insert_publication(pmid, {
+            publication = self.insert_publication(pmid, {
                 'authors': ';'.join(authors),
                 'title': soup.find('articletitle').get_text(),
                 'abstract': soup.find('abstracttext').get_text(),
                 'reference_ids': ';'.join(ids),
                 'keywords': ';'.join(list(keywords))
-            }), True]
+            })
+            tag, created = Tag.objects.get_or_create(
+                user=user, tag=tag_name, comment=publication.title
+            )
+            created = True
+        return [publication, tag, True]

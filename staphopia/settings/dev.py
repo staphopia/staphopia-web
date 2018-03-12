@@ -5,7 +5,7 @@ from staphopia.settings.private import DEV_PASS
 SECURITY WARNING: don't run with debug turned on in production
 ----------------------------------------------------------------------------'''
 DEBUG = True
-ALLOWED_HOSTS = ['0.0.0.0:80']
+ALLOWED_HOSTS = ['*']
 
 
 '''----------------------------------------------------------------------------
@@ -18,7 +18,7 @@ DATABASES = {
         'NAME': 'staphopia',
         'USER': 'staphopia',
         'PASSWORD': DEV_PASS,
-        'HOST': 'staphopia.genetics.emory.edu',
+        'HOST': 'chlamy.genetics.emory.edu',
         'PORT': '29466',
     }
 }
@@ -36,5 +36,6 @@ SITE_ENV = 'dev'
 LOGIN_URL = '/accounts/login/'
 LOGIN_EXEMPT_URLS = (
     r'^accounts/login/',
+    r'^api/*',
     r'^',
 )

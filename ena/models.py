@@ -1,7 +1,7 @@
 """ENA related models."""
 from django.db import models
 
-from sample.models import Publication
+from publication.models import Publication
 
 
 class Status(models.Model):

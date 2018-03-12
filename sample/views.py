@@ -6,7 +6,7 @@ from django.db import transaction
 
 from sample.datatable import DataTable
 from sample.forms import SampleSubmissionForm
-from sample.models import Sample, SampleSummary
+from sample.models import Sample
 
 from api.utils import query_database
 

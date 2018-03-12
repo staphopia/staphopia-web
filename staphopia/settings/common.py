@@ -27,15 +27,14 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'registration',
-    'registration.contrib.notification',
-    'django_email_changer',
     'django.contrib.auth',
+    # 'django_email_changer',
+
     'django.contrib.contenttypes',
     'django.contrib.humanize',
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'organizations',
 
     'crispy_forms',
     'django_extensions',
@@ -44,16 +43,25 @@ INSTALLED_APPS = (
     # Staphopia Related
     'staphopia',
     'autofill',
-    'sample',
-    'ena',
+    'annotation',
     'assembly',
+    'cgmlst',
+    'ena',
     'gene',
-    'mlst',
-    'sequence',
-    'variant',
     'kmer',
+    'metadata',
+    'mlst',
+    'plasmid',
+    'publication',
     'resistance',
+    'sample',
     'sccmec',
+    'search',
+    'sequence',
+    'tag',
+    'variant',
+    'version',
+    'virulence'
 )
 
 # django-registration
@@ -97,7 +105,9 @@ REST_FRAMEWORK = {
         'anon': '10/day',
         'user': '100000000000/day'
     },
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': (
+        'rest_framework.pagination.PageNumberPagination'
+    ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'PAGE_SIZE': 100
 }
@@ -106,15 +116,16 @@ MAX_IDS_PER_QUERY = 5000
 '''----------------------------------------------------------------------------
 Middleware
 ----------------------------------------------------------------------------'''
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'staphopia.middleware.LoginRequiredMiddleware',
-)
+    # 'staphopia.middleware.LoginRequiredMiddleware'
+]
 APPEND_SLASH = True
 
 '''----------------------------------------------------------------------------

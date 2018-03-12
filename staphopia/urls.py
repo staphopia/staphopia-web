@@ -3,14 +3,14 @@ from django.conf.urls import include, url
 from django.views.generic import RedirectView
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 
 # Thrid Party Apps
-from django_email_changer.views import (
-    ActivateUserEmailModification,
-    ActivationEmailSentSuccessView
-)
-from organizations.backends import invitation_backend
+# from django_email_changer.views import (
+#     ActivateUserEmailModification,
+#     ActivationEmailSentSuccessView
+# )
+# from organizations.backends import invitation_backend
 
 # Staphopia
 from staphopia.settings.common import *
@@ -31,8 +31,8 @@ urlpatterns = [
     url(r'^settings/api-token/', api.views.api_token, name='api-token'),
 
     # Grappelli & Admin Site
-    url(r'^grappelli/', include('grappelli.urls')),
-    url(r'^admin/', include(admin.site.urls)),
+    #url(r'^grappelli/', include('grappelli.urls')),
+    #url(r'^admin/', include(admin.site.urls)),
     url(r'^top10/$', sample.views.top10, name='top10'),
     url(r'^contact/$', staphopia.views.contact, name='contact'),
     url(r'^settings/account/', staphopia.views.account_settings,
@@ -46,25 +46,24 @@ urlpatterns = [
     url(r'^sample/$', sample.views.sample, name='samples'),
 
     # django-email-changer
-    url(r'settings/email/change/activate/(?P<code>[^/]+)/',
-        ActivateUserEmailModification.as_view(),
-        name="django_change_email_activate_new_email"),
-    url(r'^settings/email/change/sent/$',
-        ActivationEmailSentSuccessView.as_view(),
-        name="django_change_email_sent_activation_email"),
-    url(r'^settings/email/$',
-        staphopia.views.CreateUserEmailModificationRequest.as_view(),
-        name="django_email_changer_change_view"),
+    # url(r'settings/email/change/activate/(?P<code>[^/]+)/',
+    #     ActivateUserEmailModification.as_view(),
+    #     name="django_change_email_activate_new_email"),
+    # url(r'^settings/email/change/sent/$',
+    #     ActivationEmailSentSuccessView.as_view(),
+    #     name="django_change_email_sent_activation_email"),
+    # url(r'^settings/email/$',
+    #     staphopia.views.CreateUserEmailModificationRequest.as_view(),
+    #     name="django_email_changer_change_view"),
 
     # django-registration
     url(r'^accounts/register/$', staphopia.views.RegistrationView.as_view(),
         name='registration_register'),
     url(r'^accounts/logout/$', logout, {'next_page': '/'}),
-    url('^accounts/', include('registration.urls')),
-
+    url(r'^accounts/', include('registration.backends.default.urls')),
     # django-organizations
-    url(r'^groups/', include('organizations.urls')),
-    url(r'^invitations/', include(invitation_backend().get_urls())),
+    # url(r'^groups/', include('organizations.urls')),
+    # url(r'^invitations/', include(invitation_backend().get_urls())),
 
     # Charts
     # url(r'^chart-data/sequencing-centers/$',

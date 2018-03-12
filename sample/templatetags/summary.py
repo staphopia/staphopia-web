@@ -8,14 +8,15 @@ from django.utils.safestring import mark_safe
 
 from ena.models import CenterNames, Experiment
 from sample.models import Sample
-from assembly.models import Stats
-from mlst.models import Srst2
+from assembly.models import Summary
 
 register = template.Library()
+
 
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
 
 def query_database(sql):
     """Submit SQL query to the database."""
@@ -24,6 +25,7 @@ def query_database(sql):
     cols = [d[0] for d in cursor.description]
     return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
+
 def get_ena_link(accession):
     return (
         '<a href="http://www.ebi.ac.uk/ena/data/view/{0}" target="_blank"'
@@ -31,7 +33,8 @@ def get_ena_link(accession):
         '{0}</a>'.format(accession)
     )
 
-@register.assignment_tag(takes_context=True)
+
+@register.simple_tag(takes_context=True)
 @register.filter(needs_autoescape=True)
 def get_meta_data(context, sample_id):
     user_id = context['request'].user.pk if context['request'].user.pk else 0
@@ -65,7 +68,6 @@ def get_meta_data(context, sample_id):
              WHERE s.id={1} AND (s.is_public=TRUE OR s.user_id={2});""".format(
         ",".join(cols), sample_id, user_id
     ))[0]
-
 
     stats = {}
     stats['username'] = metadata['username']
@@ -119,7 +121,7 @@ def get_meta_data(context, sample_id):
     return stats
 
 
-@register.assignment_tag
+@register.simple_tag
 def get_publications(sample_id):
     return query_database(
         """
@@ -132,7 +134,7 @@ def get_publications(sample_id):
     )
 
 
-@register.assignment_tag
+@register.simple_tag
 def get_mlst_data(sample_id):
     stats = {}
     srst2 = query_database(
@@ -181,7 +183,7 @@ def get_mlst_data(sample_id):
     return stats
 
 
-@register.assignment_tag
+@register.simple_tag
 def get_taxon_id(sample_id):
     exp = Experiment.objects.get(experiment_accession=sample_id)
     return exp.tax_id
@@ -200,7 +202,7 @@ def sort_keys_by_int(dictionary):
     return sorted((int(key), value) for key, value in dictionary.items())
 
 
-@register.assignment_tag
+@register.simple_tag
 def get_sequence_quality(sample_id):
     stats = {}
     quality = query_database(
@@ -237,7 +239,7 @@ def get_sequence_quality(sample_id):
     return stats
 
 
-@register.assignment_tag
+@register.simple_tag
 def get_assembly_stats(sample_id):
     row = query_database(
         """

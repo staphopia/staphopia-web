@@ -6,21 +6,19 @@ Staphopia samples.
 """
 from django.db import models
 
-from assembly.models import Contigs
-from sample.models import Sample, Program
+from assembly.models import Contig
+from sample.models import Sample
 from variant.models import Reference, Annotation
 
 
 class Clusters(models.Model):
     """UniRef50 Cluster Ids."""
-
     name = models.TextField(unique=True)
     aa = models.TextField()
 
 
 class ClusterMembers(models.Model):
     """Each member of a given UniRef50 Cluster."""
-
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
     member = models.TextField(unique=True)
     entry_name = models.TextField()
@@ -36,20 +34,17 @@ class ClusterMembers(models.Model):
 
 class Names(models.Model):
     """Gene names, and protein products."""
-
     name = models.TextField()
 
 
 class Organism(models.Model):
     """The organism of origin for a given protein."""
-
     taxon_id = models.PositiveIntegerField()
     name = models.TextField()
 
 
 class ReferenceMapping(models.Model):
     """Annotation mapping to Variant references."""
-
     reference = models.ForeignKey(Reference, on_delete=models.CASCADE)
     annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
@@ -61,9 +56,8 @@ class ReferenceMapping(models.Model):
 
 class Features(models.Model):
     """Annotated info for each predicted gene."""
-
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    contig = models.ForeignKey(Contigs, on_delete=models.CASCADE, default=0)
+    contig = models.ForeignKey(Contig, on_delete=models.CASCADE, default=0)
     cluster = models.ForeignKey('Clusters', on_delete=models.CASCADE)
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     inference = models.ForeignKey('Inference', on_delete=models.CASCADE)
@@ -86,28 +80,23 @@ class Features(models.Model):
 
 class Product(models.Model):
     """Product information for a given annotation."""
-
     product = models.TextField(db_index=True)
 
 
 class Inference(models.Model):
     """How the annotation was infered."""
-
     inference = models.TextField(db_index=True)
 
 
 class Note(models.Model):
     """Any notes associated with a given annotation."""
-
     note = models.TextField(db_index=True)
 
 
 class BlastResults(models.Model):
     """Predicted gene BLAST hits against UniRef50."""
-
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     feature = models.ForeignKey('Features', on_delete=models.CASCADE)
-    program = models.ForeignKey(Program, on_delete=models.CASCADE)
 
     bitscore = models.PositiveSmallIntegerField()
     evalue = models.DecimalField(max_digits=7, decimal_places=2)

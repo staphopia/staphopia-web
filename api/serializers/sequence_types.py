@@ -1,15 +1,15 @@
 """ . """
 from rest_framework import serializers
-from mlst.models import Blast, Srst2
+from mlst.models import MLST
+from cgmlst.models import CGMLST
 
 
-class BlastSerializer(serializers.ModelSerializer):
+class MLSTSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
-        model = Blast
+        model = MLST
 
-
-class Srst2Serializer(serializers.ModelSerializer):
+class CGMLSTSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
-        model = Srst2
+        model = CGMLST

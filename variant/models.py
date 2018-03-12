@@ -10,24 +10,23 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 
 from sample.models import Sample
+from version.models import Version
 
 
-class ToIndel(models.Model):
+class Variant(models.Model):
     """A linking table between samples and InDels."""
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    indel = models.ForeignKey('Indel', on_delete=models.CASCADE)
-    filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
-    confidence = JSONField()
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='toindel_version')
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    snp_count = models.PositiveIntegerField(default=0)
+    indel_count = models.PositiveIntegerField(default=0)
+    snp = JSONField()
+    indel = JSONField()
 
     class Meta:
-        unique_together = ('sample', 'indel')
-
-    def indel_id(self):
-        """Display InDel id in admin view."""
-        return self.indel.pk
-    indel_id.short_description = 'InDel ID'
-    indel_id.admin_order_field = 'indel'
+        unique_together = ('sample', 'version', 'reference')
 
 
 class Indel(models.Model):
@@ -60,34 +59,16 @@ class Indel(models.Model):
     reference_strain.admin_order_field = 'reference'
 
 
-class ToSNP(models.Model):
-    """A linking table between samples and SNPs."""
+class IndelMember(models.Model):
+    """Indels and which public samples they are found in."""
 
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
-    comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
-    filters = models.ForeignKey('Filter', on_delete=models.CASCADE)
-    confidence = JSONField()
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    indel = models.OneToOneField('Indel', on_delete=models.CASCADE)
+    count = models.PositiveIntegerField(db_index=True)
+    members = JSONField(default=[])
 
     class Meta:
-        unique_together = ('sample', 'snp')
-
-    def sample_tag(self):
-        """Display sample_tag in admin view."""
-        return self.variant.sample.sample_tag
-    sample_tag.short_description = 'Sample Tag'
-    sample_tag.admin_order_field = 'variant'
-
-    def snp_id(self):
-        """Display InDel id in admin view."""
-        return self.snp.pk
-    snp_id.short_description = 'SNP ID'
-    snp_id.admin_order_field = 'snp'
-
-    def snp_count(self):
-        """Display snp_counts in admin view."""
-        return self.objects.filter(variant=self.variant).count()
-    snp_count.short_description = 'SNP Count'
+        unique_together = ('reference', 'indel')
 
 
 class SNP(models.Model):
@@ -133,19 +114,35 @@ class SNP(models.Model):
     reference_strain.admin_order_field = 'reference'
 
 
+class SNPMember(models.Model):
+    """SNPs and which public samples they are found in."""
+
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    snp = models.OneToOneField('SNP', on_delete=models.CASCADE)
+    count = models.PositiveIntegerField(db_index=True)
+    members = JSONField(default=[])
+
+    class Meta:
+        unique_together = ('reference', 'snp')
+
+
 class Counts(models.Model):
-    """Counts for quick reference."""
+    """Variant counts across all samples for quick reference."""
 
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    snp = models.PositiveIntegerField(default=0)
-    indel = models.PositiveIntegerField(default=0)
+    reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
+    annotation = models.ForeignKey('Annotation', on_delete=models.CASCADE)
+    position = models.PositiveIntegerField(db_index=True)
+    is_mlst_set = models.BooleanField(default=False, db_index=True)
+    nongenic_indel = models.PositiveIntegerField()
+    nongenic_snp = models.PositiveIntegerField()
+    indel = models.PositiveIntegerField()
+    synonymous = models.PositiveIntegerField()
+    nonsynonymous = models.PositiveIntegerField()
+    total = models.PositiveIntegerField()
 
 
-class SNPCounts(models.Model):
-    """SNP counts across all samples for quick reference."""
-
-    snp = models.ForeignKey('SNP', on_delete=models.CASCADE)
-    count = models.PositiveIntegerField(default=0, db_index=True)
+    class Meta:
+        unique_together = ('reference', 'position', 'is_mlst_set')
 
 
 class Comment(models.Model):

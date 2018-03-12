@@ -5,7 +5,7 @@ Reads output from EBI's data warehouse API and inserts the data into
 proper tables.
 """
 import sys
-import urllib2
+import requests
 
 from django.core.mail import EmailMessage
 from django.db import transaction, Error
@@ -79,7 +79,7 @@ class Command(BaseCommand):
         """USE ENA's API to retreieve the latest results."""
         # ENA browser info: http://www.ebi.ac.uk/ena/about/browser
         address = 'http://www.ebi.ac.uk/ena/data/warehouse/search'
-        query = urllib2.quote("tax_tree(1280)")
+        query = "tax_tree(1280)"
         result = 'result=sample'
         display = 'display=report'
         limit = 'limit=1000000'
@@ -88,14 +88,12 @@ class Command(BaseCommand):
             address, query, result, display, limit, ','.join(self.fields)
         )
 
-        f = urllib2.urlopen(url)
-        data = f.readlines()
-        f.close()
+        response = requests.get(url)
 
-        if len(data) <= 1:
+        if len(response.text) <= 1:
             raise CommandError('No results were returned from ENA.')
 
-        return data
+        return response.text.split('\n')
 
     def parse_ena(self, data):
         """Parse the retrieved ENA data."""

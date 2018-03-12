@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 import datetime
-
 import scholarly
 
 from django.core.mail import EmailMessage
@@ -10,6 +9,11 @@ from django.utils import timezone
 
 from ena.models import Study, Run, GoogleScholar, GoogleScholarStatus
 
+scholarly._COOKIES = {'GSP': 'ID={0}:CF=4:LM={0}:S=WBtNG5h78ltJhlHA'.format(
+    1518549066
+)}
+
+scholarly._HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
 class Command(BaseCommand):
     help = 'Search Study accessions against Google Scholar.'
@@ -95,7 +99,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def search(self, accession):
         links = 0
-        search_query = scholarly.search_pubs_query(accession)
+        search_query = scholarly.search_pubs_query(f'"{accession}"')
         for r in search_query:
             links += 1
 

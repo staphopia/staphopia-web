@@ -10,8 +10,7 @@ def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
     sql = """SELECT p.sample_id, b.title, b.length, p.bitscore, p.evalue,
                     p.identity, p.mismatch, p.gaps, p.hamming_distance,
                     p.query_from, p.query_to, p.hit_from, p.hit_to,
-                    p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
-                    p.program_id
+                    p.align_len, p.qseq, p.hseq, p.midline, p.contig_id
              FROM {0} AS p
              LEFT JOIN staphopia_blastquery AS b
              ON p.query_id=b.id
@@ -40,8 +39,7 @@ def get_sccmec_proteins_by_sample(sample_id, user_id):
     sql = """SELECT p.sample_id, b.title, b.length, p.bitscore, p.evalue,
                     p.identity, p.mismatch, p.gaps, p.hamming_distance,
                     p.query_from, p.query_to, p.hit_from, p.hit_to,
-                    p.align_len, p.qseq, p.hseq, p.midline, p.contig_id,
-                    p.program_id
+                    p.align_len, p.qseq, p.hseq, p.midline, p.contig_id
              FROM sccmec_proteins AS p
              LEFT JOIN staphopia_blastquery AS b
              ON p.query_id=b.id

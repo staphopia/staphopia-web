@@ -7,7 +7,7 @@ from crispy_forms.layout import *
 from crispy_forms.bootstrap import *
 
 from registration.forms import RegistrationFormUniqueEmail
-from django_email_changer.models import UserEmailModification
+# from django_email_changer.models import UserEmailModification
 
 
 class RegistrationFormWithName(RegistrationFormUniqueEmail):
@@ -37,6 +37,7 @@ class UserEmailForm(forms.ModelForm):
         fields = ('email',)
 
 
+'''
 class UserEmailModificationForm(ModelForm):
     class Meta:
         model = UserEmailModification
@@ -68,3 +69,4 @@ class UserEmailModificationForm(ModelForm):
             raise forms.ValidationError(
                 "Please provide matching emails."
             )
+'''

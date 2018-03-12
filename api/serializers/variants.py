@@ -5,11 +5,24 @@ from variant.models import (
     Indel,
     Annotation,
     Comment,
+    Counts,
     Feature,
     Filter,
     Reference,
-    Counts
+    Variant
 )
+
+
+class VariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = '__all__'
+        model = Variant
+
+
+class VariantCountsSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = '__all__'
+        model = Counts
 
 
 class SNPSerializer(serializers.ModelSerializer):
@@ -52,9 +65,3 @@ class ReferenceSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Reference
-
-
-class CountsSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = '__all__'
-        model = Counts
