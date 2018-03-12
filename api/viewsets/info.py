@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from api.pagination import CustomReadOnlyModelViewSet
 from api.queries.info import (
     get_sequencing_stats_by_year,
+    get_submission_by_year,
     get_assembly_stats_by_year
 )
 
@@ -50,11 +51,11 @@ class InfoViewSet(CustomReadOnlyModelViewSet):
         Stored metadata information for a given sample.
         """
         base_url = request.build_absolute_uri()
-        sequencing = '{0}sequencing_by_year/'.format(base_url)
-        assembly = '{0}assembly_by_year/'.format(base_url)
+
         urls = {
-            'Sequencing Stats By Year': sequencing,
-            'Assembly Stats By Year': assembly
+            'Sequencing Stats By Year': f'{base_url}sequencing_by_year/',
+            'Assembly Stats By Year': f'{base_url}assembly_by_year/',
+            'Public Submissions By Year': f'{base_url}submission_by_year/'
         }
 
         return Response(urls)
@@ -72,6 +73,13 @@ class InfoViewSet(CustomReadOnlyModelViewSet):
             return self.formatted_response(
                 get_sequencing_stats_by_year(is_original=False)
             )
+
+    @list_route(methods=['get'])
+    def submission_by_year(self, request):
+        """
+        Submission counts based on year samples were first public.
+        """
+        return self.formatted_response(get_submission_by_year())
 
     @list_route(methods=['get'])
     def assembly_by_year(self, request):

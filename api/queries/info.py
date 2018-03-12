@@ -17,3 +17,18 @@ def get_assembly_stats_by_year(is_scaffolds=False, is_plasmids=False):
         scaffold, plasmid
     )
     return query_database(sql)
+
+
+def get_submission_by_year():
+    """Return the ENA submissions by year."""
+    results = []
+    total = 0
+    for row in query_database("SELECT * FROM submission_by_year"):
+        total += int(row['count'])
+        results.append({
+            'year': int(row['year']),
+            'count': int(row['count']),
+            'overall': total
+        })
+
+    return results
