@@ -17,6 +17,7 @@ class Tag(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     tag = models.TextField(db_index=True)
     comment = models.TextField(blank=True)
+    is_public = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         unique_together = ('user', 'tag')
