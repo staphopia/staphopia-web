@@ -291,6 +291,50 @@ def get_annotation_strand(annotation_ids):
     return query_database(sql)
 
 
+def clean_annotation(string):
+    return string.replace(
+        '[semi-colon]', ';'
+    ).replace(
+        '[comma]', ','
+    ).replace(
+        '[space]', ' '
+    )
+
+
+def get_variant_annotation(annotation_ids, locus_tag=None):
+    """Get variant annotation information for a set of annotation ids."""
+    locus_sql = ""
+    if locus_tag:
+        locus_sql = f"AND locus_tag='{locus_tag}'"
+
+    sql = None
+    if annotation_ids:
+        sql = """SELECT * FROM variant_annotation
+                 WHERE id IN ({0}) {1}
+                 ORDER BY id;""".format(
+            ','.join([str(i) for i in annotation_ids]),
+            locus_sql
+        )
+    else:
+        if locus_tag:
+            sql = """SELECT * FROM variant_annotation
+                     WHERE locus_tag='{0}'
+                     ORDER BY id;""".format(locus_tag)
+        else:
+            sql = "SELECT * FROM variant_annotation ORDER BY id;"
+
+    results = []
+    for row in query_database(sql):
+        row['note'] = clean_annotation(row['note'])
+        row['gene'] = clean_annotation(row['gene'])
+        row['locus_tag'] = clean_annotation(row['locus_tag'])
+        row['product'] = clean_annotation(row['product'])
+        row['protein_id'] = clean_annotation(row['protein_id'])
+        results.append(row)
+
+    return results
+
+
 def get_snps_by_annotation(annotation_ids):
     """Get SNP IDs associated with a given Annotation IDs."""
     sql = """SELECT id, reference_position, reference_base, alternate_base,

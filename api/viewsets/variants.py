@@ -12,7 +12,8 @@ from api.queries.variants import (
     get_indels_by_sample,
     get_snps_by_sample,
     get_variant_counts_by_samples,
-    get_representative_sequence
+    get_representative_sequence,
+    get_variant_annotation
 )
 from api.validators import validate_positive_integer, validate_list_of_ids
 from api.utils import timeit
@@ -134,7 +135,6 @@ class VariantViewSet(CustomReadOnlyModelViewSet):
             request.user.pk
         )
         return self.paginate(results, page_size=2000, is_serialized=True)
-
 
     @list_route(methods=['post'])
     def indel_bulk_by_sample(self, request):
@@ -338,7 +338,6 @@ class InDelViewSet(CustomReadOnlyModelViewSet):
                     annotation_id=annotation_id
                 ))
 
-
 class VariantAnnotationViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving SNP."""
 
@@ -347,13 +346,13 @@ class VariantAnnotationViewSet(CustomReadOnlyModelViewSet):
 
     def list(self, request):
         if 'locus_tag' in request.GET:
-            queryset = Annotation.objects.filter(
-                locus_tag=request.GET['locus_tag']
+            queryset = get_variant_annotation(
+                None, locus_tag=request.GET['locus_tag']
             )
         else:
-            queryset = Annotation.objects.all()
+            queryset = get_variant_annotation(None)
 
-        return self.paginate(queryset, serializer=AnnotationSerializer)
+        return self.paginate(queryset, is_serialized=True, page_size=500)
 
     @list_route(methods=['post'])
     def bulk(self, request):
@@ -362,14 +361,13 @@ class VariantAnnotationViewSet(CustomReadOnlyModelViewSet):
             validator = validate_list_of_ids(request.data)
             if validator['has_errors']:
                 return Response({
-                            "message": validator['message'],
-                            "data": request.data
-                        })
-            else:
-                return Response(get_ids_in_bulk(
-                    'variant_annotation',
-                    request.data['ids']
-                ))
+                    "message": validator['message'],
+                    "data": request.data
+                })
+
+            return self.formatted_response(get_variant_annotation(
+                request.data['ids']
+            ))
 
     @list_route(methods=['post'])
     def generate_variant_sequence(self, request):
