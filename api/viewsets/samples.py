@@ -70,24 +70,57 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
         if 'user_only' in request.GET:
             queryset = get_samples(request.user.pk, user_only=True,
                                    st=st_filter)
+        elif 'name' in request.GET:
+            queryset = get_samples(request.user.pk, name=request.GET['name'])
         else:
             queryset = get_samples(request.user.pk, st=st_filter)
         return self.paginate(queryset, is_serialized=True)
+
+    @list_route(methods=['post'])
+    def bulk(self, request):
+        """Given a list of Sample IDs, return information for each Sample."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=1000)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+
+            results = get_samples(request.user.pk,
+                                  sample_ids=request.data['ids'])
+            return self.formatted_response(results)
 
     @list_route(methods=['get'])
     def public(self, request):
         """Return all public ENA samples."""
         samples = None
+        limit = None
+        if 'limit' in request.GET:
+            validator = validate_positive_integer(request.GET['limit'])
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                limit = request.GET['limit']
+
         if 'include_location' in request.GET:
-            samples = get_public_samples(include_location=True)
+            samples = get_public_samples(include_location=True, limit=limit)
         else:
-            samples = get_public_samples()
+            samples = get_public_samples(limit=limit)
         return self.paginate(samples, page_size=500, is_serialized=True)
 
     @list_route(methods=['get'])
     def published(self, request):
         """Return all published ENA samples."""
-        samples = get_public_samples(is_published=True)
+        limit = None
+        if 'limit' in request.GET:
+            validator = validate_positive_integer(request.GET['limit'])
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                limit = request.GET['limit']
+
+        samples = get_public_samples(is_published=True, limit=limit)
         return self.paginate(samples, page_size=500, is_serialized=True)
 
     @list_route(methods=['get'])

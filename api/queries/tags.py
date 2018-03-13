@@ -31,6 +31,21 @@ def get_tags_by_sample(sample_id, user_id):
     return query_database(sql)
 
 
+def get_all_tags(tag=None):
+    """Return tags associated with a user."""
+    tag_sql = ""
+    if tag:
+        tag_sql = f"AND tag='{tag}'"
+
+    sql = """SELECT t.id as tag_id, tag, comment
+             FROM tag_tag as t
+             LEFT JOIN auth_user as u
+             ON (u.id=t.user_id OR u.username='ena') {0}
+             WHERE u.username='ena' {0};""".format(tag_sql)
+
+    return query_database(sql)
+
+
 def get_user_tags(user_id, tag=None):
     """Return tags associated with a user."""
     tag_sql = ""

@@ -55,7 +55,8 @@ class InfoViewSet(CustomReadOnlyModelViewSet):
         urls = {
             'Sequencing Stats By Year': f'{base_url}sequencing_by_year/',
             'Assembly Stats By Year': f'{base_url}assembly_by_year/',
-            'Public Submissions By Year': f'{base_url}submission_by_year/'
+            'Public Submissions By Year': f'{base_url}submission_by_year/',
+            'Publications By Year': f'{base_url}published_by_year/'
         }
 
         return Response(urls)

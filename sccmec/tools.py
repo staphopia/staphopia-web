@@ -201,8 +201,10 @@ def predict_type_by_primers(sample_id, blast_results):
 
         # Determine mec class
         mec_class = {'A': False, 'B': False, 'C': False}
+        meca = False
         if primers['IS431'] and primers['mecA'] and primers['mecR1']:
             mec_class['C'] = True
+            meca = True
 
             if primers['mecI']:
                 mec_class['A'] = True
@@ -213,7 +215,7 @@ def predict_type_by_primers(sample_id, blast_results):
                 mec_class['C'] = False
 
         mec_types = OrderedDict([
-            ('sample_id', sample),
+            ('sample_id', sample), ('meca', meca),
             ('I', False), ('II', False), ('III', False), ('IV', False),
             ('V', False), ('VI', False), ('VII', False), ('VIII', False),
             ('IX', False), ('X', False), ('XI', False)

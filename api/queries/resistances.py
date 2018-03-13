@@ -22,16 +22,19 @@ def get_ariba_resistance(sample_id, user_id):
 
     results = []
     for row in query_database(sql):
-        for result in row['results']:
-            clid = result['cluster']
-            result['sample_id'] = row['sample_id']
-            result['cluster_name'] = cluster[clid]['name']
-            result['resistance_class'] = cluster[clid]['resistance_class']
-            result['mechanism'] = cluster[clid]['mechanism']
-            result['ref_name'] = cluster[clid]['ref_name']
-            result['database'] = cluster[clid]['database']
-            result['headers'] = cluster[clid]['headers']
-            results.append(result)
+        result = {}
+        result['sample_id'] = row['sample_id']
+        for key, val in row['results'][0].items():
+            if key == 'cluster':
+                result['cluster_name'] = cluster[val]['name']
+                result['resistance_class'] = cluster[val]['resistance_class']
+                result['mechanism'] = cluster[val]['mechanism']
+                result['ref_name'] = cluster[val]['ref_name']
+                result['database'] = cluster[val]['database']
+                result['headers'] = cluster[val]['headers']
+            result[key] = val
+
+        results.append(result)
     return results
 
 

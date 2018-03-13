@@ -3,7 +3,12 @@ from rest_framework.response import Response
 
 from api.pagination import CustomReadOnlyModelViewSet
 from api.serializers.tags import TagSerializer
-from api.queries.tags import get_samples_by_tag, get_user_tags, get_public_tags
+from api.queries.tags import (
+    get_samples_by_tag,
+    get_all_tags,
+    get_user_tags,
+    get_public_tags
+)
 
 from api.utils import timeit
 from api.validators import validate_positive_integer, validate_list_of_ids
@@ -26,8 +31,10 @@ class TagViewSet(CustomReadOnlyModelViewSet):
 
         if 'public' in request.GET:
             tags = get_public_tags(tag=tag)
-        else:
+        elif 'user' in request.GET:
             tags = get_user_tags(request.user.pk, tag=tag)
+        else:
+            tags = get_all_tags(tag=tag)
 
         return self.paginate(tags, page_size=500, is_serialized=True)
 
