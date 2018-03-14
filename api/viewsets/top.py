@@ -47,7 +47,7 @@ class TopViewSet(CustomReadOnlyModelViewSet):
         Stored metadata information for a given sample.
         """
         total = pk
-        sql = """SELECT sequence_type, count
+        sql = """SELECT sequence_type as st, count
                  FROM top_sequence_types({0})""".format(total)
 
         return self.formatted_response(query_database(sql))

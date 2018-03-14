@@ -202,9 +202,11 @@ def predict_type_by_primers(sample_id, blast_results):
         # Determine mec class
         mec_class = {'A': False, 'B': False, 'C': False}
         meca = False
+        if primers['mecA']:
+            meca = True
+
         if primers['IS431'] and primers['mecA'] and primers['mecR1']:
             mec_class['C'] = True
-            meca = True
 
             if primers['mecI']:
                 mec_class['A'] = True
