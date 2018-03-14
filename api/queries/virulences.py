@@ -21,10 +21,13 @@ def get_ariba_virulence(sample_id, user_id):
 
     results = []
     for row in query_database(sql):
+        result = {}
+        result['sample_id'] = row['sample_id']
         for result in row['results']:
-            clid = result['cluster']
-            result['sample_id'] = row['sample_id']
-            result['cluster_name'] = cluster[clid]['name']
-            result['ref_name'] = cluster[clid]['ref_name']
+            for key, val in result.items():
+                if key == 'cluster':
+                    result['cluster_name'] = cluster[val]['name']
+                    result['ref_name'] = cluster[val]['ref_name']
+                result[key] = val
             results.append(result)
     return results

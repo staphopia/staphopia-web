@@ -17,14 +17,16 @@ def insert_annotation(sample, version, files, force=False):
     if force:
         delete_annotation(sample, version)
 
-    aa = read_fasta(files['annotation_proteins'], compressed=True)
+    amino_acid = read_fasta(files['annotation_proteins'], compressed=True)
     dna = read_fasta(files['annotation_genes'], compressed=True)
     blast_results = read_blast([files['annotation_blastp_sprot'],
                                 files['annotation_blastp_staph']])
-    info, gene, protein, rna, blast, repeat = read_gff(files['annotation_gff'],
-                                                       aa, dna, blast_results)
+    info, gene, protein, rna, blast, repeat = read_gff(
+        files['annotation_gff'], amino_acid, dna, blast_results
+    )
 
     try:
+        print(f'{sample.name}: Inserting annotation')
         Annotation.objects.create(
             sample=sample,
             version=version,
@@ -34,14 +36,14 @@ def insert_annotation(sample, version, files, force=False):
             rna=rna,
             blast=blast
         )
-        if len(repeat):
+        if repeat:
             Repeat.objects.create(
                 sample=sample,
                 version=version,
                 repeat=repeat
             )
-    except IntegrityError as e:
-        raise CommandError(f'{sample.name} Annotation save error: {e}')
+    except IntegrityError as exception:
+        raise CommandError(f'{sample.name} Annotation save error: {exception}')
 
 
 @transaction.atomic
@@ -53,20 +55,15 @@ def delete_annotation(sample, version):
 
 
 @transaction.atomic
-def insert_features(features):
-    """Bulk insert a list of features."""
-    Features.objects.bulk_create(features, batch_size=500)
-
-
-@transaction.atomic
 def create_inference(inference, product, note, name):
-    inference, created = Inference.objects.get_or_create(
+    """Get or create annotation inference."""
+    inference = Inference.objects.get_or_create(
         inference=inference,
         product=product,
         note=note,
         name=name
     )
-    return inference
+    return inference[0]
 
 
 def get_inferences():
@@ -87,19 +84,20 @@ def get_features():
 
 
 def read_blast(files, compressed=True):
+    "Read blast results and return list."
     results = {}
     for file in files:
         json_data = read_json(file, compressed=compressed)
         for entry in json_data['BlastOutput2']:
             hit = entry['report']['results']['search']
-            if len(hit['hits']):
+            if hit['hits']:
                 # Only storing the top hit
                 hsp = hit['hits'][0]['hsps'][0]
                 mismatch = hsp['align_len'] - hsp['identity']
-                hd = mismatch
+                distance = mismatch
                 if hit['query_len'] > hsp['align_len']:
                     # Include those bases that weren't aligned
-                    hd = hit['query_len'] - hsp['align_len'] + mismatch
+                    distance = hit['query_len'] - hsp['align_len'] + mismatch
 
                 results[hit['query_title']] = {
                     'bitscore': int(hsp['bit_score']),
@@ -107,7 +105,7 @@ def read_blast(files, compressed=True):
                     'identity': hsp['identity'],
                     'mismatch': mismatch,
                     'gaps': hsp['gaps'],
-                    'hamming_distance': hd,
+                    'hamming_distance': distance,
                     'query_from': hsp['query_from'],
                     'query_to': hsp['query_to'],
                     'query_len': hit['query_len'],
@@ -126,13 +124,13 @@ def read_blast(files, compressed=True):
 
 
 @timeit
-def read_gff(gff, aa, dna, blast_results):
+def read_gff(gff, amino_acid, dna, blast_results):
     """Read through the GFF and extract annotations."""
-    info = {}
-    rna = {}
-    gene = {}
-    protein = {}
-    blast = {}
+    info = []
+    rna = []
+    gene = []
+    protein = []
+    blast = []
     repeat = []
     features = get_features()
     inferences = get_inferences()
@@ -187,7 +185,7 @@ def read_gff(gff, aa, dna, blast_results):
                         'phase': cols[7],
                         'note': attributes['note'],
                         'family': attributes['rpt_family'],
-                        'type': attributes['rpt_type']
+                        'rpt_type': attributes['rpt_type']
                     })
                 else:
                     locus_tag = attributes['locus_tag']
@@ -199,24 +197,41 @@ def read_gff(gff, aa, dna, blast_results):
 
                     if 'RNA' in feature:
                         is_rna = True
-                        rna[locus_tag] = dna[locus_tag]
+                        rna.append({
+                            'locus_tag': locus_tag,
+                            'sequence': dna[locus_tag]
+                        })
                     else:
-                        gene[locus_tag] = dna[locus_tag]
-                        protein[locus_tag] = aa[locus_tag]
+                        gene.append({
+                            'locus_tag': locus_tag,
+                            'sequence': dna[locus_tag]
+                        })
+                        protein.append({
+                            'locus_tag': locus_tag,
+                            'sequence': amino_acid[locus_tag]
+                        })
 
                     if 'query_title' in attributes:
                         if attributes['query_title'] not in blast_results:
-                            blast[locus_tag] = blast_results[
-                                attributes['query_title']
-                            ]
+                            results = blast_results[attributes['query_title']]
+                            results['locus_tag'] = locus_tag
+                            blast.append(results)
                         else:
-                            blast[locus_tag] = {'message': 'No hits found'}
+                            blast.append({
+                                'locus_tag': locus_tag,
+                                'message': 'No hits found'
+                            })
                     else:
-                        blast[locus_tag] = {'message': 'blast not applicable'}
+                        blast.append({
+                            'locus_tag': locus_tag,
+                            'message': 'BLAST not applicable'
+                        })
 
                     if 'inference' in attributes:
                         if 'RefSeq' in attributes['inference']:
-                            inference = attributes['inference'].split('RefSeq:')[1]
+                            inference = attributes['inference'].split(
+                                'RefSeq:'
+                            )[1]
                         elif feature == 'CDS':
                             inference = 'hypothetical'
 
@@ -237,8 +252,9 @@ def read_gff(gff, aa, dna, blast_results):
                         # tRNA gives '.' for phase,lets make it 9
                         cols[7] = 9
 
-                    info[locus_tag] = {
+                    info.append({
                         'contig': cols[0].split('_')[1],
+                        'locus_tag': locus_tag,
                         'start': int(cols[3]),
                         'end': int(cols[4]),
                         'strand': 1 if cols[6] == '+' else -1,
@@ -246,6 +262,6 @@ def read_gff(gff, aa, dna, blast_results):
                         'type': 'RNA' if is_rna else feature,
                         feature: True,
                         'inference': inference.id,
-                    }
+                    })
 
     return [info, gene, protein, rna, blast, repeat]

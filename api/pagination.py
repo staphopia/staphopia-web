@@ -28,7 +28,7 @@ class CustomReadOnlyModelViewSet(mixins.RetrieveModelMixin,
                     ("count", 0),
                     ("results", [])
                 )),
-                status=rf_status.HTTP_204_NO_CONTENT
+                status=rf_status.HTTP_200_OK
             )
 
     def paginate(self, queryset, serializer=None, page_size=None,
