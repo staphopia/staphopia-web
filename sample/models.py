@@ -11,9 +11,20 @@ class Sample(models.Model):
     name = models.TextField(db_index=True, default='')
     is_public = models.BooleanField(default=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
+    is_flagged = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         unique_together = ('user', 'name')
+
+
+class Flag(models.Model):
+    """Reason for flagging a sample."""
+
+    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    reason = models.TextField(unique=True)
+
+    class Meta:
+        unique_together = ('sample', 'reason')
 
 
 class MD5(models.Model):

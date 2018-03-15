@@ -11,7 +11,7 @@ from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
 from staphopia.utils import read_json, timeit
-
+from sample.models import Flag
 from sequence.models import Stage, Summary
 
 
@@ -46,6 +46,7 @@ def insert_sequence_stats(sample, version, files, force=False):
     stages = get_stages()
     stat_objects = []
     stats = ['fastq_adapter', 'fastq_cleanup', 'fastq_ecc', 'fastq_original']
+    flag_sample = False
     for stat in stats:
         stage_name = stat.split('_')[1]
         stage = None
@@ -55,17 +56,26 @@ def insert_sequence_stats(sample, version, files, force=False):
             stage = create_stage(stage_name)
 
         json_data = read_json(files[stat])
+        rank = __get_rank(json_data["qc_stats"], is_paired)
+        if not rank and stat == 'fastq_cleanup':
+            flag = True
+
         stat_objects.append(Summary(
             sample=sample,
             version=version,
             stage=stage,
             is_paired=is_paired,
-            rank=__get_rank(json_data["qc_stats"], is_paired),
+            rank=rank,
             read_lengths=json.dumps(json_data["read_lengths"], sort_keys=True),
             qual_per_base=json.dumps(json_data["per_base_quality"],
                                      sort_keys=True),
             **json_data["qc_stats"]
         ))
+
+    if flag_sample:
+        Flag.objects.get_or_create(sample=sample, reason='coverage < 20x')
+        sample.is_flagged = True
+        sample.save()
 
     try:
         Summary.objects.bulk_create(stat_objects, batch_size=5)
@@ -88,7 +98,7 @@ def __get_rank(data, is_paired):
     """
     Determine the rank of the reads.
 
-    3: Gold, 2: Silver, 1: Bronze
+    3: Gold, 2: Silver, 1: Bronze, 0: <20x coverage, flag this sample
     """
     if data['coverage'] < 20:
         return 0
