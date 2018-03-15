@@ -6,7 +6,7 @@ from api.queries.samples import get_samples
 from staphopia.utils import reverse_complement
 
 
-def get_variant_counts(ids, is_annotation=False):
+def get_variant_count_by_position(ids, is_annotation=False):
     sql = """SELECT id, position, reference_id, annotation_id,
                     is_mlst_set, nongenic_indel, nongenic_snp, indel,
                     synonymous, nonsynonymous, total
@@ -15,6 +15,21 @@ def get_variant_counts(ids, is_annotation=False):
              ORDER BY position;""".format(
         'annotation_id' if is_annotation else 'position',
         ','.join([str(i) for i in ids])
+    )
+
+    return query_database(sql)
+
+
+def get_variant_counts(sample_id, user_id):
+    sql = """SELECT v.sample_id, snp_count, indel_count,
+                    (snp_count + indel_count) AS total
+             FROM variant_variant AS v
+             LEFT JOIN sample_sample AS s
+             ON v.sample_id=s.id
+             WHERE v.sample_id IN ({0}) AND
+                   (s.is_public=TRUE OR s.user_id={1});""".format(
+        ','.join([str(i) for i in sample_id]),
+        user_id
     )
 
     return query_database(sql)
@@ -140,6 +155,7 @@ def get_samples_by_snp(snp_id, user_id, bulk=False):
                 results = get_samples(user_id, sample_ids=row['members'])
             break
     return results
+
 
 def get_snps_by_sample(sample_id, user_id, annotation_id=None):
     """Return snps associated with a sample."""
@@ -374,13 +390,13 @@ def get_representative_sequence(sample_ids, annotation_ids,
     for sample in sample_ids:
         samples[sample] = {}
 
-    if len(snps.keys()):
+    if snps.keys():
         sql = """SELECT sample_id, snp_id
                  FROM variant_tosnp
                  WHERE sample_id IN ({0}) AND snp_id IN ({1})
                  ORDER BY sample_id, snp_id ASC""".format(
             ','.join([str(i) for i in sample_ids]),
-            ','.join([str(i) for i in snps.keys()])
+            ','.join([str(i) for i in snps])
         )
         for row in query_database(sql):
             if row['sample_id'] not in samples:

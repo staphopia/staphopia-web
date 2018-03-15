@@ -7,6 +7,7 @@ from api.pagination import CustomReadOnlyModelViewSet
 from api.utils import format_results, get_ids_in_bulk
 from api.queries.variants import (
     get_variant_counts,
+    get_variant_count_by_position,
     get_samples_by_snp,
     get_samples_by_indel,
     get_indels_by_sample,
@@ -47,6 +48,17 @@ class VariantCountsViewSet(CustomReadOnlyModelViewSet):
     queryset = Counts.objects.all()
     serializer_class = VariantCountsSerializer
 
+    def retrieve(self, request, pk=None):
+        validator = validate_positive_integer(pk)
+        if validator['has_errors']:
+            return Response(validator)
+        else:
+            results, qt = timeit(
+                get_variant_count_by_position,
+                [pk]
+            )
+            return self.formatted_response(results, query_time=qt)
+
     def list(self, request):
         annotation_id = None
         if 'annotation_id' in request.GET:
@@ -60,7 +72,7 @@ class VariantCountsViewSet(CustomReadOnlyModelViewSet):
 
         if annotation_id:
             results, qt = timeit(
-                get_variant_counts,
+                get_variant_count_by_position,
                 [annotation_id],
                 is_annotation=True
             )
@@ -86,7 +98,7 @@ class VariantCountsViewSet(CustomReadOnlyModelViewSet):
                     is_annotation = True
 
                 results, qt = timeit(
-                    get_variant_counts,
+                    get_variant_count_by_position,
                     request.data['ids'],
                     is_annotation=is_annotation
                 )
@@ -162,6 +174,22 @@ class VariantViewSet(CustomReadOnlyModelViewSet):
                     request.user.pk,
                     annotation_id=annotation_id
                 ))
+
+    @list_route(methods=['post'])
+    def counts_in_bulk(self, request):
+        """Given a list of Sample IDs, return SNP and InDel counts for each."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=1000)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+
+            return self.formatted_response(get_variant_counts(
+                request.data['ids'],
+                request.user.pk
+            ))
 
 
 class SNPViewSet(CustomReadOnlyModelViewSet):

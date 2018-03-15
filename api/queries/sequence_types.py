@@ -1,5 +1,6 @@
 """API utilities for MLST related viewsets."""
 from collections import OrderedDict
+import json
 from api.utils import query_database, get_sample_permisions
 
 
@@ -21,6 +22,35 @@ def get_sequence_type(sample_id, user):
     )
 
     return query_database(sql)
+
+
+def get_mlst_blast_results(sample_id, user):
+    """Return MLST loci results associated with a sample."""
+    sql = """SELECT sample_id, blast
+             FROM mlst_report AS m
+             LEFT JOIN sample_sample AS s
+             ON m.sample_id=s.id
+             WHERE m.sample_id IN ({0}) AND ({1})
+             ORDER BY m.sample_id ASC;""".format(
+        ','.join([str(i) for i in sample_id]),
+        get_sample_permisions(user)
+    )
+
+    results = []
+    for row in query_database(sql):
+        result = OrderedDict()
+        result['sample_id'] = row['sample_id']
+        blast = json.loads(row['blast'].replace("'", '"'))
+        unassigned = 0
+        for loci, vals in sorted(blast.items()):
+            allele = int(vals['sseqid'].split('.')[1])
+            result[loci] = allele
+            if not allele:
+                unassigned += 1
+        result['unassigned'] = unassigned
+        results.append(result)
+    return results
+
 
 def get_cgmlst(sample_id, user):
     """Return cgMLST loci results associated with a sample."""

@@ -25,6 +25,7 @@ from api.queries.resistances import (
 from api.queries.sequences import get_sequencing_stats
 from api.queries.sequence_types import (
     get_unique_st_samples,
+    get_mlst_blast_results,
     get_sequence_type,
     get_cgmlst
 )
@@ -34,7 +35,11 @@ from api.queries.sccmecs import (
     get_sccmec_coverage_by_sample,
     get_sccmec_proteins_by_sample
 )
-from api.queries.variants import get_indels_by_sample, get_snps_by_sample
+from api.queries.variants import (
+    get_indels_by_sample,
+    get_snps_by_sample,
+    get_variant_counts
+)
 from api.queries.virulences import get_ariba_virulence
 from api.utils import timeit
 from api.validators import validate_positive_integer, validate_list_of_ids
@@ -332,11 +337,29 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
         return self.formatted_response(result, query_time=qt)
 
     @detail_route(methods=['get'])
+    def st_blast(self, request, pk=None):
+        result, qt = timeit(
+            get_mlst_blast_results,
+            [pk],
+            request.user
+        )
+        return self.formatted_response(result, query_time=qt)
+
+    @detail_route(methods=['get'])
     def cgmlst(self, request, pk=None):
         result, qt = timeit(
             get_cgmlst,
             [pk],
             request.user
+        )
+        return self.formatted_response(result, query_time=qt)
+
+    @detail_route(methods=['get'])
+    def variant_count(self, request, pk=None):
+        result, qt = timeit(
+            get_variant_counts,
+            [pk],
+            request.user.pk
         )
         return self.formatted_response(result, query_time=qt)
 
