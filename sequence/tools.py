@@ -90,12 +90,16 @@ def __get_rank(data, is_paired):
 
     3: Gold, 2: Silver, 1: Bronze
     """
+    if data['coverage'] < 20:
+        return 0
+
     if data['read_mean'] >= 95:
         if data['coverage'] >= 100 and data['qual_mean'] >= 30 and is_paired:
             return 3
-        elif data['coverage'] >= 50 and data['qual_mean'] >= 30:
+
+        if data['coverage'] >= 50 and data['qual_mean'] >= 30:
             return 2
-        else:
-            return 1
+
+        return 1
     else:
         return 1
