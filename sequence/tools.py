@@ -58,7 +58,7 @@ def insert_sequence_stats(sample, version, files, force=False):
         json_data = read_json(files[stat])
         rank = __get_rank(json_data["qc_stats"], is_paired)
         if not rank and stat == 'fastq_cleanup':
-            flag = True
+            flag_sample = True
 
         stat_objects.append(Summary(
             sample=sample,
