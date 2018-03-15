@@ -60,7 +60,7 @@ def insert_sequence_stats(sample, version, files, force=False):
             version=version,
             stage=stage,
             is_paired=is_paired,
-            rank=__get_rank(json_data["qc_stats"]),
+            rank=__get_rank(json_data["qc_stats"], is_paired),
             read_lengths=json.dumps(json_data["read_lengths"], sort_keys=True),
             qual_per_base=json.dumps(json_data["per_base_quality"],
                                      sort_keys=True),
@@ -84,16 +84,16 @@ def delete_stats(sample, version):
     Summary.objects.filter(sample=sample, version=version).delete()
 
 
-def __get_rank(data):
+def __get_rank(data, is_paired):
     """
     Determine the rank of the reads.
 
     3: Gold, 2: Silver, 1: Bronze
     """
     if data['read_mean'] >= 95:
-        if data['coverage'] >= 100 and data['qual_mean'] >= 30:
+        if data['coverage'] >= 100 and data['qual_mean'] >= 30 and is_paired:
             return 3
-        elif data['coverage'] >= 20 and data['qual_mean'] >= 20:
+        elif data['coverage'] >= 50 and data['qual_mean'] >= 30:
             return 2
         else:
             return 1
