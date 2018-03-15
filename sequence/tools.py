@@ -73,6 +73,7 @@ def insert_sequence_stats(sample, version, files, force=False):
         ))
 
     if flag_sample:
+        print(f'{sample.name}: Flagging for less than 20x coverage.')
         Flag.objects.get_or_create(sample=sample, reason='coverage < 20x')
         sample.is_flagged = True
         sample.save()
