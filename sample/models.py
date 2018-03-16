@@ -21,7 +21,7 @@ class Flag(models.Model):
     """Reason for flagging a sample."""
 
     sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
-    reason = models.TextField(unique=True)
+    reason = models.TextField()
 
     class Meta:
         unique_together = ('sample', 'reason')

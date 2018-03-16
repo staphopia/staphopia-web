@@ -6,7 +6,8 @@ from api.pagination import CustomReadOnlyModelViewSet
 from api.queries.info import (
     get_sequencing_stats_by_year,
     get_submission_by_year,
-    get_assembly_stats_by_year
+    get_assembly_stats_by_year,
+    get_rank_by_year
 )
 
 
@@ -56,10 +57,25 @@ class InfoViewSet(CustomReadOnlyModelViewSet):
             'Sequencing Stats By Year': f'{base_url}sequencing_by_year/',
             'Assembly Stats By Year': f'{base_url}assembly_by_year/',
             'Public Submissions By Year': f'{base_url}submission_by_year/',
-            'Publications By Year': f'{base_url}published_by_year/'
+            'Publications By Year': f'{base_url}published_by_year/',
+            'Rank By Year': f'{base_url}rank_by_year/'
         }
 
         return Response(urls)
+
+    @list_route(methods=['get'])
+    def rank_by_year(self, request):
+        """
+        Sequencing rank based on year samples were first public.
+        """
+        if 'is_original' in request.GET:
+            return self.formatted_response(
+                get_rank_by_year(is_original=True)
+            )
+        else:
+            return self.formatted_response(
+                get_rank_by_year(is_original=False)
+            )
 
     @list_route(methods=['get'])
     def sequencing_by_year(self, request):

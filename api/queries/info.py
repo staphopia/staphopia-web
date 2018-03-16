@@ -56,3 +56,59 @@ def get_submission_by_year():
         })
 
     return results
+
+
+def get_rank_by_year(is_original=False):
+    """Return the published submissions by year."""
+    results = []
+    name = 'original' if is_original else 'cleanup'
+
+    sql = """SELECT metadata->'first_public' AS first_public, rank
+             FROM sample_metadata AS m
+             LEFT JOIN sample_sample AS s
+             ON m.sample_id=s.id
+             LEFT JOIN sequence_summary AS t
+             ON m.sample_id=t.sample_id
+             LEFT JOIN sequence_stage AS u
+             ON t.stage_id=u.id
+             WHERE s.is_public=TRUE AND u.name='{0}'
+                   AND s.is_flagged = FALSE;""".format(
+        name
+    )
+
+    years = {}
+    overall = [0, 0, 0]
+    for row in query_database(sql):
+        year = int(row['first_public'][0:4])
+        if year not in years:
+            years[year] = {'bronze': 0, 'silver': 0, 'gold': 0, 'total': 0}
+
+        if row['rank']:
+            if row['rank'] == 1:
+                years[year]['bronze'] += 1
+            elif row['rank'] == 2:
+                years[year]['silver'] += 1
+            elif row['rank'] == 3:
+                years[year]['gold'] += 1
+
+            years[year]['total'] += 1
+
+    overall = [0, 0, 0, 0]
+    for key, val in sorted(years.items()):
+        overall[0] += val['bronze']
+        overall[1] += val['silver']
+        overall[2] += val['gold']
+        overall[3] += val['total']
+        results.append({
+            'year': key,
+            'bronze': val['bronze'],
+            'silver': val['silver'],
+            'gold': val['gold'],
+            'count': val['total'],
+            'overall_bronze': overall[0],
+            'overall_silver': overall[1],
+            'overall_gold': overall[2],
+            'overall': overall[3]
+        })
+
+    return results
