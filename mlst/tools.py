@@ -42,15 +42,42 @@ def parse_ariba(basic_report, detailed_report):
     basic_report = read_table(basic_report)
     basic_report['uncertainty'] = False
     predicted_novel = False
-    if 'Novel' in basic_report['ST']:
-        basic_report['ST'] = "10000"
-        predicted_novel = True
-    elif basic_report['ST'] == 'ND':
-        basic_report['ST'] = 0
-    elif basic_report['ST'].endswith('*'):
+    if basic_report['ST'].endswith('*'):
         # * indicates uncertainty in Ariba call
         basic_report['ST'] = basic_report['ST'].rstrip('*')
         basic_report['uncertainty'] = True
+
+    if 'Novel' in basic_report['ST']:
+        basic_report['ST'] = 0
+        if not basic_report['uncertainty']:
+            predicted_novel = True
+    elif basic_report['ST'] == 'ND':
+        basic_report['ST'] = 0
+
+    total_assigned = 0
+    for key, val in basic_report.items():
+        if key not in ['ST', 'uncertainty']:
+            if val.endswith("*") or val == 'ND':
+                pass
+            elif int(val):
+                total_assigned += 1
+
+    if total_assigned == 7 and not int(basic_report['ST']):
+        # See if loci pattern exists
+        try:
+            st = SequenceTypes.objects.get(
+                arcc=int(basic_report['arcC']),
+                aroe=int(basic_report['aroE']),
+                glpf=int(basic_report['glpF']),
+                gmk=int(basic_report['gmk']),
+                pta=int(basic_report['pta']),
+                tpi=int(basic_report['tpi']),
+                yqil=int(basic_report['yqiL'])
+            )
+            basic_report['ST'] = st.st
+        except SequenceTypes.DoesNotExist:
+            if predicted_novel:
+                basic_report['ST'] = 10000
 
     '''
     Parse Detailed Report (tabs not spaces)
@@ -65,7 +92,7 @@ def parse_ariba(basic_report, detailed_report):
     '''
     detailed_report = read_table(detailed_report)
 
-    return [basic_report, detailed_report, predicted_novel]
+    return [basic_report, detailed_report, total_assigned]
 
 
 def parse_mentalist(basic_report, tie_report, vote_report):
@@ -88,6 +115,24 @@ def parse_mentalist(basic_report, tie_report, vote_report):
         'ties': read_table(tie_report),
         'votes': read_table(vote_report)
     }
+
+    # Remove the ties
+    total_assigned = total_assigned - len(detailed_report['ties'])
+    if total_assigned == 7 and not int(basic_report['ST']):
+        # See if loci pattern exists
+        try:
+            st = SequenceTypes.objects.get(
+                arcc=int(basic_report['arcC']),
+                aroe=int(basic_report['aroE']),
+                glpf=int(basic_report['glpF']),
+                gmk=int(basic_report['gmk']),
+                pta=int(basic_report['pta']),
+                tpi=int(basic_report['tpi']),
+                yqil=int(basic_report['yqiL'])
+            )
+            basic_report['ST'] = st.st
+        except SequenceTypes.DoesNotExist:
+            basic_report['ST'] = 0
 
     return [basic_report, detailed_report, total_assigned]
 
@@ -127,9 +172,10 @@ def insert_mlst(sample, version, files, force=False):
     """Insert mlst results and the reports."""
     st = {'ariba': 0}
     report = {'ariba': 'empty'}
+    ariba_assigned = 0
     if 'fastq_r2' in files:
         # Ariba only works on paired end reads
-        st['ariba'], report['ariba'], ariba_novel = parse_ariba(
+        st['ariba'], report['ariba'], ariba_assigned = parse_ariba(
             files['mlst_ariba_mlst_report'],
             files['mlst_ariba_details']
         )
@@ -145,7 +191,7 @@ def insert_mlst(sample, version, files, force=False):
     )
 
     novel = {
-        'ariba': ariba_novel,
+        'ariba': ariba_assigned,
         'mentalist': mentalist_assigned,
         'blast': blast_assigned
     }
@@ -198,17 +244,15 @@ def insert_mlst_results(sample, version, results, novel):
     # If ST still not determined, check if predicted to be novel
     predicted_novel = False
     if not st['st']:
-        if novel['blast'] and novel['mentalist']:
+        if novel['blast'] == 7 or novel['mentalist'] == 7:
             predicted_novel = True
-        elif st['ariba'] == 10000 and not ariba['uncertainty']:
+        elif st['ariba'] == 10000:
             predicted_novel = True
 
     # Get support
-    ariba_support = 0
-    if st['ariba'] and st['ariba'] != 10000 and not ariba['uncertainty']:
-        ariba_support = 1
-    mentalist_support = 1 if st['mentalist'] else 0
-    blast_support = 1 if st['blast'] else 0
+    ariba_support = novel['ariba']
+    mentalist_support = novel['mentalist']
+    blast_support = novel['blast']
 
     support = Support.objects.get_or_create(
         ariba=ariba_support, mentalist=mentalist_support, blast=blast_support
