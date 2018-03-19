@@ -12,7 +12,7 @@ from django.core.management.base import CommandError
 
 from staphopia.utils import file_exists, read_json, timeit
 
-from mlst.models import SequenceTypes, MLST, Report
+from mlst.models import SequenceTypes, MLST, Report, Support
 
 
 def read_table(table, header=True, sep='\t', ):
@@ -41,8 +41,10 @@ def parse_ariba(basic_report, detailed_report):
     '''
     basic_report = read_table(basic_report)
     basic_report['uncertainty'] = False
+    predicted_novel = False
     if 'Novel' in basic_report['ST']:
         basic_report['ST'] = "10000"
+        predicted_novel = True
     elif basic_report['ST'] == 'ND':
         basic_report['ST'] = 0
     elif basic_report['ST'].endswith('*'):
@@ -63,7 +65,7 @@ def parse_ariba(basic_report, detailed_report):
     '''
     detailed_report = read_table(detailed_report)
 
-    return [basic_report, detailed_report]
+    return [basic_report, detailed_report, predicted_novel]
 
 
 def parse_mentalist(basic_report, tie_report, vote_report):
@@ -73,12 +75,21 @@ def parse_mentalist(basic_report, tie_report, vote_report):
     ERX1666310  7   6   1   5   8   8   6   22
     '''
     basic_report = read_table(basic_report)
+    total_assigned = 0
+    if int(basic_report['ST']):
+        total_assigned = 7
+    else:
+        for key, val in basic_report.items():
+            if key not in ['Sample', 'ST', 'clonal_complex']:
+                if int(val):
+                    total_assigned += 1
+
     detailed_report = {
         'ties': read_table(tie_report),
         'votes': read_table(vote_report)
     }
 
-    return [basic_report, detailed_report]
+    return [basic_report, detailed_report, total_assigned]
 
 
 def parse_blast(basic_report):
@@ -97,13 +108,18 @@ def parse_blast(basic_report):
     }
 
     # Determine ST based on hits
+    total_assigned = 0
     try:
         st = SequenceTypes.objects.get(**basic_report)
         basic_report['ST'] = st.st
+        total_assigned = 7
     except SequenceTypes.DoesNotExist:
+        for key, val in basic_report.items():
+            if val:
+                total_assigned += 1
         basic_report['ST'] = 0
 
-    return [basic_report, detailed_report]
+    return [basic_report, detailed_report, total_assigned]
 
 
 @timeit
@@ -113,25 +129,43 @@ def insert_mlst(sample, version, files, force=False):
     report = {'ariba': 'empty'}
     if 'fastq_r2' in files:
         # Ariba only works on paired end reads
-        st['ariba'], report['ariba'] = parse_ariba(
+        st['ariba'], report['ariba'], ariba_novel = parse_ariba(
             files['mlst_ariba_mlst_report'],
             files['mlst_ariba_details']
         )
 
-    st['mentalist'], report['mentalist'] = parse_mentalist(
+    st['mentalist'], report['mentalist'], mentalist_assigned = parse_mentalist(
         files['mlst_mentalist'],
         files['mlst_mentalist_ties'],
         files['mlst_mentalist_votes']
     )
 
-    st['blast'], report['blast'] = parse_blast(files['mlst_blastn'])
+    st['blast'], report['blast'], blast_assigned = parse_blast(
+        files['mlst_blastn']
+    )
 
-    insert_mlst_results(sample, version, st, force=force)
-    insert_report(sample, version, report, force=force)
+    novel = {
+        'ariba': ariba_novel,
+        'mentalist': mentalist_assigned,
+        'blast': blast_assigned
+    }
+
+    if force:
+        delete_mlst(sample, version)
+
+    insert_mlst_results(sample, version, st, novel)
+    insert_report(sample, version, report)
 
 
 @transaction.atomic
-def insert_mlst_results(sample, version, results, force=False):
+def delete_mlst(sample, version):
+    print(f'Deleting MLST calls/reports for {sample.name}')
+    Report.objects.filter(sample=sample, version=version).delete()
+    MLST.objects.filter(sample=sample, version=version).delete()
+
+
+@transaction.atomic
+def insert_mlst_results(sample, version, results, novel):
     '''Insert sequence type into database.'''
     st = {
         'st': 0,
@@ -158,36 +192,46 @@ def insert_mlst_results(sample, version, results, force=False):
         st['st'] = st['ariba']
     elif st['mentalist']:
         st['st'] = st['mentalist']
+    elif st['blast']:
+        st['st'] = st['blast']
 
+    # If ST still not determined, check if predicted to be novel
+    predicted_novel = False
+    if not st['st']:
+        if novel['blast'] and novel['mentalist']:
+            predicted_novel = True
+        elif st['ariba'] == 10000 and not ariba['uncertainty']:
+            predicted_novel = True
+
+    # Get support
+    ariba_support = 0
+    if st['ariba'] and st['ariba'] != 10000 and not ariba['uncertainty']:
+        ariba_support = 1
+    mentalist_support = 1 if st['mentalist'] else 0
+    blast_support = 1 if st['blast'] else 0
+
+    support = Support.objects.get_or_create(
+        ariba=ariba_support, mentalist=mentalist_support, blast=blast_support
+    )
     try:
-        if force:
-            MLST.objects.update_or_create(
-                sample=sample,
-                version=version,
-                defaults=st
-            )
-            print(f'Updated MLST calls for {sample.name}')
-        else:
-            MLST.objects.create(sample=sample, version=version, **st)
-            print(f'Inserted MLST calls for {sample.name}')
+        MLST.objects.create(
+            sample=sample,
+            version=version,
+            predicted_novel=predicted_novel,
+            support=support[0],
+            **st
+        )
+        print(f'Inserted MLST calls for {sample.name}')
     except IntegrityError as e:
         raise CommandError(e)
 
 
 @transaction.atomic
-def insert_report(sample, version, reports, force=False):
+def insert_report(sample, version, reports):
     '''Insert detailed report of mlst calls into database.'''
     try:
-        if force:
-            Report.objects.update_or_create(
-                sample=sample,
-                version=version,
-                defaults=reports
-            )
-            print(f'Updated MLST reports for {sample.name}')
-        else:
-            Report.objects.create(sample=sample, version=version, **reports)
-            print(f'Inserted MLST reports for {sample.name}')
+        Report.objects.create(sample=sample, version=version, **reports)
+        print(f'Inserted MLST reports for {sample.name}')
     except IntegrityError as e:
         raise CommandError(
             f'{sample.name} found, will not update unless --force is used. {e}'

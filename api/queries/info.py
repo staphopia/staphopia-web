@@ -26,7 +26,8 @@ def get_submission_by_year():
              FROM sample_metadata AS m
              LEFT JOIN sample_sample AS s
              ON m.sample_id=s.id
-             WHERE s.is_public=TRUE;"""
+             WHERE s.is_public=TRUE
+             ORDER BY first_public;"""
     years = {}
     for row in query_database(sql):
         year = int(row['first_public'][0:4])
@@ -72,7 +73,8 @@ def get_rank_by_year(is_original=False):
              LEFT JOIN sequence_stage AS u
              ON t.stage_id=u.id
              WHERE s.is_public=TRUE AND u.name='{0}'
-                   AND s.is_flagged = FALSE;""".format(
+                   AND s.is_flagged = FALSE
+             ORDER BY first_public;""".format(
         name
     )
 
@@ -108,6 +110,60 @@ def get_rank_by_year(is_original=False):
             'overall_bronze': overall[0],
             'overall_silver': overall[1],
             'overall_gold': overall[2],
+            'overall': overall[3]
+        })
+
+    return results
+
+
+def get_st_by_year():
+    """Return the published submissions by year."""
+    results = []
+    sql = """SELECT metadata->'first_public' AS first_public, st
+             FROM sample_metadata AS m
+             LEFT JOIN sample_sample AS s
+             ON m.sample_id=s.id
+             LEFT JOIN mlst_mlst AS t
+             ON m.sample_id=t.sample_id
+             WHERE s.is_public=TRUE AND s.is_flagged = FALSE
+             ORDER BY first_public;"""
+
+    years = {}
+    types = set()
+    for row in query_database(sql):
+        year = int(row['first_public'][0:4])
+        if year not in years:
+            years[year] = {'unique': [], 'novel': [], 'assigned': 0,
+                           'unassigned': 0, 'total': 0}
+
+        if row['st']:
+            if row['st'] not in types:
+                years[year]['novel'].append(row['st'])
+                types.add(row['st'])
+            years[year]['unique'].append(row['st'])
+            years[year]['assigned'] += 1
+        else:
+            years[year]['unassigned'] += 1
+        years[year]['total'] += 1
+
+    overall = [0, 0, 0, 0]
+    for key, val in sorted(years.items()):
+        total_unique = len(list(set(val['unique'])))
+        total_novel = len(list(set(val['novel'])))
+        overall[0] += total_novel
+        overall[1] += val['assigned']
+        overall[2] += val['unassigned']
+        overall[3] += val['total']
+        results.append({
+            'year': key,
+            'unique': total_unique,
+            'novel': total_novel,
+            'assigned': val['assigned'],
+            'unassigned': val['unassigned'],
+            'count': val['total'],
+            'overall_novel': overall[0],
+            'overall_assigned': overall[1],
+            'overall_unassigned': overall[2],
             'overall': overall[3]
         })
 

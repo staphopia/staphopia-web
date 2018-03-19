@@ -4,6 +4,7 @@ MLST Application Models.
 These are models to store information on the MLST calls for Staphopia samples.
 """
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 from sample.models import Sample
 from version.models import Version
@@ -32,9 +33,20 @@ class MLST(models.Model):
     ariba = models.PositiveIntegerField(db_index=True)
     mentalist = models.PositiveIntegerField(db_index=True)
     blast = models.PositiveIntegerField(db_index=True)
+    predicted_novel = models.BooleanField(default=False, db_index=True)
+    support = models.ForeignKey('Support', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('sample', 'version')
+
+
+class Support(models.Model):
+    ariba = models.PositiveIntegerField(default=0)
+    mentalist = models.PositiveIntegerField(default=0)
+    blast = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('ariba', 'mentalist', 'blast')
 
 
 class Report(models.Model):
@@ -43,9 +55,9 @@ class Report(models.Model):
                                related_name='mlst_report_sample')
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='mlst_report_version')
-    ariba = models.TextField()
-    mentalist = models.TextField()
-    blast = models.TextField()
+    ariba = JSONField()
+    mentalist = JSONField()
+    blast = JSONField()
 
     class Meta:
         unique_together = ('sample', 'version')

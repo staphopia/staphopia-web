@@ -7,7 +7,8 @@ from api.queries.info import (
     get_sequencing_stats_by_year,
     get_submission_by_year,
     get_assembly_stats_by_year,
-    get_rank_by_year
+    get_rank_by_year,
+    get_st_by_year
 )
 
 
@@ -58,10 +59,20 @@ class InfoViewSet(CustomReadOnlyModelViewSet):
             'Assembly Stats By Year': f'{base_url}assembly_by_year/',
             'Public Submissions By Year': f'{base_url}submission_by_year/',
             'Publications By Year': f'{base_url}published_by_year/',
-            'Rank By Year': f'{base_url}rank_by_year/'
+            'Rank By Year': f'{base_url}rank_by_year/',
+            'Rank By Year': f'{base_url}st_by_year/'
         }
 
         return Response(urls)
+
+    @list_route(methods=['get'])
+    def st_by_year(self, request):
+        """
+        Sequencing type based on year samples were first public.
+        """
+        return self.formatted_response(
+            get_st_by_year()
+        )
 
     @list_route(methods=['get'])
     def rank_by_year(self, request):
