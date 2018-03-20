@@ -9,7 +9,8 @@ from api.queries.info import (
     get_assembly_stats_by_year,
     get_rank_by_year,
     get_st_by_year,
-    get_cgmlst_patterns
+    get_cgmlst_patterns,
+    get_publication_links
 )
 
 
@@ -62,7 +63,8 @@ class InfoViewSet(CustomReadOnlyModelViewSet):
             'Publications By Year': f'{base_url}published_by_year/',
             'Rank By Year': f'{base_url}rank_by_year/',
             'ST By Year': f'{base_url}st_by_year/',
-            'Public cgMLST Pattern Counts':  f'{base_url}cgmlst_patterns/'
+            'Public cgMLST Pattern Counts':  f'{base_url}cgmlst_patterns/',
+            'Publication Links': f'{base_url}publication_links/'
         }
 
         return Response(urls)
@@ -83,6 +85,15 @@ class InfoViewSet(CustomReadOnlyModelViewSet):
         """
         return self.formatted_response(
             get_cgmlst_patterns()
+        )
+
+    @list_route(methods=['get'])
+    def publication_links(self, request):
+        """
+        How public sample publication links were made.
+        """
+        return self.formatted_response(
+            get_publication_links()
         )
 
     @list_route(methods=['get'])

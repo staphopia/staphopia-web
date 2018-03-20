@@ -61,6 +61,42 @@ def get_assembly_stats_by_year(is_scaffolds=False, is_plasmids=False):
     return query_database(sql)
 
 
+def get_publication_links():
+    """Return how publication links wer made."""
+    sql = """SELECT s.name, e.sra_to_pubmed, e.publication_id
+             FROM ena_topublication AS e
+             LEFT JOIN sample_sample AS s
+             ON e.experiment_accession=s.name
+             WHERE s.is_flagged=FALSE AND s.is_published=TRUE;"""
+
+    results = {
+        'elink': 0,
+        'text': 0
+    }
+    names = {'elink': {}, 'text': {}, 'all': {}}
+    pmid = {'elink': {}, 'text': {}, 'all': {}}
+    for row in query_database(sql):
+        if row['sra_to_pubmed']:
+            if row['name'] not in names['elink']:
+                results['elink'] += 1
+                names['elink'][row['name']] = True
+            pmid['elink'][row['publication_id']] = True
+        else:
+            if row['name'] not in names['text']:
+                results['text'] += 1
+                names['text'][row['name']] = True
+            pmid['text'][row['publication_id']] = True
+        names['all'][row['name']] = True
+        pmid['all'][row['publication_id']] = True
+
+    results['elink_pmid'] = len(pmid['elink'])
+    results['text_pmid'] = len(pmid['all']) - results['elink_pmid']
+    results['total'] = len(names['all'])
+    results['total_pmid'] = len(pmid['all'])
+
+    return [results]
+
+
 def get_submission_by_year():
     """Return the published submissions by year."""
     results = []
