@@ -9,6 +9,48 @@ def get_sequencing_stats_by_year(is_original=False):
     return query_database(sql)
 
 
+def get_cgmlst_patterns():
+    """Return cgmlst patterns and counts of public samples."""
+    loci = []
+    for row in query_database("SELECT id, name FROM cgmlst_loci;"):
+        loci.append(str(row['id']))
+
+    sql = """SELECT mentalist
+             FROM cgmlst_cgmlst AS m
+             LEFT JOIN sample_sample AS s
+             ON m.sample_id=s.id
+             LEFT JOIN auth_user AS u
+             on u.id=s.user_id
+             WHERE s.is_public=TRUE AND s.is_flagged=FALSE AND u.username='ena'
+             ORDER BY m.sample_id ASC;"""
+
+    patterns = {}
+    for row in query_database(sql):
+        pattern = ':'.join([str(row['mentalist'][l]) for l in loci])
+        if pattern not in patterns:
+            patterns[pattern] = 1
+        else:
+            patterns[pattern] += 1
+
+    results = []
+    counts = {}
+    for pattern, count in patterns.items():
+        if count not in counts:
+            counts[count] = 1
+        else:
+            counts[count] += 1
+
+    results = []
+    for total_samples, count in sorted(counts.items(), reverse=True):
+        results.append({
+            'samples_in_pattern': total_samples,
+            'count': count,
+            'total_samples': count * total_samples,
+        })
+
+    return results
+
+
 def get_assembly_stats_by_year(is_scaffolds=False, is_plasmids=False):
     """Return metadata associated with a sample."""
     scaffold = 'TRUE' if is_scaffolds else 'FALSE'
@@ -26,7 +68,7 @@ def get_submission_by_year():
              FROM sample_metadata AS m
              LEFT JOIN sample_sample AS s
              ON m.sample_id=s.id
-             WHERE s.is_public=TRUE
+             WHERE s.is_public=TRUE AND s.is_flagged=FALSE
              ORDER BY first_public;"""
     years = {}
     for row in query_database(sql):
@@ -142,7 +184,73 @@ def get_st_by_year():
                            'unassigned': 0, 'predicted_novel': 0,
                            'total': 0, 'all': 0, 'mentalist_blast': 0,
                            'mentalist_ariba': 0, 'ariba_blast': 0,
-                           'mentalist': 0, 'ariba': 0, 'blast': 0}
+                           'mentalist': 0, 'ariba': 0, 'blast': 0,
+                           'assigned_agree': 0, 'assigned_disagree': 0,
+                           'unassigned_agree': 0, 'unassigned_disagree': 0}
+
+        if row['is_paired']:
+            if (row['ariba'] == row['blast']) and (
+                    row['ariba'] == row['mentalist']):
+                # All three programs agree
+                if row['st']:
+                    years[year]['assigned_agree'] += 1
+                else:
+                    years[year]['unassigned_agree'] += 1
+            else:
+                calls = []
+                if row['ariba'] and row['ariba'] != 10000:
+                    calls.append(row['ariba'])
+                if row['blast']:
+                    calls.append(row['blast'])
+                if row['mentalist']:
+                    calls.append(row['mentalist'])
+
+                total_st = len(set(calls))
+                if total_st == 1:
+                    if row['st']:
+                        years[year]['assigned_agree'] += 1
+                    else:
+                        if total_st:
+                            if row['ariba'] and row['ariba'] != 10000:
+                                # Ariba made a call with uncertainty, ST was
+                                # not assigned
+                                years[year]['unassigned_agree'] += 1
+                            else:
+                                years[year]['unassigned_disagree'] += 1
+                        else:
+                            years[year]['unassigned_agree'] += 1
+                else:
+                    if row['st']:
+                        if total_st:
+                            # Ariba made a call with uncertainty, so
+                            # mentalist and/or BLAST were used to make call
+                            if row['blast'] == row['mentalist']:
+                                years[year]['assigned_agree'] += 1
+                            elif row['blast'] and row['mentalist']:
+                                years[year]['assigned_disagree'] += 1
+                            else:
+                                years[year]['assigned_agree'] += 1
+                        else:
+                            years[year]['assigned_disagree'] += 1
+                    else:
+                        if total_st:
+                            years[year]['unassigned_disagree'] += 1
+                        else:
+                            years[year]['unassigned_agree'] += 1
+        else:
+            if row['blast'] == row['mentalist']:
+                if row['st']:
+                    years[year]['assigned_agree'] += 1
+                else:
+                    years[year]['unassigned_agree'] += 1
+            else:
+                if row['st']:
+                    if row['blast'] and row['mentalist']:
+                        # Mentalist and BLAST had two different calls
+                        years[year]['assigned_disagree'] += 1
+                    else:
+                        # Either Mentalist or BLAST had a 0 call
+                        years[year]['assigned_agree'] += 1
 
         if row['st']:
             if row['st'] not in types:
@@ -183,7 +291,8 @@ def get_st_by_year():
         'novel': 0, 'assigned': 0, 'unassigned': 0, 'predicted_novel': 0,
         'total': 0, 'all': 0, 'mentalist_blast': 0, 'mentalist_ariba': 0,
         'ariba_blast': 0, 'mentalist': 0, 'ariba': 0, 'blast': 0, 'partial': 0,
-        'single': 0
+        'single': 0, 'assigned_agree': 0, 'assigned_disagree': 0,
+        'unassigned_agree': 0, 'unassigned_disagree': 0,
     }
     for key, val in sorted(years.items()):
         single = val['mentalist'] + val['ariba'] + val['blast']
@@ -196,7 +305,11 @@ def get_st_by_year():
         overall['total'] += val['total']
         overall['novel'] += total_novel
         overall['assigned'] += val['assigned']
+        overall['assigned_agree'] += val['assigned_agree']
+        overall['assigned_disagree'] += val['assigned_disagree']
         overall['unassigned'] += val['unassigned']
+        overall['unassigned_agree'] += val['unassigned_agree']
+        overall['unassigned_disagree'] += val['unassigned_disagree']
         overall['predicted_novel'] += val['predicted_novel']
         overall['all'] += val['all']
         overall['mentalist_blast'] += val['mentalist_blast']
@@ -212,7 +325,11 @@ def get_st_by_year():
             'unique': total_unique,
             'novel': total_novel,
             'assigned': val['assigned'],
+            'assigned_agree': val['assigned_agree'],
+            'assigned_disagree': val['assigned_disagree'],
             'unassigned': val['unassigned'],
+            'unassigned_agree': val['unassigned_agree'],
+            'unassigned_disagree': val['unassigned_disagree'],
             'predicted_novel': val['predicted_novel'],
             'all': val['all'],
             'partial': partial,
@@ -226,7 +343,11 @@ def get_st_by_year():
             'count': val['total'],
             'overall_novel': overall['novel'],
             'overall_assigned': overall['assigned'],
+            'overall_assigned_agree': overall['assigned_agree'],
+            'overall_assigned_disagree': overall['assigned_disagree'],
             'overall_unassigned': overall['unassigned'],
+            'overall_unassigned_agree': overall['unassigned_agree'],
+            'overall_unassigned_disagree': overall['unassigned_disagree'],
             'overall_predicted_novel': overall['predicted_novel'],
             'overall_all': overall['all'],
             'overall_partial': overall['partial'],

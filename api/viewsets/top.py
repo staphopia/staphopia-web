@@ -46,8 +46,31 @@ class TopViewSet(CustomReadOnlyModelViewSet):
         """
         Stored metadata information for a given sample.
         """
-        total = pk
         sql = """SELECT sequence_type as st, count
-                 FROM top_sequence_types({0})""".format(total)
+                 FROM top_sequence_types()"""
+        results = []
+        total = 0
+        for row in query_database(sql):
+            results.append({
+                'st': row['st'],
+                'count': row['count']
+            })
+            total += row['count']
 
-        return self.formatted_response(query_database(sql))
+        output = []
+        current = 0
+        total_percent = 0
+        for result in results:
+            if current == int(pk):
+                break
+            current += 1
+            percent = result["count"] / total * 100
+            total_percent += percent
+            output.append({
+                'st': result['st'],
+                'count': result['count'],
+                'percent': float(f'{percent:2.2f}'),
+                'overall': float(f'{total_percent:2.2f}')
+            })
+
+        return self.formatted_response(output)

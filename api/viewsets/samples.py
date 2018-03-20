@@ -26,6 +26,7 @@ from api.queries.sequences import get_sequencing_stats
 from api.queries.sequence_types import (
     get_unique_st_samples,
     get_mlst_blast_results,
+    get_mlst_allele_matches,
     get_sequence_type,
     get_cgmlst
 )
@@ -340,6 +341,15 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     def st_blast(self, request, pk=None):
         result, qt = timeit(
             get_mlst_blast_results,
+            [pk],
+            request.user
+        )
+        return self.formatted_response(result, query_time=qt)
+
+    @detail_route(methods=['get'])
+    def st_allele(self, request, pk=None):
+        result, qt = timeit(
+            get_mlst_allele_matches,
             [pk],
             request.user
         )

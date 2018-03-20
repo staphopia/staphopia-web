@@ -52,6 +52,30 @@ def get_mlst_blast_results(sample_id, user):
     return results
 
 
+def get_mlst_allele_matches(sample_id, user):
+    """Return MLST loci results associated with a sample."""
+    sql = """SELECT sample_id, st, d.blast, d.ariba, d.mentalist
+             FROM mlst_mlst AS m
+             LEFT JOIN sample_sample AS s
+             ON m.sample_id=s.id
+             LEFT JOIN mlst_support AS d
+             ON m.support_id=d.id
+             WHERE m.sample_id IN ({0}) AND ({1})
+             ORDER BY m.sample_id ASC;""".format(
+        ','.join([str(i) for i in sample_id]),
+        get_sample_permisions(user)
+    )
+
+    results = []
+    for row in query_database(sql):
+        results.append({
+            'sample_id': row['sample_id'],
+            'st': row['st'],
+            'matches': max(row['blast'], row['mentalist'], row['ariba'])
+        })
+    return results
+
+
 def get_cgmlst(sample_id, user):
     """Return cgMLST loci results associated with a sample."""
     sql = "SELECT id, name FROM cgmlst_loci;"

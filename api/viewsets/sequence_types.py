@@ -7,7 +7,8 @@ from api.serializers.sequence_types import MLSTSerializer, CGMLSTSerializer
 from api.queries.sequence_types import (
     get_sequence_type,
     get_cgmlst,
-    get_mlst_blast_results
+    get_mlst_blast_results,
+    get_mlst_allele_matches
 )
 from api.validators import validate_list_of_ids
 from mlst.models import MLST
@@ -58,6 +59,25 @@ class MLSTViewSet(CustomReadOnlyModelViewSet):
                 request.user
             )
             return self.formatted_response(result, query_time=qt)
+
+    @list_route(methods=['post'])
+    def allele_by_sample(self, request):
+        """Given a list of sample IDs, return number alleles with match."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=1000)
+            if validator['has_errors']:
+                return Response({
+                            "message": validator['message'],
+                            "data": request.data
+                        })
+
+            result, qt = timeit(
+                get_mlst_allele_matches,
+                request.data['ids'],
+                request.user
+            )
+            return self.formatted_response(result, query_time=qt)
+
 
 class CGMLSTViewSet(CustomReadOnlyModelViewSet):
     """
