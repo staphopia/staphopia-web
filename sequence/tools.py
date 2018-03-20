@@ -101,16 +101,22 @@ def __get_rank(data, is_paired):
 
     3: Gold, 2: Silver, 1: Bronze, 0: <20x coverage, flag this sample
     """
+    rank = None
     if data['coverage'] < 20:
-        return 0
-
-    if data['read_mean'] >= 95:
-        if data['coverage'] >= 100 and data['qual_mean'] >= 30 and is_paired:
-            return 3
-
-        if data['coverage'] >= 50 and data['qual_mean'] >= 30:
-            return 2
-
-        return 1
+        rank = 0
+    elif not is_paired:
+        rank = 1
+    elif data['read_mean'] >= 95:
+        if data['qual_mean'] >= 30:
+            if data['coverage'] >= 100:
+                rank = 3
+            elif data['coverage'] >= 50:
+                rank = 2
+            else:
+                rank = 1
+        else:
+            rank = 1
     else:
-        return 1
+        rank = 1
+
+    return rank
