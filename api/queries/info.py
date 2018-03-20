@@ -119,13 +119,18 @@ def get_rank_by_year(is_original=False):
 def get_st_by_year():
     """Return the published submissions by year."""
     results = []
-    sql = """SELECT metadata->'first_public' AS first_public, st
+    sql = """SELECT metadata->'first_public' AS first_public, st,
+                    predicted_novel, ariba, mentalist, blast, is_paired
              FROM sample_metadata AS m
              LEFT JOIN sample_sample AS s
              ON m.sample_id=s.id
              LEFT JOIN mlst_mlst AS t
              ON m.sample_id=t.sample_id
-             WHERE s.is_public=TRUE AND s.is_flagged = FALSE
+             LEFT JOIN sequence_summary AS q
+             ON m.sample_id=q.sample_id
+             LEFT JOIN sequence_stage AS w
+             ON w.id=q.stage_id
+             WHERE s.is_public=TRUE AND s.is_flagged=FALSE AND w.name='cleanup'
              ORDER BY first_public;"""
 
     years = {}
@@ -134,37 +139,105 @@ def get_st_by_year():
         year = int(row['first_public'][0:4])
         if year not in years:
             years[year] = {'unique': [], 'novel': [], 'assigned': 0,
-                           'unassigned': 0, 'total': 0}
+                           'unassigned': 0, 'predicted_novel': 0,
+                           'total': 0, 'all': 0, 'mentalist_blast': 0,
+                           'mentalist_ariba': 0, 'ariba_blast': 0,
+                           'mentalist': 0, 'ariba': 0, 'blast': 0}
 
         if row['st']:
             if row['st'] not in types:
                 years[year]['novel'].append(row['st'])
                 types.add(row['st'])
             years[year]['unique'].append(row['st'])
+            if row['is_paired']:
+                if row['ariba'] == row['blast'] and (
+                        row['mentalist'] == row['ariba']):
+                    years[year]['all'] += 1
+                elif row['ariba'] == row['blast'] and row['blast']:
+                    years[year]['ariba_blast'] += 1
+                elif row['ariba'] == row['mentalist'] and row['mentalist']:
+                    years[year]['mentalist_ariba'] += 1
+                elif row['mentalist'] == row['blast'] and row['mentalist']:
+                    years[year]['mentalist_blast'] += 1
+                elif row['ariba']:
+                    years[year]['ariba'] += 1
+                elif row['mentalist']:
+                    years[year]['mentalist'] += 1
+                elif row['blast']:
+                    years[year]['blast'] += 1
+            else:
+                if row['mentalist'] == row['blast']:
+                    years[year]['all'] += 1
+                elif row['mentalist']:
+                    years[year]['mentalist'] += 1
+                elif row['blast']:
+                    years[year]['blast'] += 1
             years[year]['assigned'] += 1
         else:
+            if row['predicted_novel']:
+                years[year]['predicted_novel'] += 1
             years[year]['unassigned'] += 1
         years[year]['total'] += 1
 
-    overall = [0, 0, 0, 0]
+    overall = {
+        'novel': 0, 'assigned': 0, 'unassigned': 0, 'predicted_novel': 0,
+        'total': 0, 'all': 0, 'mentalist_blast': 0, 'mentalist_ariba': 0,
+        'ariba_blast': 0, 'mentalist': 0, 'ariba': 0, 'blast': 0, 'partial': 0,
+        'single': 0
+    }
     for key, val in sorted(years.items()):
+        single = val['mentalist'] + val['ariba'] + val['blast']
+        partial = (
+            val['mentalist_blast'] + val['mentalist_ariba'] +
+            val['ariba_blast']
+        )
         total_unique = len(list(set(val['unique'])))
         total_novel = len(list(set(val['novel'])))
-        overall[0] += total_novel
-        overall[1] += val['assigned']
-        overall[2] += val['unassigned']
-        overall[3] += val['total']
+        overall['total'] += val['total']
+        overall['novel'] += total_novel
+        overall['assigned'] += val['assigned']
+        overall['unassigned'] += val['unassigned']
+        overall['predicted_novel'] += val['predicted_novel']
+        overall['all'] += val['all']
+        overall['mentalist_blast'] += val['mentalist_blast']
+        overall['mentalist_ariba'] += val['mentalist_ariba']
+        overall['ariba_blast'] += val['ariba_blast']
+        overall['mentalist'] += val['mentalist']
+        overall['ariba'] += val['ariba']
+        overall['blast'] += val['blast']
+        overall['partial'] += partial
+        overall['single'] += single
         results.append({
             'year': key,
             'unique': total_unique,
             'novel': total_novel,
             'assigned': val['assigned'],
             'unassigned': val['unassigned'],
+            'predicted_novel': val['predicted_novel'],
+            'all': val['all'],
+            'partial': partial,
+            'ariba_blast': val['ariba_blast'],
+            'mentalist_blast': val['mentalist_blast'],
+            'mentalist_ariba': val['mentalist_ariba'],
+            'single': single,
+            'ariba': val['ariba'],
+            'mentalist': val['mentalist'],
+            'blast': val['blast'],
             'count': val['total'],
-            'overall_novel': overall[0],
-            'overall_assigned': overall[1],
-            'overall_unassigned': overall[2],
-            'overall': overall[3]
+            'overall_novel': overall['novel'],
+            'overall_assigned': overall['assigned'],
+            'overall_unassigned': overall['unassigned'],
+            'overall_predicted_novel': overall['predicted_novel'],
+            'overall_all': overall['all'],
+            'overall_partial': overall['partial'],
+            'overall_ariba_blast': overall['ariba_blast'],
+            'overall_mentalist_blast': overall['mentalist_blast'],
+            'overall_mentalist_ariba': overall['mentalist_ariba'],
+            'overall_single': overall['single'],
+            'overall_ariba': overall['ariba'],
+            'overall_mentalist': overall['mentalist'],
+            'overall_blast': overall['blast'],
+            'overall': overall['total']
         })
 
     return results
