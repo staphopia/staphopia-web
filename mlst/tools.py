@@ -225,11 +225,11 @@ def insert_mlst_results(sample, version, results, novel):
     ariba = results['ariba']
     if st['ariba'] == st['mentalist'] and st['mentalist'] == st['blast']:
         st['st'] = st['ariba']
-    elif st['ariba'] == st['mentalist']:
+    elif st['ariba'] == st['mentalist'] and st['mentalist']:
         st['st'] = st['ariba']
-    elif st['ariba'] == st['blast']:
+    elif st['ariba'] == st['blast'] and st['blast']:
         st['st'] = st['ariba']
-    elif st['mentalist'] == st['blast']:
+    elif st['mentalist'] == st['blast'] and st['mentalist']:
         st['st'] = st['mentalist']
     elif st['ariba'] and st['ariba'] != 10000 and not ariba['uncertainty']:
         # 10000 is 'Novel' as considered by Ariba
