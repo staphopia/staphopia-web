@@ -220,8 +220,6 @@ def insert_mlst_results(sample, version, results, novel):
         'mentalist': int(results['mentalist']['ST']),
     }
 
-    # Overlap, three digits (ariba, mentalist, blast)
-    # If all agree: 111
     ariba = results['ariba']
     if st['ariba'] == st['mentalist'] and st['mentalist'] == st['blast']:
         st['st'] = st['ariba']
