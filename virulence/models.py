@@ -24,6 +24,7 @@ class Ariba(models.Model):
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='virulence_ariba_version')
     results = JSONField()
+    summary = JSONField(default=[])
 
     class Meta:
         unique_together = ('sample', 'version')

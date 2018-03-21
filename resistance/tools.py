@@ -4,6 +4,7 @@ Useful functions associated with resistance.
 To use:
 from resistance.tools import UTIL1, UTIL2, etc...
 """
+from collections import OrderedDict
 import numpy
 
 from django.db import transaction
@@ -21,10 +22,14 @@ def insert_resistance(sample, version, files, force=False):
     if force:
         delete_resistance(sample, version)
 
-    results, sequences = read_report(files)
+    resistance_class = get_resistance_class()
+    clusters = get_clusters()
+    results, sequences = read_report(files, resistance_class, clusters)
+    summary = read_summary(files, clusters)
 
     try:
-        Ariba.objects.create(sample=sample, version=version, results=results)
+        Ariba.objects.create(sample=sample, version=version, results=results,
+                             summary=summary)
     except IntegrityError as e:
         raise CommandError(' '.join([
             f'Ariba Resistance: Insert error for {sample.name} ({sample.id}).',
@@ -77,14 +82,12 @@ def create_resistance_class(name):
 
 
 @timeit
-def read_report(files):
+def read_report(files, resistance_class, clusters):
     """
     Convert the Ariba report to JSON.
 
     See: https://github.com/sanger-pathogens/ariba/wiki/Task:-run#report-file
     """
-    resistance_class = get_resistance_class()
-    clusters = get_clusters()
     fasta = read_fasta(files['resistance_assembled_seqs'], compressed=True)
     results = []
     sequences = {}
@@ -158,6 +161,40 @@ def read_report(files):
                 total += 1
 
     return [results, sequences]
+
+
+def read_summary(files, clusters):
+    """Ariba summary report."""
+    hits = OrderedDict()
+    first_line = True
+    with open(files["resistance_summary"], 'r') as fh:
+        cols = None
+        for line in fh:
+            line = line.rstrip()
+            if first_line:
+                cols = line.split('\t')
+                first_line = False
+            else:
+                row = dict(zip(cols, line.split('\t')))
+                for key, val in row.items():
+                    if key == 'name':
+                        pass
+                    cluster, field = key.split('.')
+                    if cluster not in hits:
+                        hits[cluster] = {
+                            'cluster_id': clusters[cluster].pk,
+                            'cluster': cluster,
+                            'resistance_class': (
+                                clusters[cluster].resistance_class
+                            )
+                        }
+                    hits[cluster][field] = val
+
+    summary = []
+    for key, val in hits.items():
+        if val['match'] == 'yes':
+            summary.append(val)
+    return summary
 
 
 def delete_resistance(sample, version):
