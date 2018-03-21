@@ -357,6 +357,7 @@ def get_file_list(is_paired):
             ),
             'resistance_assemblies': '{0}/resistance/assemblies.fa.gz',
             'resistance_report': '{0}/resistance/report.tsv',
+            'resistance_summary': '{0}/resistance/summary.csv',
             'resistance_assembled_seqs': '{0}/resistance/assembled_seqs.fa.gz',
             'resistance_debug_report': '{0}/resistance/debug.report.tsv',
 
@@ -370,6 +371,7 @@ def get_file_list(is_paired):
             'virulence_assembled_genes': '{0}/virulence/assembled_genes.fa.gz',
             'virulence_assemblies': '{0}/virulence/assemblies.fa.gz',
             'virulence_report': '{0}/virulence/report.tsv',
+            'virulence_summary': '{0}/virulence/summary.csv',
             'virulence_assembled_seqs': '{0}/virulence/assembled_seqs.fa.gz',
             'virulence_debug_report': '{0}/virulence/debug.report.tsv',
 

@@ -6,6 +6,7 @@ from resistance.tools import UTIL1, UTIL2, etc...
 """
 from collections import OrderedDict
 import numpy
+import sys
 
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -100,7 +101,15 @@ def read_report(files, resistance_class, clusters):
             else:
                 row = dict(zip(cols, line.split('\t')))
                 text = row['free_text'].replace('; ', ';')
-                text = dict(s.split(':') for s in text.split(';'))
+                temp = {}
+                for s in text.split(';'):
+                    if ':' in s:
+                        key, val = s.split(':')
+                        temp[key] = val
+                    else:
+                        print(f'Free Text {s}: {files["resistance_report"]}',
+                              file=sys.stderr)
+                text = temp
                 if row['cluster'] not in clusters:
                     clusters[row['cluster']] = create_cluster({
                         'cluster': row['cluster'],
@@ -123,8 +132,10 @@ def read_report(files, resistance_class, clusters):
 
                 results.append({
                     'id': total,
-                    'cluster': clusters[row['cluster']].pk,
-                    'class': resistance_class[text['class']].pk,
+                    'cluster_id': clusters[row['cluster']].pk,
+                    'cluster': row['cluster'],
+                    'resistance_class': text['class'],
+                    'resistance_class_id': resistance_class[text['class']].pk,
                     'gene': row['gene'],
                     'var_only': row['var_only'],
                     'flag': row['flag'],
@@ -154,8 +165,8 @@ def read_report(files, resistance_class, clusters):
                 })
                 sequences[total] = {
                     'id': total,
-                    'cluster': clusters[row['cluster']].pk,
-                    'class': resistance_class[text['class']].pk,
+                    'cluster_id': clusters[row['cluster']].pk,
+                    'resistance_class_id': resistance_class[text['class']].pk,
                     'dna': seq
                 }
                 total += 1
@@ -163,6 +174,7 @@ def read_report(files, resistance_class, clusters):
     return [results, sequences]
 
 
+@timeit
 def read_summary(files, clusters):
     """Ariba summary report."""
     hits = OrderedDict()
@@ -172,23 +184,22 @@ def read_summary(files, clusters):
         for line in fh:
             line = line.rstrip()
             if first_line:
-                cols = line.split('\t')
+                cols = line.split(',')
                 first_line = False
             else:
-                row = dict(zip(cols, line.split('\t')))
+                row = dict(zip(cols, line.split(',')))
                 for key, val in row.items():
-                    if key == 'name':
-                        pass
-                    cluster, field = key.split('.')
-                    if cluster not in hits:
-                        hits[cluster] = {
-                            'cluster_id': clusters[cluster].pk,
-                            'cluster': cluster,
-                            'resistance_class': (
-                                clusters[cluster].resistance_class
-                            )
-                        }
-                    hits[cluster][field] = val
+                    if key != 'name':
+                        cluster, field = key.split('.')
+                        if cluster not in hits:
+                            hits[cluster] = {
+                                'cluster_id': clusters[cluster].pk,
+                                'cluster': cluster,
+                                'resistance_class': (
+                                    clusters[cluster].resistance_class
+                                )
+                            }
+                        hits[cluster][field] = val
 
     summary = []
     for key, val in hits.items():
