@@ -27,9 +27,8 @@ def get_ariba_resistance(sample_id, user_id):
                 result = {}
                 result['sample_id'] = row['sample_id']
                 for key, val in i.items():
-                    if key == 'cluster':
+                    if key == 'cluster_id':
                         r_class = cluster[val]['resistance_class']
-                        result['cluster_name'] = cluster[val]['name']
                         result['resistance_class'] = r_class
                         result['mechanism'] = cluster[val]['mechanism']
                         result['ref_name'] = cluster[val]['ref_name']
@@ -53,7 +52,7 @@ def get_ariba_resistance_report(sample_id, user_id):
             else:
                 resistance_class.append(row['name'].title())
 
-    sql = """SELECT sample_id, results
+    sql = """SELECT sample_id, summary
              FROM resistance_ariba AS r
              LEFT JOIN sample_sample AS s
              ON r.sample_id=s.id
@@ -68,15 +67,39 @@ def get_ariba_resistance_report(sample_id, user_id):
         sample = OrderedDict()
         sample['sample_id'] = row['sample_id']
         for c in resistance_class:
-            sample[c] = 0
+            sample[c] = False
 
-        for result in row['results']:
-            rclass = cluster[result['class']]['name']
+        for r in row['summary']:
+            rclass = r['resistance_class']
             if rclass == 'MLS':
-                sample[rclass] += 1
+                sample[rclass] = True
             else:
-                sample[rclass.title()] += 1
+                sample[rclass.title()] = True
 
         results.append(sample)
+
+    return results
+
+
+def get_ariba_resistance_summary(sample_id, user_id):
+    """Return resistance summary based on class associated with a sample."""
+    sql = """SELECT sample_id, summary
+             FROM resistance_ariba AS r
+             LEFT JOIN sample_sample AS s
+             ON r.sample_id=s.id
+             WHERE r.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
+             ORDER BY r.sample_id ASC;""".format(
+        ','.join([str(i) for i in sample_id]),
+        user_id
+    )
+
+    results = []
+    for row in query_database(sql):
+        for r in row['summary']:
+            sample = OrderedDict()
+            sample['sample_id'] = row['sample_id']
+            for key, val in r.items():
+                sample[key] = val
+            results.append(sample)
 
     return results

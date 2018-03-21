@@ -3,8 +3,9 @@ from rest_framework.decorators import list_route
 
 from api.pagination import CustomReadOnlyModelViewSet
 from api.queries.resistances import (
-    get_ariba_resistance,
-    get_ariba_resistance_report
+    get_ariba_resistance_report,
+    get_ariba_resistance_summary,
+    get_ariba_resistance
 )
 from api.serializers.resistances import ResistanceAribaSerializer
 from api.validators import validate_list_of_ids
@@ -30,7 +31,13 @@ class ResistanceAribaViewSet(CustomReadOnlyModelViewSet):
                     "data": request.data
                 })
             else:
-                if 'report' in request.GET:
+                if 'summary' in request.GET:
+                    result, qt = timeit(
+                        get_ariba_resistance_summary,
+                        request.data['ids'],
+                        request.user.pk
+                    )
+                elif 'report' in request.GET:
                     result, qt = timeit(
                         get_ariba_resistance_report,
                         request.data['ids'],

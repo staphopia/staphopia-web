@@ -18,8 +18,9 @@ from api.queries.samples import (
 from api.queries.tags import get_tags_by_sample
 from api.queries.genes import get_genes_by_sample
 from api.queries.resistances import (
-    get_ariba_resistance,
-    get_ariba_resistance_report
+    get_ariba_resistance_report,
+    get_ariba_resistance_summary,
+    get_ariba_resistance
 )
 
 from api.queries.sequences import get_sequencing_stats
@@ -241,7 +242,13 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def resistance(self, request, pk=None):
-        if 'report' in request.GET:
+        if 'summary' in request.GET:
+            result, qt = timeit(
+                get_ariba_resistance_summary,
+                [pk],
+                request.user.pk
+            )
+        elif 'report' in request.GET:
             result, qt = timeit(
                 get_ariba_resistance_report,
                 [pk],
