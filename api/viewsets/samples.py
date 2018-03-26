@@ -273,24 +273,28 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def sccmec_primers(self, request, pk=None):
+        hamming_distance=True if 'hamming_distance' in request.GET else False
         result, qt = timeit(
             get_sccmec_primers_by_sample,
             [pk],
             request.user.pk,
             exact_hits=True if 'exact_hits' in request.GET else False,
-            predict=True if 'predict' in request.GET else False
+            predict=True if 'predict' in request.GET else False,
+            hamming_distance=hamming_distance
         )
         return self.formatted_response(result, query_time=qt)
 
     @detail_route(methods=['get'])
     def sccmec_subtypes(self, request, pk=None):
+        hamming_distance=True if 'hamming_distance' in request.GET else False
         result, qt = timeit(
             get_sccmec_primers_by_sample,
             [pk],
             request.user.pk,
             is_subtypes=True,
             exact_hits=True if 'exact_hits' in request.GET else False,
-            predict=True if 'predict' in request.GET else False
+            predict=True if 'predict' in request.GET else False,
+            hamming_distance=hamming_distance
         )
         return self.formatted_response(result, query_time=qt)
 

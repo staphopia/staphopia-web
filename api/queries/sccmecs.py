@@ -5,7 +5,8 @@ from api.utils import query_database
 
 
 def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
-                                 exact_hits=False, predict=False):
+                                 exact_hits=False, predict=False,
+                                 hamming_distance=False):
     """Return SCCmec primer hits asscociated with a sample_id."""
     sql = """SELECT p.sample_id, b.title, b.length, p.bitscore, p.evalue,
                     p.identity, p.mismatch, p.gaps, p.hamming_distance,
@@ -22,14 +23,22 @@ def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
         'sccmec_subtypes' if is_subtypes else 'sccmec_primers',
         ','.join([str(i) for i in sample_id]),
         user_id,
-        '=' if exact_hits or predict else '>='
+        '=' if exact_hits and not predict else '>='
     )
 
-    if predict:
+    if predict or hamming_distance:
         if is_subtypes:
-            return predict_subtype_by_primers(sample_id, query_database(sql))
+            return predict_subtype_by_primers(
+                sample_id,
+                query_database(sql),
+                hamming_distance=hamming_distance
+            )
         else:
-            return predict_type_by_primers(sample_id, query_database(sql))
+            return predict_type_by_primers(
+                sample_id,
+                query_database(sql),
+                hamming_distance=hamming_distance
+            )
     else:
         return query_database(sql)
 

@@ -172,7 +172,18 @@ def insert_blast(sample, version, blast, table, contigs):
         raise CommandError(f'{sample.name} SCCmec blast result Error: {e}')
 
 
-def predict_type_by_primers(sample_id, blast_results):
+def max_primer_hamming_distance():
+    return ({
+        "IS1272-F": 20, "IS7": 24, "IS5": 23, "IS2": 25, "mecI-R": 19,
+        "mecI-F": 21, "mI6": 23, "mI4": 20, "mI3": 25, "mecR1-R": 24,
+        "mcR5": 21, "mcR3": 20, "mcR2": 20, "mA7": 23, "mA6": 18,
+        "mA2": 21, "mA1": 21, "ccrCf-B": 27, "ccrCr-B": 28, "ccrCr-A": 22,
+        "ccrCf-A": 20, "ccrB4": 20, "ccrB": 22, "ccrA4": 20, "ccrA3": 23,
+        "ccrA2": 24, "ccrA1": 24
+    })
+
+
+def predict_type_by_primers(sample_id, blast_results, hamming_distance=False):
     sample_hits = OrderedDict()
     for sample in sorted(sample_id):
         sample_hits[int(sample)] = []
@@ -181,81 +192,170 @@ def predict_type_by_primers(sample_id, blast_results):
         sample_hits[hit['sample_id']].append(hit)
 
     predictions = []
+    # max_hamming = max_primer_hamming_distance()
     for sample, hits in sample_hits.items():
-        primers = {
-            # ccr
-            'ccrA1': False, 'ccrA2': False, 'ccrA3': False, 'ccrA4': False,
-            'ccrB': False, 'ccrB4': False,
-            'ccrC': False,
-
-            # IS elements
-            'IS431': False, 'IS1272': False,
-
-            # mec
-            'mecA': False, 'mecR1': False, 'mecI': False
-        }
+        dist = max_primer_hamming_distance()
+        primers = OrderedDict()
+        for key in dist:
+            primers[key] = False
 
         for hit in hits:
-            name = hit['title'].split('|')[0]
-            primers[name] = True
+            if '|' in hit['title']:
+                name, primer = hit['title'].split('|')
+            else:
+                name = hit['title']
+
+            # Differentiate the mec class primers
+            if name in ['mecR1', 'mecI', 'mecA', 'IS1272', 'IS431']:
+                name = primer
+            elif name == 'ccrCf':
+                if int(hit['length']) == 27:
+                    name = 'ccrCf-B'
+                else:
+                    name = 'ccrCf-A'
+            elif name == 'ccrCr':
+                if int(hit['length']) == 28:
+                    name = 'ccrCr-B'
+                else:
+                    name = 'ccrCr-A'
+
+            dist[name] = int(hit['hamming_distance'])
+            if int(hit['hamming_distance']) == 0:
+                # Require perfect matches
+                primers[name] = True
+
+        # Determine ccrC
+        dist['ccrC'] = min((dist['ccrCr-B'] + dist['ccrCf-B']),
+                           (dist['ccrCr-A'] + dist['ccrCf-A']))
+        if ((primers['ccrCr-B'] and primers['ccrCf-B']) or
+                (primers['ccrCr-A'] and primers['ccrCf-A'])):
+            primers['ccrC'] = True
+        else:
+            primers['ccrC'] = False
 
         # Determine mec class
-        mec_class = {'A': False, 'B': False, 'C': False}
-        meca = False
-        if primers['mecA']:
-            meca = True
+        mec_class = {'meca': False, 'A': False, 'B': False, 'C': False,
+                     'AB': False, 'ABC': False}
+        mec_dist = {'meca': 0, 'A': 0, 'B': 0, 'C': 0, 'AB': 0, 'ABC': 0}
 
-        if primers['IS431'] and primers['mecA'] and primers['mecR1']:
-            mec_class['C'] = True
+        if hamming_distance:
+            mec_dist['meca'] = dist['mA1'] + dist['mA2']
+            # Class A
+            mec_dist['A'] = mec_dist['meca'] + min(
+                (dist['mI4'] + dist['mI3'] + dist['mcR2'] + dist['mcR5']),
+                (dist['mI4'] + dist['mcR3'])
+            )
 
-            if primers['mecI']:
-                mec_class['A'] = True
-                mec_class['C'] = False
+            # Class B
+            mec_dist['B'] = mec_dist['meca'] + dist['IS5'] + dist['mA6']
 
-            if primers['IS1272']:
+            # Class C
+            mec_dist['C'] = mec_dist['meca'] + dist['IS2']
+
+            # Class A,B
+            mec_dist['AB'] = (mec_dist['meca'] + dist['mecI-R'] +
+                              dist['mecI-F'] + dist['IS1272-F'] +
+                              dist['mecR1-R'])
+
+            # Class A,B,C
+            mec_dist['ABC'] = (mec_dist['meca'] + dist['mecI-R'] +
+                               dist['mecI-F'] + dist['IS1272-F'] +
+                               dist['mecR1-R'])
+
+        # True/False Classes
+        if primers['mA1'] and primers['mA2']:
+            mec_class['meca'] = True
+            # Class A
+            if (primers['mI4'] and primers['mI3'] and primers['mcR2'] and
+                    primers['mcR5']) or (primers['mI4'] and primers['mcR3']):
+                    mec_class['A'] = True
+
+            # Class B
+            if primers['IS5'] and primers['mA6']:
                 mec_class['B'] = True
-                mec_class['C'] = False
 
-        mec_types = OrderedDict([
-            ('sample_id', sample), ('meca', meca),
+            # Class C
+            if primers['IS2']:
+                mec_class['C'] = True
+
+            # Class A,B
+            if (primers['mecI-R'] and primers['mecI-F'] and
+                    primers['IS1272-F'] and primers['mecR1-R']):
+                mec_class['A'] = True
+                mec_class['B'] = True
+                mec_class['AB'] = True
+
+            # Class A,B,C
+            if (primers['mI6'] and primers['IS7'] and
+                    primers['IS2'] and primers['mA7']):
+                mec_class['A'] = True
+                mec_class['B'] = True
+                mec_class['C'] = True
+                mec_class['ABC'] = True
+
+        mec = OrderedDict([
+            ('sample_id', sample),
             ('I', False), ('II', False), ('III', False), ('IV', False),
             ('V', False), ('VI', False), ('VII', False), ('VIII', False),
-            ('IX', False), ('X', False), ('XI', False)
+            ('IX', False), ('meca', mec_class['meca'])
         ])
 
-        if primers['ccrA1'] and primers['ccrB'] and mec_class['B']:
-            mec_types['I'] = True
+        if hamming_distance:
+            mec['meca'] = mec_dist['meca']
+            mec['I'] = dist['ccrA1'] + dist['ccrB'] + mec_dist['B']
+            mec['II'] = dist['ccrA2'] + dist['ccrB'] + mec_dist['A']
+            mec['III'] = dist['ccrA3'] + dist['ccrB'] + mec_dist['A']
+            mec['IV'] = dist['ccrA2'] + dist['ccrB'] + mec_dist['B']
+            mec['V'] = dist['ccrC'] + mec_dist['C']
+            mec['VI'] = dist['ccrA4'] + dist['ccrB4'] + mec_dist['B']
+            mec['VII'] = dist['ccrC'] + mec_dist['C']
+            mec['VIII'] = dist['ccrA4'] + dist['ccrB4'] + mec_dist['A']
+            mec['IX'] = dist['ccrA1'] + dist['ccrB'] + mec_dist['C']
+        else:
+            if primers['ccrA1'] and primers['ccrB'] and mec_class['B']:
+                mec['I'] = True
 
-        if primers['ccrA2'] and primers['ccrB'] and mec_class['A']:
-            mec_types['II'] = True
+            if primers['ccrA2'] and primers['ccrB'] and mec_class['A']:
+                mec['II'] = True
 
-        if primers['ccrA3'] and primers['ccrB'] and mec_class['A']:
-            mec_types['III'] = True
+            if primers['ccrA3'] and primers['ccrB'] and mec_class['A']:
+                mec['III'] = True
 
-        if primers['ccrA2'] and primers['ccrB'] and mec_class['B']:
-            mec_types['IV'] = True
+            if primers['ccrA2'] and primers['ccrB'] and mec_class['B']:
+                mec['IV'] = True
 
-        if primers['ccrC'] and mec_class['C']:
-            mec_types['V'] = True
+            if primers['ccrC'] and mec_class['C']:
+                mec['V'] = True
 
-        if primers['ccrA4'] and primers['ccrB4'] and mec_class['B']:
-            mec_types['VI'] = True
+            if primers['ccrA4'] and primers['ccrB4'] and mec_class['B']:
+                mec['VI'] = True
 
-        if primers['ccrC'] and mec_class['C']:
-            mec_types['VII'] = True
+            if primers['ccrC'] and mec_class['C']:
+                mec['VII'] = True
 
-        if primers['ccrA4'] and primers['ccrB4'] and mec_class['A']:
-            mec_types['VIII'] = True
+            if primers['ccrA4'] and primers['ccrB4'] and mec_class['A']:
+                mec['VIII'] = True
 
-        if primers['ccrA1'] and primers['ccrB'] and mec_class['C']:
-            mec_types['IX'] = True
+            if primers['ccrA1'] and primers['ccrB'] and mec_class['C']:
+                mec['IX'] = True
 
-        predictions.append(mec_types)
+        predictions.append(mec)
 
     return predictions
 
 
-def predict_subtype_by_primers(sample_id, blast_results):
+def max_subtype_hamming_distance():
+    return ({
+        "ivh-r": 20, "ivh-f": 20, "ivg-r": 20, "ivg-f": 20, "ivd-r": 20,
+        "ivd-f": 20, "ivce-r": 20, "ivce-f": 20, "ivbf-r": 20, "ivbf-f": 20,
+        "iva-r": 20, "iva-f": 20, "iiia-3ab": 20, "iiia-3a1": 20,
+        "iib-2b4": 22, "iib-2b3": 21, "iia-kdpB2": 22, "iia-kdpB1": 22,
+        "ia-1a4": 21, "ia-1a3": 23
+    })
+
+
+def predict_subtype_by_primers(sample_id, blast_results,
+                               hamming_distance=False):
     sample_hits = OrderedDict()
     for sample in sorted(sample_id):
         sample_hits[int(sample)] = []
@@ -265,22 +365,16 @@ def predict_subtype_by_primers(sample_id, blast_results):
 
     predictions = []
     for sample, hits in sample_hits.items():
-        primers = {
-            'ia-1a3': False, 'ia-1a4': False,
-            'iia-kdpB1': False, 'iia-kdpB2': False,
-            'iib-2b3': False, 'iib-2b4': False,
-            'iiia-3a1': False, 'iiia-3ab': False,
-            'iva-f': False, 'iva-r': False,
-            'ivbf-f': False, 'ivbf-r': False,
-            'ivce-f': False, 'ivce-r': False,
-            'ivd-f': False, 'ivd-r': False,
-            'ivg-f': False, 'ivg-r': False,
-            'ivh-f': False, 'ivh-r': False,
-        }
+        dist = max_subtype_hamming_distance()
+        primers = {}
+        for key in dist:
+            primers[key] = False
 
         for hit in hits:
-            name = hit['title'].split('|')[0]
-            primers[name] = True
+            name = hit['title']
+            if int(hit['hamming_distance']) == 0:
+                primers[name] = True
+            dist[name] = int(hit['hamming_distance'])
 
         subtypes = OrderedDict([
             ('sample_id', sample),
@@ -289,35 +383,47 @@ def predict_subtype_by_primers(sample_id, blast_results):
             ('IVg', False), ('IVh', False),
         ])
 
-        if primers['ia-1a3'] and primers['ia-1a4']:
-            subtypes['Ia'] = True
+        if hamming_distance:
+            subtypes['Ia'] = dist['ia-1a3'] + dist['ia-1a4']
+            subtypes['IIa'] = dist['iia-kdpB1'] + dist['iia-kdpB2']
+            subtypes['IIb'] = dist['iib-2b3'] + dist['iib-2b4']
+            subtypes['IIIa'] = dist['iiia-3a1'] + dist['iiia-3ab']
+            subtypes['IVa'] = dist['iva-f'] + dist['iva-r']
+            subtypes['IVb'] = dist['ivbf-f'] + dist['ivbf-r']
+            subtypes['IVc'] = dist['ivce-f'] + dist['ivce-r']
+            subtypes['IVd'] = dist['ivd-f'] + dist['ivd-r']
+            subtypes['IVg'] = dist['ivg-f'] + dist['ivg-r']
+            subtypes['IVh'] = dist['ivh-f'] + dist['ivh-r']
+        else:
+            if primers['ia-1a3'] and primers['ia-1a4']:
+                subtypes['Ia'] = True
 
-        if primers['iia-kdpB1'] and primers['iia-kdpB2']:
-            subtypes['IIa'] = True
+            if primers['iia-kdpB1'] and primers['iia-kdpB2']:
+                subtypes['IIa'] = True
 
-        if primers['iib-2b3'] and primers['iib-2b4']:
-            subtypes['IIb'] = True
+            if primers['iib-2b3'] and primers['iib-2b4']:
+                subtypes['IIb'] = True
 
-        if primers['iiia-3a1'] and primers['iiia-3ab']:
-            subtypes['IIIa'] = True
+            if primers['iiia-3a1'] and primers['iiia-3ab']:
+                subtypes['IIIa'] = True
 
-        if primers['iva-f'] and primers['iva-r']:
-            subtypes['IVa'] = True
+            if primers['iva-f'] and primers['iva-r']:
+                subtypes['IVa'] = True
 
-        if primers['ivbf-f'] and primers['ivbf-r']:
-            subtypes['IVb'] = True
+            if primers['ivbf-f'] and primers['ivbf-r']:
+                subtypes['IVb'] = True
 
-        if primers['ivce-f'] and primers['ivce-r']:
-            subtypes['IVc'] = True
+            if primers['ivce-f'] and primers['ivce-r']:
+                subtypes['IVc'] = True
 
-        if primers['ivd-f'] and primers['ivd-r']:
-            subtypes['IVd'] = True
+            if primers['ivd-f'] and primers['ivd-r']:
+                subtypes['IVd'] = True
 
-        if primers['ivg-f'] and primers['ivg-r']:
-            subtypes['IVg'] = True
+            if primers['ivg-f'] and primers['ivg-r']:
+                subtypes['IVg'] = True
 
-        if primers['ivh-f'] and primers['ivh-r']:
-            subtypes['IVh'] = True
+            if primers['ivh-f'] and primers['ivh-r']:
+                subtypes['IVh'] = True
 
         predictions.append(subtypes)
 
