@@ -50,6 +50,7 @@ class SCCmecPrimerViewSet(CustomReadOnlyModelViewSet):
     def bulk_by_sample(self, request):
         """Given a list of Sample IDs, return SCCmec Primer for each Sample."""
         if request.method == 'POST':
+            hamming = True if 'hamming_distance' in request.GET else False
             validator = validate_list_of_ids(request.data, max_query=500)
             if validator['has_errors']:
                 return Response({
@@ -61,7 +62,8 @@ class SCCmecPrimerViewSet(CustomReadOnlyModelViewSet):
                     request.data['ids'],
                     request.user.pk,
                     exact_hits=True if 'exact_hits' in request.GET else False,
-                    predict=True if 'predict' in request.GET else False
+                    predict=True if 'predict' in request.GET else False,
+                    hamming_distance=hamming
                 ))
 
 
@@ -107,6 +109,7 @@ class SCCmecSubtypeViewSet(CustomReadOnlyModelViewSet):
     def bulk_by_sample(self, request):
         """Given a list of Sample IDs, return SCCmec subtype hits Sample."""
         if request.method == 'POST':
+            hamming = True if 'hamming_distance' in request.GET else False
             validator = validate_list_of_ids(request.data, max_query=500)
             if validator['has_errors']:
                 return Response({
@@ -119,5 +122,6 @@ class SCCmecSubtypeViewSet(CustomReadOnlyModelViewSet):
                     request.user.pk,
                     is_subtypes=True,
                     exact_hits=True if 'exact_hits' in request.GET else False,
-                    predict=True if 'predict' in request.GET else False
+                    predict=True if 'predict' in request.GET else False,
+                    hamming_distance=hamming
                 ))
