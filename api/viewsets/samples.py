@@ -119,6 +119,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     @list_route(methods=['get'])
     def published(self, request):
         """Return all published ENA samples."""
+        samples = None
         limit = None
         if 'limit' in request.GET:
             validator = validate_positive_integer(request.GET['limit'])
@@ -127,7 +128,12 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             else:
                 limit = request.GET['limit']
 
-        samples = get_public_samples(is_published=True, limit=limit)
+        if 'include_location' in request.GET:
+            samples = get_public_samples(is_published=True,
+                                         include_location=True, limit=limit)
+        else:
+            samples = get_public_samples(is_published=True, limit=limit)
+
         return self.paginate(samples, page_size=500, is_serialized=True)
 
     @list_route(methods=['get'])

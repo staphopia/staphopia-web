@@ -4,12 +4,11 @@ from api.utils import query_database
 
 def get_samples_by_tag(tag_id):
     """Return samples associated with a tag."""
-    sql = """SELECT t.sample_id, s.name, s.is_public, s.is_published, m.st
+    sql = """SELECT s.sample_id, s.name, s.is_public, s.is_published, s.st,
+                    s.rank
              FROM tag_tosample AS t
-             LEFT JOIN sample_sample AS s
-             ON t.sample_id=s.id
-             LEFT JOIN mlst_mlst as m
-             ON m.sample_id=s.id
+             LEFT JOIN sample_basic AS s
+             ON t.sample_id=s.sample_id
              WHERE t.tag_id={0}
              ORDER BY s.name ASC;""".format(tag_id)
     return query_database(sql)

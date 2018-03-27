@@ -9,72 +9,44 @@ def get_samples(user_id, sample_id=None, sample_ids=None, user_only=False,
     sql = None
     st_sql = ""
     if st:
-        st_sql = f'AND m.st={st}'
+        st_sql = f'AND st={st}'
 
     if user_only:
-        sql = """SELECT s.id AS sample_id, s.is_public, s.is_published, s.name,
-                        m.st
-                 FROM sample_sample as s
-                 LEFT JOIN mlst_mlst as m
-                 ON s.id = m.sample_id
+        sql = """SELECT sample_id, name, is_public, is_published, st, rank
+                 FROM sample_basic
                  WHERE s.user_id={0} {1}
                  ORDER BY s.id DESC""".format(user_id, st_sql)
     elif name:
-        sql = """SELECT s.id AS sample_id, s.is_public, s.is_published, s.name,
-                        m.st
-                 FROM sample_sample as s
-                 LEFT JOIN mlst_mlst as m
-                 ON s.id = m.sample_id
+        sql = """SELECT sample_id, name, is_public, is_published, st, rank
+                 FROM sample_basic
                  WHERE s.name='{0}'
-                       AND (s.is_public=TRUE OR s.user_id={1})""".format(
+                       AND (is_public=TRUE OR user_id={1})""".format(
             name,
             user_id
         )
     elif sample_id:
-        sql = """SELECT s.id AS sample_id, s.is_public, s.is_published, s.name,
-                        m.st
-                 FROM sample_sample as s
-                 LEFT JOIN mlst_mlst as m
-                 ON s.id = m.sample_id
-                 WHERE s.id={0}
-                       AND (s.is_public=TRUE OR s.user_id={1})""".format(
+        sql = """SELECT sample_id, name, is_public, is_published, st, rank
+                 FROM sample_basic
+                 WHERE sample_id={0}
+                       AND (is_public=TRUE OR user_id={1})""".format(
             sample_id,
             user_id
         )
     elif sample_ids:
-        sql = """SELECT s.id AS sample_id, s.is_public, s.is_published, s.name,
-                        m.st
-                 FROM sample_sample as s
-                 LEFT JOIN mlst_mlst as m
-                 ON s.id = m.sample_id
-                 WHERE s.id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
-                 ORDER BY s.id""".format(
+        sql = """SELECT sample_id, name, is_public, is_published, st, rank
+                 FROM sample_basic
+                 WHERE sample_id IN ({0}) AND (is_public=TRUE OR user_id={1})
+                 ORDER BY sample_id""".format(
             ','.join([str(i) for i in sample_ids]),
             user_id
         )
     else:
-        sql = """SELECT s.id AS sample_id, s.is_public, s.is_published, s.name,
-                        m.st
-                 FROM sample_sample as s
-                 LEFT JOIN mlst_mlst as m
-                 ON s.id = m.sample_id
-                 WHERE (s.is_public=TRUE OR s.user_id={0}) {1}""".format(
+        sql = """SELECT sample_id, name, is_public, is_published, st, rank
+                 FROM sample_basic
+                 WHERE (is_public=TRUE OR user_id={0}) {1}""".format(
             user_id, st_sql
         )
 
-    return query_database(sql)
-
-
-def get_samples_by_tag(tag_id):
-    """Return samples associated with a tag."""
-    sql = """SELECT t.sample_id, s.name, s.is_public, s.is_published, m.st
-             FROM sample_totag AS t
-             LEFT JOIN sample_sample AS s
-             ON t.sample_id=s.id
-             LEFT JOIN mlst_mlst as m
-             ON m.sample_id=s.id
-             WHERE t.tag_id={0}
-             ORDER BY s.name ASC;""".format(tag_id)
     return query_database(sql)
 
 
@@ -84,33 +56,23 @@ def get_public_samples(is_published=False, include_location=False, limit=None):
     if limit:
         limit_sql = f'LIMIT {limit}'
 
-    sql = None
+    table = 'public_ena_samples'
     if is_published:
-        sql = f'SELECT * FROM published_ena_samples {limit_sql};'
-        results = {}
-        for row in query_database(sql):
-            if row['name'] not in results:
-                results[row['name']] = row
-                if row['pmid']:
-                    results[row['name']]['pmid'] = [int(row['pmid'])]
-                else:
-                    results[row['name']]['pmid'] = []
-            else:
-                if row['pmid']:
-                    results[row['name']]['pmid'].append(int(row['pmid']))
+        table = 'published_ena_samples'
 
-        return [vals for k, vals in results.items()]
-    elif include_location:
-        sql = """SELECT p.sample_id, is_public, is_published, name, st,
+    if include_location:
+        sql = """SELECT p.sample_id, name, is_public, is_published, st, rank,
                         metadata->>'location' AS location,
                         metadata->>'region' AS region,
                         metadata->>'country' AS country
-                 FROM public_ena_samples AS p
+                 FROM {0} AS p
                  LEFT JOIN sample_metadata AS m
-                 ON p.sample_id=m.sample_id {0}""".format(limit_sql)
+                 ON p.sample_id=m.sample_id {1}""".format(table, limit_sql)
         return query_database(sql)
     else:
-        return query_database(f'SELECT * FROM public_ena_samples {limit_sql};')
+        sql = """SELECT sample_id, name, is_public, is_published, st, rank
+                 FROM {0} {1};""".format(table, limit_sql)
+        return query_database(sql)
 
 
 def get_resistance_by_samples(sample_ids, resistance_id=None):
@@ -124,22 +86,6 @@ def get_resistance_by_samples(sample_ids, resistance_id=None):
         ','.join([str(i) for i in sample_ids]), optional
     )
 
-    return query_database(sql)
-
-
-def get_tags_by_sample(sample_id, user_id):
-    """Return tags associated with a sample."""
-    sql = """SELECT s.sample_id, s.tag_id, t.tag, t.comment
-             FROM tag_tosample AS s
-             LEFT JOIN tag_tag AS t
-             ON s.tag_id=t.id
-             LEFT JOIN sample_sample AS a
-             ON s.sample_id=a.id
-             WHERE s.sample_id={0}
-                   AND (a.is_public=TRUE OR a.user_id={1});""".format(
-        sample_id,
-        user_id
-    )
     return query_database(sql)
 
 
