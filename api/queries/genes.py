@@ -66,6 +66,28 @@ def get_genes_by_sample(sample_id, user_id, product_id=None):
     return results
 
 
+def get_gene_products(product_id, is_term=False):
+    """Return a list of gene products."""
+    sql = None
+    if is_term:
+        sql = """SELECT id as product_id, inference, product, name, note
+                 FROM annotation_inference
+                 WHERE product ILIKE '%{0}%' OR name ILIKE '%{0}%'
+                       OR note ILIKE '%{0}%' OR inference ILIKE '%{0}%'
+                 ORDER BY id;""".format(product_id)
+    elif not product_id:
+        sql = """SELECT id as product_id, inference, product, name, note
+                 FROM annotation_inference;"""
+    else:
+        sql = """SELECT id as product_id, inference, product, name, note
+                 FROM annotation_inference
+                 WHERE id IN ({0});""".format(
+            ','.join([str(i) for i in product_id]),
+        )
+
+    return query_database(sql)
+
+
 def get_clusters_by_samples(sample_id, user_id):
     """Return genes associated with a sample."""
     columns = COLUMNS['gene_clusters']
@@ -96,6 +118,9 @@ def get_cluster_counts_by_samples(ids):
     )
 
     return query_database(sql)
+
+
+
 
 
 def get_gene_feature(feature_id):

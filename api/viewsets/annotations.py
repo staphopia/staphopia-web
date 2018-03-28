@@ -8,7 +8,8 @@ from api.queries.genes import (
     get_gene_feature,
     get_gene_features,
     get_clusters_by_samples,
-    get_cluster_counts_by_samples
+    get_cluster_counts_by_samples,
+    get_gene_products
 )
 from api.validators import validate_positive_integer, validate_list_of_ids
 from api.serializers.annotations import (
@@ -95,3 +96,45 @@ class AnnotationInferenceViewSet(CustomReadOnlyModelViewSet):
 
     queryset = Inference.objects.all()
     serializer_class = AnnotationInferenceSerializer
+
+    def list(self, request):
+        if 'term' in request.GET:
+            results, qt = timeit(
+                get_gene_products,
+                request.GET['term'],
+                is_term=True
+            )
+            return self.formatted_response(results, query_time=qt)
+        else:
+            results, qt = timeit(
+                get_gene_products,
+                None
+            )
+            return self.paginate(results, is_serialized=True)
+
+
+    @list_route(methods=['post'])
+    def bulk_by_product(self, request):
+        """Given a list of sample IDs, return table info for each gene."""
+        if request.method == 'POST':
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                results, qt = timeit(
+                    get_gene_products,
+                    request.data['ids']
+                )
+                return self.formatted_response(results, query_time=qt)
+
+    @list_route(methods=['get'])
+    def bulk(self, request):
+        """Return all available products in Staphopia."""
+        results, qt = timeit(
+            get_gene_products,
+            None
+        )
+        return self.formatted_response(results, query_time=qt)
