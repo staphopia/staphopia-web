@@ -70,7 +70,13 @@ def get_inferences():
     """Get the total list of inferences."""
     rows = {}
     for tag in Inference.objects.filter():
-        key = f'{tag.inference}|{tag.product}|{tag.note}|{tag.name}'
+        # Assume inference is unique RefSeq accession
+        key = f'{inference}'
+
+        if tag.inference == 'hypothetical' or tag.inference.endswith('RNA'):
+            # Not a unique accession
+            key = f'{tag.inference}|{tag.product}|{tag.note}|{tag.name}'
+
         rows[key] = tag
     return rows
 
@@ -233,7 +239,12 @@ def read_gff(gff, amino_acid, dna, blast_results):
                     if 'Name' in attributes:
                         name = attributes['Name']
 
-                    inference_key = f'{inference}|{product}|{note}|{name}'
+                    inference_key = f'{inference}'
+                    if inference == 'hypothetical':
+                        inference_key = f'{inference}|{product}|{note}|{name}'
+                    elif inference.endswith('RNA'):
+                        inference_key = f'{inference}|{product}|{note}|{name}'
+
                     if inference_key not in inferences:
                         inferences[inference_key] = create_inference(
                             inference, product, note, name
