@@ -127,9 +127,9 @@ def read_blast(files, compressed=True):
 def read_gff(gff, amino_acid, dna, blast_results):
     """Read through the GFF and extract annotations."""
     info = []
-    rna = []
-    gene = []
-    protein = []
+    rna = {}
+    gene = {}
+    protein = {}
     blast = []
     repeat = []
     features = get_features()
@@ -197,19 +197,10 @@ def read_gff(gff, amino_acid, dna, blast_results):
 
                     if 'RNA' in feature:
                         is_rna = True
-                        rna.append({
-                            'locus_tag': locus_tag,
-                            'sequence': dna[locus_tag]
-                        })
+                        rna[locus_tag] = dna[locus_tag]
                     else:
-                        gene.append({
-                            'locus_tag': locus_tag,
-                            'sequence': dna[locus_tag]
-                        })
-                        protein.append({
-                            'locus_tag': locus_tag,
-                            'sequence': amino_acid[locus_tag]
-                        })
+                        gene[locus_tag] = dna[locus_tag]
+                        protein[locus_tag] = amino_acid[locus_tag]
 
                     if 'query_title' in attributes:
                         if attributes['query_title'] not in blast_results:

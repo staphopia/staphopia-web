@@ -37,13 +37,10 @@ def get_genes_by_sample(sample_id, user_id, product_id=None):
 
     results = []
     for row in query_database(sql):
-        for locus_tag, info in row['info'].items():
-            if product_id:
-                if info['inference'] != int(product_id):
-                    continue
+        for info in row['info']:
             new = OrderedDict()
             new['sample_id'] = row['sample_id']
-            new['locus_tag'] = locus_tag
+            new['locus_tag'] = info['locus_tag']
             for k, v in info.items():
                 if k == 'CDS' or 'RNA' in k:
                     continue
@@ -57,13 +54,13 @@ def get_genes_by_sample(sample_id, user_id, product_id=None):
                     new[k] = v
 
             if new['type'] == 'RNA':
-                new['length'] = len(row['rna'][locus_tag])
-                new['dna'] = row['rna'][locus_tag]
+                new['length'] = len(row['rna'][info['locus_tag']])
+                new['dna'] = row['rna'][info['locus_tag']]
                 new['aa'] = ''
             else:
-                new['length'] = len(row['gene'][locus_tag])
-                new['dna'] = row['gene'][locus_tag]
-                new['aa'] = row['protein'][locus_tag]
+                new['length'] = len(row['gene'][info['locus_tag']])
+                new['dna'] = row['gene'][info['locus_tag']]
+                new['aa'] = row['protein'][info['locus_tag']]
             results.append(new)
 
     return results
