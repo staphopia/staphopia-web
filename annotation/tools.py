@@ -71,7 +71,7 @@ def get_inferences():
     rows = {}
     for tag in Inference.objects.filter():
         # Assume inference is unique RefSeq accession
-        key = f'{inference}'
+        key = f'{tag.inference}'
 
         if tag.inference == 'hypothetical' or tag.inference.endswith('RNA'):
             # Not a unique accession
