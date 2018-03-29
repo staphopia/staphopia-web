@@ -17,6 +17,7 @@ from api.queries.samples import (
 
 from api.queries.tags import get_tags_by_sample, get_samples_by_tag
 from api.queries.genes import get_genes_by_sample
+from api.queries.publications import get_pmids
 from api.queries.resistances import (
     get_ariba_resistance_report,
     get_ariba_resistance_summary,
@@ -243,6 +244,11 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
     @detail_route(methods=['get'])
     def metadata(self, request, pk=None):
         result, qt = timeit(get_sample_metadata, [pk],  request.user.pk)
+        return self.formatted_response(result, query_time=qt)
+
+    @detail_route(methods=['get'])
+    def pmid(self, request, pk=None):
+        result, qt = timeit(get_pmids, [pk],  request.user.pk)
         return self.formatted_response(result, query_time=qt)
 
     @detail_route(methods=['get'])

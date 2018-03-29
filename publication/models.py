@@ -12,7 +12,7 @@ class ToSample(models.Model):
 
 class Publication(models.Model):
     """Pubmed information."""
-    pmid = models.TextField(unique=True)
+    pmid = models.PositiveIntegerField(unique=True)
     authors = models.TextField()
     title = models.TextField()
     abstract = models.TextField(db_index=True)

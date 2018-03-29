@@ -18,6 +18,8 @@ from api.viewsets.kmers import KmerViewSet
 
 from api.viewsets.samples import SampleViewSet, MetadataViewSet
 from api.viewsets.tags import TagViewSet
+from api.viewsets.publications import PublicationViewSet
+
 
 from api.viewsets.resistances import ResistanceAribaViewSet
 
@@ -59,7 +61,7 @@ router = routers.DefaultRouter()
 # Sample Related Tables
 router.register(r'sample', SampleViewSet)
 router.register(r'tag', TagViewSet)
-# router.register(r'publication', PublicationViewSet)
+router.register(r'publication', PublicationViewSet)
 # router.register(r'resistance', ResistanceViewSet)
 router.register(r'metadata', MetadataViewSet, base_name='metadata')
 
