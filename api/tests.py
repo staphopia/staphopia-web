@@ -8,7 +8,10 @@ from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from api.pagination import CustomReadOnlyModelViewSet
+from api.queries.tags import get_samples_by_tag
+
 from sample.models import Sample
+TEST_TAG = 'public-5'
 
 
 class TestsViewSet(CustomReadOnlyModelViewSet):
@@ -22,9 +25,8 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
     def __init__(self, *args, **kwargs):
         super(TestsViewSet, self).__init__(*args, **kwargs)
         self.client.force_authenticate(user=self.user)
-        self.samples = sorted(Sample.objects.filter(
-            user=self.user
-        ).values_list('id', flat=True))
+        self.samples = [s['sample_id']
+                        for s in get_samples_by_tag(TEST_TAG, is_id=False)]
         self.endpoints = [
             'Connection Related',
             'test_status',
@@ -37,8 +39,7 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
             'test_gene',
             'test_indel',
             'test_snp',
-            'test_mlst_srst2',
-            'test_mlst_blast',
+            'test_mlst',
             'test_sccmec_primer',
             'test_sccmec_primer_predict',
             'test_sccmec_subtype',
@@ -50,8 +51,7 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
             'test_assemblies',
             'test_indels',
             'test_snps',
-            'test_mlst_srst2_bulk',
-            'test_mlst_blast_bulk',
+            'test_mlsts',
             'test_sccmec_primers',
             'test_sccmec_primers_predict',
             'test_sccmec_subtypes',
@@ -88,12 +88,13 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
 
     @list_route(methods=['get'])
     def test_samples(self, request):
-        data, status = self.__get('/api/sample/?user_only')
+        data, status = self.__get(f'/api/sample/?tag={TEST_TAG}')
         return self.formatted_response(data['results'], status=status)
 
     @list_route(methods=['get'])
     def test_sample(self, request):
-        data, status = self.__get('/api/sample/{0}/'.format(self.samples[0]))
+        sample = self.samples[0]
+        data, status = self.__get(f'/api/sample/{sample}/')
         return self.formatted_response(data['results'], status=status)
 
     @list_route(methods=['get'])
@@ -175,14 +176,14 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
         return self.formatted_response(data['results'], status=status)
 
     @list_route(methods=['get'])
-    def test_mlst_blast(self, request):
-        url = '/api/sample/{0}/st_blast/'.format(self.samples[0])
+    def test_mlst(self, request):
+        url = '/api/sample/{0}/st/'.format(self.samples[0])
         data, status = self.__get(url)
         return self.formatted_response(data['results'], status=status)
 
     @list_route(methods=['get'])
-    def test_mlst_blast_bulk(self, request):
-        url = '/api/mlst/blast/bulk_by_sample/'
+    def test_mlsts(self, request):
+        url = '/api/mlst/bulk_by_sample/'
         data, status = self.__post(url, self.samples)
         return self.formatted_response(data['results'], status=status)
 
@@ -194,9 +195,7 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
 
     @list_route(methods=['get'])
     def test_sccmec_primer_predict(self, request):
-        url = '/api/sample/{0}/sccmec_primers/?predict'.format(
-            self.samples[0]
-        )
+        url = '/api/sample/{0}/sccmec_primers/?predict'.format(self.samples[0])
         data, status = self.__get(url)
         return self.formatted_response(data['results'], status=status)
 
@@ -214,7 +213,9 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
 
     @list_route(methods=['get'])
     def test_sccmec_subtype(self, request):
-        url = '/api/sample/{0}/sccmec_subtypes/'.format(self.samples[0])
+        url = '/api/sample/{0}/sccmec_subtypes/'.format(
+            self.samples[0]
+        )
         data, status = self.__get(url)
         return self.formatted_response(data['results'], status=status)
 

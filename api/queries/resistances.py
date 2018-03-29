@@ -39,18 +39,38 @@ def get_ariba_resistance(sample_id, user_id):
     return results
 
 
-def get_ariba_resistance_report(sample_id, user_id):
+def get_ariba_resistance_report(sample_id, user_id, by_cluster=False):
     """Return resistance report based on class associated with a sample."""
     resistance_class = []
-    cluster = {}
-    sql = """SELECT id, name FROM resistance_resistanceclass ORDER BY name"""
-    for row in query_database(sql):
-        cluster[row['id']] = row
-        if row['name'].title() not in resistance_class:
-            if row['name'] == 'MLS':
-                resistance_class.append(row['name'])
-            else:
-                resistance_class.append(row['name'].title())
+    omit = [
+        'AAC3', 'APH3_PRIME_5', 'ARL-', 'ARLS', 'CLS', 'dha', 'FOLP_21',
+        'GYRA_8', 'gyrB_1', 'MEPA_1', 'MEPR', 'MGRA', 'MPRF', 'NORA',
+        'PARC_16', 'PARE+', 'PGSA', 'RLMH', 'RPOB+', 'RPOC', 'SAV1866',
+        'TET38', 'TUFAB_10'
+    ]
+    if by_cluster:
+        sql = """SELECT id, name, resistance_class
+                 FROM resistance_cluster
+                 ORDER BY name"""
+        for row in query_database(sql):
+            if row['name'] not in omit:
+                if row['resistance_class']:
+                    name = f"{row['name']};{row['resistance_class']}"
+                    resistance_class.append(name)
+    else:
+        sql = """SELECT id, name
+                 FROM resistance_resistanceclass
+                 ORDER BY name"""
+        for row in query_database(sql):
+            if row['name'] not in omit:
+                if row['name'].title() not in resistance_class:
+                    if row['name'] == 'MLS':
+                        resistance_class.append(row['name'])
+                    elif row['name'] == 'betalactams':
+                        resistance_class.append(row['name'].title())
+                        resistance_class.append(f"{row['name'].title()} (mecA)")
+                    else:
+                        resistance_class.append(row['name'].title())
 
     sql = """SELECT sample_id, summary
              FROM resistance_ariba AS r
@@ -70,11 +90,21 @@ def get_ariba_resistance_report(sample_id, user_id):
             sample[c] = False
 
         for r in row['summary']:
-            rclass = r['resistance_class']
-            if rclass == 'MLS':
-                sample[rclass] = True
-            else:
-                sample[rclass.title()] = True
+            if r['cluster'] not in omit:
+                if r['match'] == 'yes':
+                    if by_cluster:
+                        name = f"{r['cluster']};{r['resistance_class']}"
+                        sample[name] = True
+                    else:
+                        rclass = r['resistance_class']
+                        if rclass == 'MLS':
+                            sample[rclass] = True
+                        elif rclass == 'betalactams':
+                            sample[rclass.title()] = True
+                            if 'mec' in r['cluster'].lower():
+                                sample[f'{rclass.title()} (mecA)'] = True
+                        else:
+                            sample[rclass.title()] = True
 
         results.append(sample)
 

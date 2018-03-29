@@ -43,6 +43,13 @@ class ResistanceAribaViewSet(CustomReadOnlyModelViewSet):
                         request.data['ids'],
                         request.user.pk
                     )
+                elif 'cluster_report' in request.GET:
+                    result, qt = timeit(
+                        get_ariba_resistance_report,
+                        request.data['ids'],
+                        request.user.pk,
+                        by_cluster=True
+                    )
                 else:
                     result, qt = timeit(
                         get_ariba_resistance,

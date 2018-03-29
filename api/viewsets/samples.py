@@ -15,7 +15,7 @@ from api.queries.samples import (
     get_sample_metadata
 )
 
-from api.queries.tags import get_tags_by_sample
+from api.queries.tags import get_tags_by_sample, get_samples_by_tag
 from api.queries.genes import get_genes_by_sample
 from api.queries.resistances import (
     get_ariba_resistance_report,
@@ -79,6 +79,8 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                                    st=st_filter)
         elif 'name' in request.GET:
             queryset = get_samples(request.user.pk, name=request.GET['name'])
+        elif 'tag' in request.GET:
+            queryset = get_samples_by_tag(request.GET['tag'], is_id=False)
         else:
             queryset = get_samples(request.user.pk, st=st_filter)
         return self.paginate(queryset, is_serialized=True)
@@ -186,7 +188,7 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             if product['has_errors']:
                 return Response(product)
             else:
-                product = request.GET['product_id']
+                product = int(request.GET['product_id'])
 
         results, qt = timeit(
             get_genes_by_sample,
@@ -259,6 +261,13 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                 get_ariba_resistance_report,
                 [pk],
                 request.user.pk
+            )
+        elif 'cluster_report' in request.GET:
+            result, qt = timeit(
+                get_ariba_resistance_report,
+                [pk],
+                request.user.pk,
+                by_cluster=True
             )
         else:
             result, qt = timeit(

@@ -55,7 +55,7 @@ class AnnotationViewSet(CustomReadOnlyModelViewSet):
                     if validator['has_errors']:
                         return Response(validator)
                     else:
-                        product = request.GET['product_id']
+                        product = int(request.GET['product_id'])
 
                 results, qt = timeit(
                     get_genes_by_sample,
