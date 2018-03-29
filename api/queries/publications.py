@@ -18,10 +18,11 @@ def get_pmids(sample_id, user_id):
 
     results = []
     for row in query_database(sql):
-        results.append({
-            'sample_id': row['sample_id'],
-            'pmid': row['pmid']
-        })
+        if row['pmid']:
+            results.append({
+                'sample_id': row['sample_id'],
+                'pmid': row['pmid']
+            })
     return results
 
 
