@@ -171,11 +171,20 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def contigs(self, request, pk=None):
+        contig = None
+        if 'contig' in request.GET:
+            contig = validate_positive_integer(request.GET['contig'])
+            if contig['has_errors']:
+                return Response(contig)
+            else:
+                contig = int(request.GET['contig'])
+
         results, qt = timeit(
             get_assembly_contigs,
             [pk],
             request.user.pk,
-            is_plasmids=True if 'plasmids' in request.GET else False
+            is_plasmids=True if 'plasmids' in request.GET else False,
+            contig=contig
         )
         return self.paginate(results, page_size=30, is_serialized=True,
                              query_time=qt)

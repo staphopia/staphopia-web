@@ -62,6 +62,18 @@ def get_genes_by_sample(sample_id, user_id, product_id=None):
                 new['dna'] = row['gene'][info['locus_tag']]
                 new['aa'] = row['protein'][info['locus_tag']]
 
+            new['header'] = (
+                "{0}|{1}|{2}|{3} [product={4}] [name={5}] [note={6}]"
+            ).format(
+                new['sample_id'],
+                new['locus_tag'],
+                new['product_id'],
+                new['inference'],
+                new['product'],
+                new['name'],
+                new['note']
+            )
+
             if product_id:
                 if product_id == new['product_id']:
                     results.append(new)

@@ -34,7 +34,7 @@ def get_assembly_stats(sample_id, user_id, is_plasmids=None):
     return query_database(sql)
 
 
-def get_assembly_contigs(sample_id, user_id, is_plasmids=False):
+def get_assembly_contigs(sample_id, user_id, is_plasmids=False, contig=None):
     """Return assembled contigs for a set of sample ids."""
     # Get contigs
     table = 'plasmid_sequence' if is_plasmids else 'assembly_sequence'
@@ -61,7 +61,7 @@ def get_assembly_contigs(sample_id, user_id, is_plasmids=False):
              LEFT JOIN sample_sample as s
              ON s.id=c.sample_id
              WHERE c.sample_id IN ({0}) AND (s.is_public=TRUE OR user_id={1})
-             ORDER BY sample_id ASC;""".format(
+             ORDER BY sample_id ASC, c.id ASC;""".format(
         ','.join([str(i) for i in sample_id]),
         user_id,
         table
@@ -70,6 +70,9 @@ def get_assembly_contigs(sample_id, user_id, is_plasmids=False):
         # Spades: NODE_37_length_341_cov_381.897727
         cols = row['spades'].split("_")
         sequence = None
+        if contig and int(cols[1]) != contig:
+            continue
+
         if is_plasmids:
             sequence = contigs[row['sample_id']][row['staphopia']]
         else:
@@ -77,6 +80,7 @@ def get_assembly_contigs(sample_id, user_id, is_plasmids=False):
 
         results.append({
             'sample_id': row['sample_id'],
+            'contig': cols[1],
             'header': row['staphopia'],
             'coverage': float(f'{float(cols[5]):.2f}'),
             'length': int(cols[3]),

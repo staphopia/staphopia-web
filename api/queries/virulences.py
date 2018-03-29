@@ -23,8 +23,8 @@ def get_ariba_virulence(sample_id, user_id):
     for row in query_database(sql):
         result = {}
         result['sample_id'] = row['sample_id']
-        for result in row['results']:
-            for key, val in result.items():
+        for r in row['results']:
+            for key, val in r.items():
                 if key == 'cluster':
                     result['cluster_name'] = cluster[val]['name']
                     result['ref_name'] = cluster[val]['ref_name']
