@@ -20,16 +20,21 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Command line arguements."""
-        parser.add_argument('reference', metavar='REFERENCE',
-                            help=('Genome to use a reference.'))
-        parser.add_argument('sample_tag', metavar='SAMPLE_TAG',
-                            help=('Sample Tag to create variant genome.'))
+        parser.add_argument('tag', metavar='TAG',
+                            help=('Tag to get samples.'))
         parser.add_argument('jellyfish', metavar='JELLYFISH',
                             help=('Location to Jellyfish counts.'))
+        parser.add_argument('tag', metavar='TAG',
+                            help=('Tag to get samples.'))
+        parser.add_argument('--reference', metavar='REFERENCE',
+                            default='gi|29165615|ref|NC_002745.2|',
+                            help=('Reference genome.'))
+        parser.add_argument('--pass_only', action='store_true',
+                            help='Only print annotation IDs that pass.')
+        parser.add_argument('--all_variants', action='store_true',
+                            help='Include InDels as well.')
         parser.add_argument('--printall', action='store_true',
                             help='Prints everything variants and non.')
-        parser.add_argument('--snpsonly', action='store_true',
-                            help='Prints only the SNPs.')
         parser.add_argument('--nokmers', action='store_true',
                             help='Skip printing kmers.')
 
