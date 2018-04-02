@@ -8,10 +8,10 @@ def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
                                  exact_hits=False, predict=False,
                                  hamming_distance=False):
     """Return SCCmec primer hits asscociated with a sample_id."""
-    sql = """SELECT p.sample_id, b.title, b.length, p.bitscore, p.evalue,
-                    p.identity, p.mismatch, p.gaps, p.hamming_distance,
-                    p.query_from, p.query_to, p.hit_from, p.hit_to,
-                    p.align_len, p.qseq, p.hseq, p.midline, p.contig_id
+    sql = """SELECT p.sample_id, p.contig, b.title, p.hamming_distance,
+                    p.bitscore, p.evalue, p.identity, b.length, p.mismatch,
+                    p.gaps, p.query_from, p.query_to, p.hit_from, p.hit_to,
+                    p.align_len, p.qseq, p.hseq
              FROM {0} AS p
              LEFT JOIN staphopia_blastquery AS b
              ON p.query_id=b.id
@@ -45,10 +45,10 @@ def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
 
 def get_sccmec_proteins_by_sample(sample_id, user_id):
     """Return SCCmec protein hits asscociated with a sample_id."""
-    sql = """SELECT p.sample_id, b.title, b.length, p.bitscore, p.evalue,
-                    p.identity, p.mismatch, p.gaps, p.hamming_distance,
-                    p.query_from, p.query_to, p.hit_from, p.hit_to,
-                    p.align_len, p.qseq, p.hseq, p.midline, p.contig_id
+    sql = """SELECT p.sample_id, p.contig, b.title, p.hamming_distance,
+                    p.bitscore, p.evalue, b.length, p.identity,
+                    p.mismatch, p.gaps, p.query_from, p.query_to,
+                    p.hit_from, p.hit_to, p.align_len, p.qseq, p.hseq
              FROM sccmec_proteins AS p
              LEFT JOIN staphopia_blastquery AS b
              ON p.query_id=b.id

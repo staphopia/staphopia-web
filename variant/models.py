@@ -140,7 +140,6 @@ class Counts(models.Model):
     nonsynonymous = models.PositiveIntegerField()
     total = models.PositiveIntegerField()
 
-
     class Meta:
         unique_together = ('reference', 'position', 'is_mlst_set')
 
@@ -181,11 +180,7 @@ class ReferenceGenome(models.Model):
     """Reference genome used for SNP calling."""
 
     reference = models.ForeignKey('Reference', on_delete=models.CASCADE)
-    position = models.PositiveIntegerField(default=0)
-    base = models.CharField(max_length=1)
-
-    class Meta:
-        unique_together = ('reference', 'position', 'base')
+    sequence = JSONField()
 
 
 class Feature(models.Model):
@@ -205,6 +200,8 @@ class Annotation(models.Model):
     product = models.TextField()
     note = models.TextField()
     is_pseudo = models.PositiveSmallIntegerField()
+    start = models.PositiveIntegerField(default=0)
+    end = models.PositiveIntegerField(default=0)
     strand = models.SmallIntegerField(default=0)
 
     def fixed_note(self):

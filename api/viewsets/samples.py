@@ -349,6 +349,36 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             else:
                 annotation_id = request.GET['annotation_id']
 
+        temp_start = None
+        if 'start' in request.GET:
+            validator = validate_positive_integer(
+                request.GET['start']
+            )
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                temp_start = request.GET['start']
+
+        temp_end = None
+        if 'end' in request.GET:
+            validator = validate_positive_integer(
+                request.GET['end']
+            )
+            if validator['has_errors']:
+                return Response(validator)
+            else:
+                temp_end = request.GET['end']
+
+        start = None
+        end = None
+        if temp_start and temp_end:
+            start = min(temp_start, temp_end)
+            end = max(temp_start, temp_end)
+        else:
+            # Incase only one was given
+            start = None
+            end = None
+
         validator = validate_positive_integer(pk)
         if validator['has_errors']:
             return Response(validator, status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -356,7 +386,8 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             if 'paginate' in request.GET:
                 return self.paginate(
                     get_snps_by_sample([pk], request.user.pk,
-                                       annotation_id=annotation_id),
+                                       annotation_id=annotation_id,
+                                       start=start, end=end),
                     page_size=100,
                     is_serialized=True
                 )
@@ -365,7 +396,9 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
                     get_snps_by_sample,
                     [pk],
                     request.user.pk,
-                    annotation_id=annotation_id
+                    annotation_id=annotation_id,
+                    start=start,
+                    end=end
                 )
                 return self.formatted_response(result, query_time=qt)
 

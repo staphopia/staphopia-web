@@ -5,7 +5,6 @@ These are models to store information on the SCCmec related results.
 """
 from django.db import models
 
-from assembly.models import Contig
 from sample.models import Sample
 from staphopia.models import BlastQuery
 from version.models import Version
@@ -63,8 +62,8 @@ class Primers(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='sccmec_primers_version')
-    contig = models.ForeignKey(Contig, on_delete=models.CASCADE)
     query = models.ForeignKey(BlastQuery, on_delete=models.CASCADE)
+    contig = models.PositiveIntegerField()
 
     bitscore = models.PositiveSmallIntegerField()
     evalue = models.DecimalField(max_digits=7, decimal_places=2)
@@ -91,8 +90,8 @@ class Subtypes(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='sccmec_subtypes_version')
-    contig = models.ForeignKey(Contig, on_delete=models.CASCADE)
     query = models.ForeignKey(BlastQuery, on_delete=models.CASCADE)
+    contig = models.PositiveIntegerField()
 
     bitscore = models.PositiveSmallIntegerField()
     evalue = models.DecimalField(max_digits=7, decimal_places=2)
@@ -119,8 +118,8 @@ class Proteins(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     version = models.ForeignKey(Version, on_delete=models.CASCADE,
                                 related_name='sccmec_proteins_version')
-    contig = models.ForeignKey(Contig, on_delete=models.CASCADE)
     query = models.ForeignKey(BlastQuery, on_delete=models.CASCADE)
+    contig = models.PositiveIntegerField()
 
     bitscore = models.PositiveSmallIntegerField()
     evalue = models.DecimalField(max_digits=7, decimal_places=2)

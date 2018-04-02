@@ -157,29 +157,18 @@ def get_samples_by_snp(snp_id, user_id, bulk=False):
     return results
 
 
-def get_snps_by_sample(sample_id, user_id, annotation_id=None):
+def get_snps_by_sample(sample_id, user_id, annotation_id=None, start=None,
+                       end=None):
     """Return snps associated with a sample."""
-    sql = None
-    if annotation_id:
-        sql = """SELECT v.sample_id, v.snp
-                 FROM variant_variant AS v
-                 LEFT JOIN sample_sample AS s
-                 ON v.sample_id=s.id
-                 WHERE v.sample_id IN ({0}) AND
-                       (s.is_public=TRUE OR s.user_id={1});""".format(
-            ','.join([str(i) for i in sample_id]),
-            user_id
-        )
-    else:
-        sql = """SELECT v.sample_id, v.snp
-                 FROM variant_variant AS v
-                 LEFT JOIN sample_sample AS s
-                 ON v.sample_id=s.id
-                 WHERE v.sample_id IN ({0}) AND
-                       (s.is_public=TRUE OR s.user_id={1});""".format(
-            ','.join([str(i) for i in sample_id]),
-            user_id
-        )
+    sql = """SELECT v.sample_id, v.snp
+             FROM variant_variant AS v
+             LEFT JOIN sample_sample AS s
+             ON v.sample_id=s.id
+             WHERE v.sample_id IN ({0}) AND
+                   (s.is_public=TRUE OR s.user_id={1});""".format(
+        ','.join([str(i) for i in sample_id]),
+        user_id
+    )
 
     rows = {}
     snp_id = []
@@ -196,6 +185,13 @@ def get_snps_by_sample(sample_id, user_id, annotation_id=None):
                  FROM variant_snp
                  WHERE id IN ({0}) AND annotation_id={1}""".format(
             ','.join([str(i) for i in snp_id]), annotation_id
+        )
+    elif start and end:
+        sql = """SELECT *
+                 FROM variant_snp
+                 WHERE reference_position >= {0} AND
+                       reference_position <= {1};""".format(
+            start, end
         )
     else:
         sql = "SELECT * FROM variant_snp WHERE id IN ({0})".format(

@@ -26,7 +26,7 @@ def insert_sccmec(sample, version, files, force=False):
     # Get contigs associated with sample.
     contigs = {}
     for contig in get_contigs(sample, version):
-        contigs[contig.spades] = contig
+        contigs[contig.spades] = int(contig.spades.split('_')[1])
 
     insert_coverage(sample, version, files)
     insert_blast(sample, version, files['sccmec_primers'], Primers, contigs)

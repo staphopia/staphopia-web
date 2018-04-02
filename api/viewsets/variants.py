@@ -135,10 +135,42 @@ class VariantViewSet(CustomReadOnlyModelViewSet):
                     else:
                         annotation_id = request.GET['annotation_id']
 
+                temp_start = None
+                if 'start' in request.GET:
+                    validator = validate_positive_integer(
+                        request.GET['start']
+                    )
+                    if validator['has_errors']:
+                        return Response(validator)
+                    else:
+                        temp_start = request.GET['start']
+
+                temp_end = None
+                if 'end' in request.GET:
+                    validator = validate_positive_integer(
+                        request.GET['end']
+                    )
+                    if validator['has_errors']:
+                        return Response(validator)
+                    else:
+                        temp_end = request.GET['end']
+
+                start = None
+                end = None
+                if temp_start and temp_end:
+                    start = min(temp_start, temp_end)
+                    end = max(temp_start, temp_end)
+                else:
+                    # Incase only one was given
+                    start = None
+                    end = None
+
                 return self.formatted_response(get_snps_by_sample(
                     request.data['ids'],
                     request.user.pk,
-                    annotation_id=annotation_id
+                    annotation_id=annotation_id,
+                    start=start,
+                    end=end
                 ))
 
         results, qt = timeit(

@@ -1,41 +1,63 @@
-"""Insert variant analysis results into database."""
+"""Insert Reference genome sequence and annotation IDs"""
+from collections import OrderedDict
 import sys
 
 from django.db import connection, transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 
-from staphopia.utils import read_fasta
+from api.utils import query_database
 from variant.models import Reference, ReferenceGenome
 
 
 class Command(BaseCommand):
-    """Insert results into database."""
+    """Insert Reference genome sequence and annotation IDs"""
 
-    help = 'Insert the analysis results into the database.'
+    help = 'Insert Reference genome sequence and annotation IDs'
 
     def add_arguments(self, parser):
         """Command line arguements."""
-        parser.add_argument('input', metavar='INPUT_FASTA',
-                            help=('FASTA formated file to be inserted'))
-        parser.add_argument('--compressed', action='store_true',
-                            help='Input FASTA is gzipped.')
+        parser.add_argument('--reference', metavar='REFERENCE',
+                            default='gi|29165615|ref|NC_002745.2|',
+                            help=('Reference genome.'))
         parser.add_argument('--empty', action='store_true',
                             help='Empty tables and reset counts.')
 
     @transaction.atomic
     def handle(self, *args, **opts):
         """Insert results to database."""
-        fasta = read_fasta(opts['input'], compressed=opts['compressed'])
-        for ref, sequence in fasta.items():
-            if opts['empty']:
-                print("Emptying Variant Reference Table")
-                Reference.objects.filter(name=ref).delete()
-            try:
-                Reference.objects.create(
-                    name=ref,
-                    length=len(sequence),
-                    sequence=sequence
-                )
-            except IntegrityError as e:
-                raise CommandError(f'{e}')
+        # Get Reference sequence
+        try:
+            reference = Reference.objects.get(name=opts['reference'])
+        except Reference.DoesNotExist:
+            raise CommandError('Missing Reference: {0} == Exiting.'.format(
+                opts['reference']
+            ))
+
+        sql = """SELECT reference_position, reference_base, annotation_id
+                 FROM variant_snp
+                 WHERE reference_id={0}
+                 ORDER BY reference_position;""".format(reference.pk)
+        reference_genome = OrderedDict()
+        for row in query_database(sql):
+            if row['reference_position'] not in reference_genome:
+                reference_genome[row['reference_position']] = {
+                    'base': row['reference_base'],
+                    'annotation_id': row['annotation_id']
+                }
+
+        if len(reference_genome) != reference.length:
+            raise CommandError(
+                f'Length Mismatch {len(reference_genome)} {reference.length}')
+
+        if opts['empty']:
+            print("Emptying Variant ReferenceGenome Table")
+            ReferenceGenome.objects.filter(reference=reference).delete()
+        try:
+            print("Inserting Variant ReferenceGenome Table")
+            ReferenceGenome.objects.create(
+                reference=reference,
+                sequence=reference_genome
+            )
+        except IntegrityError as e:
+            raise CommandError(f'{e}')
