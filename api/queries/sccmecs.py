@@ -1,4 +1,6 @@
 """API utilities for XYZ related viewsets."""
+from collections import OrderedDict
+
 from sccmec.tools import predict_type_by_primers, predict_subtype_by_primers
 
 from api.utils import query_database
@@ -40,7 +42,25 @@ def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
                 hamming_distance=hamming_distance
             )
     else:
-        return query_database(sql)
+        cols = ['sample_id', 'contig', 'title', 'hamming_distance', 'bitscore',
+                'evalue', 'length', 'identity', 'mismatch', 'gaps',
+                'query_from', 'query_to', 'hit_from', 'hit_to', 'align_len',
+                'qseq', 'hseq']
+        results = []
+        for row in query_database(sql):
+            result = OrderedDict()
+            for col in cols:
+                if col == 'title':
+                    if '|' in row[col]:
+                        result['target'], result['title'] = row[col].split('|')
+                    else:
+                        result['target'] = row[col]
+                        result['title'] = row[col]
+                else:
+                    result[col] = row[col]
+            results.append(result)
+
+        return results
 
 
 def get_sccmec_proteins_by_sample(sample_id, user_id):
@@ -60,7 +80,21 @@ def get_sccmec_proteins_by_sample(sample_id, user_id):
         user_id,
     )
 
-    return query_database(sql)
+    cols = ['sample_id', 'contig', 'title', 'hamming_distance', 'bitscore',
+            'evalue', 'length', 'identity', 'mismatch', 'gaps', 'query_from',
+            'query_to', 'hit_from', 'hit_to', 'align_len', 'qseq', 'hseq']
+    results = []
+    for row in query_database(sql):
+        result = OrderedDict()
+        for col in cols:
+            if col == 'title':
+                result['target'], result['title'] = row[col].split('|')
+            else:
+                result[col] = row[col]
+        results.append(result)
+
+
+    return results
 
 
 def get_sccmec_coverage_by_sample(sample_id, user_id):
