@@ -507,3 +507,102 @@ def generate_reference_snps(path, name, sequence):
                     'LowQual', 'AC=1', 'AD', '1'
                 ]))
     return vcf
+
+@timeit
+def generate_alternate_genome(variants, reference, sample_name):
+    """Produce an alternate genome"""
+    alternate_genome = OrderedDict()
+    deleted_bases = []
+    deletion_is_next = False
+    is_deletion = False
+    for position, vals in reference.items():
+        position = int(position)
+        base = vals['base']
+        reference_base = base
+        alternate_base = base
+        is_variant = False
+        is_snp = False
+        is_insertion = False
+        DP = 0
+        GQ = 0
+        QD = 0
+        quality = 0
+
+        if position in variants:
+            reference_base = variants[position]['reference_base']
+            alternate_base = variants[position]['alternate_base']
+            DP =variants[position]['DP'][0]
+            GQ = variants[position]['GQ'][0]
+            QD = variants[position]['QD'][0]
+            quality = variants[position]['quality']
+            is_variant = True
+            if variants[position]['is_snp']:
+                # SNP
+                is_snp = True
+                if base != reference_base:
+                    raise_reference_match_error(
+                        position, base, reference_base, sample_name, 'SNP'
+                    )
+            elif len(reference_base) > 1:
+                # Deletion
+                if base != reference_base[0]:
+                    raise_reference_match_error(
+                        position, base, reference_base, sample_name, 'Deletion'
+                    )
+                if not is_deletion:
+                    deletion_is_next = True
+                else:
+                    # Overlapping deletions, reset it and delete alt_base
+                    is_deletion = False
+                    alternate_base = '-'
+                deleted_bases = reference_base[1:]
+            else:
+                # Insertion
+                is_insertion = True
+                if base != alternate_base[0]:
+                    raise_reference_match_error(
+                        position, base, alternate_base, sample_name, 'Insert'
+                    )
+
+        if is_deletion:
+            if base != deleted_bases[0]:
+                raise_reference_match_error(
+                    position, base, deleted_bases[0], sample_name, 'Deletion2'
+                )
+            else:
+                alternate_base = '-'
+                if len(deleted_bases) == 1:
+                    is_deletion = False
+                    deleted_bases = []
+                else:
+                    deleted_bases = deleted_bases[1:]
+
+        alternate_genome[position] = {
+            'reference_base': reference_base,
+            'alternate_base': alternate_base,
+            'is_variant': is_variant,
+            'is_snp': is_snp,
+            'is_insertion': is_insertion,
+            'is_variant_cluster': False,
+            'annotation_id': vals['annotation_id'],
+            'DP': DP,
+            'GQ': GQ,
+            'QD': QD,
+            'quality': quality,
+            'kmers': "",
+            'counts': "",
+        }
+
+        if deletion_is_next:
+            is_deletion = True
+            deletion_is_next = False
+
+    return alternate_genome
+
+
+def raise_reference_match_error(self, position, ref, alt, name, variant_type):
+    raise CommandError(
+        '{0}|{1}: Reference Mismatch At Position {2}: {3} != {4}'.format(
+                name, variant_type, position, ref, alt,
+        )
+    )

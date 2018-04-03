@@ -43,7 +43,7 @@ def jf_query(jf, fasta):
     f = Popen(['jellyfish', 'query', jf, '-s', fasta], stdout=PIPE)
     stdout, stderr = f.communicate()
 
-    return stdout
+    return byte_to_string(stdout)
 
 
 def byte_to_string(b):

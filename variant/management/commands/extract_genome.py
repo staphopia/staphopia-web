@@ -13,23 +13,30 @@ from api.queries.variants import (
     get_annotated_indels_by_sample
 )
 
-from api.queries.tags import get_samples_by_tag
+from api.queries.samples import get_samples
 from api.queries.variants import get_variant_annotation
 from api.utils import query_database
 
 from sample.models import Sample
-from staphopia.utils import jf_query, timeit
+from staphopia.utils import jf_query, reverse_complement, timeit
 from variant.models import Reference, ReferenceGenome, SNP
+from variant.tools import (
+    generate_alternate_genome
+)
 
 
 @timeit
 def get_variant_positions(reference_id, table='snp'):
     variants = OrderedDict()
-    sql = """SELECT id, reference_position
+    sql = """SELECT id, reference_position, reference_base, alternate_base
              FROM variant_{0}
              WHERE reference_id={1};""".format(table, reference_id)
     for row in query_database(sql):
-        variants[row['id']] = row['reference_position']
+        variants[row['id']] = {
+            'reference_position': row['reference_position'],
+            'reference_base': row['reference_base'],
+            'alternate_base': row['alternate_base']
+        }
 
     return variants
 
@@ -46,9 +53,12 @@ def get_variants(sample, snp_position, indel_position, reference_id, user_id):
     )
     for row in query_database(sql):
         for snp in row['snp']:
-            pos = snp_position[snp['snp_id']]
+            snp_id = snp_position[snp['snp_id']]
+            pos = snp_id['reference_position']
             if pos not in variants:
                 snp['is_snp'] = True
+                snp['reference_base'] = snp_id['reference_base']
+                snp['alternate_base'] = snp_id['alternate_base']
                 variants[pos] = snp
             else:
                 raise CommandError(
@@ -56,9 +66,12 @@ def get_variants(sample, snp_position, indel_position, reference_id, user_id):
                 )
 
         for indel in row['indel']:
-            pos = indel_position[indel['indel_id']]
+            indel_id = indel_position[indel['indel_id']]
+            pos = indel_id['reference_position']
             if pos not in variants:
                 indel['is_snp'] = False
+                indel['reference_base'] = indel_id['reference_base']
+                indel['alternate_base'] = indel_id['alternate_base']
                 variants[pos] = indel
             else:
                 raise CommandError(
@@ -74,8 +87,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Command line arguements."""
-        parser.add_argument('tag', metavar='TAG',
-                            help=('Tag to get samples.'))
+        parser.add_argument('sample_id', metavar='SAMPLE_ID',
+                            help=('Sample ID to extract genome from.'))
         parser.add_argument('summary', metavar='SUMMARY',
                             help=('Variant annotation summary for samples.'))
         parser.add_argument('staphopia', metavar='STAPHOPIA',
@@ -99,11 +112,12 @@ class Command(BaseCommand):
 
         # Get Samples
         samples = OrderedDict()
-        for sample in get_samples_by_tag(opts['tag'], is_id=False):
+        for sample in get_samples(user.pk, sample_id=opts['sample_id']):
             samples[sample['sample_id']] = sample
 
         # Read annotation summary
         summary = {}
+        genes = {}
         col_names = None
         with open(opts['summary'], 'r') as fh:
             for line in fh:
@@ -114,14 +128,19 @@ class Command(BaseCommand):
                     col_names = line.split('\t')
                 else:
                     row = dict(zip(col_names, line.split('\t')))
-                    if opts['all_variants'] or not bool(row['has_indel']):
-                        summary[row['annotation_id']] = row
+                    # percent = float(row['snps']) / float(row['samples'])
+                    annotation_id = int(row['annotation_id'])
+                    if opts['printall']:
+                        summary[annotation_id] = row
+                    elif row['has_indel'] == 'False' and int(row['snps']) > 0:
+                        summary[annotation_id] = row
 
         # Get annotations
         annotations = {}
         for annotation in get_variant_annotation(None):
-            annotations[annotation['id']] = annotation
-            annotations[annotation['id']]['position'] = []
+            annotation_id = int(annotation['id'])
+            annotations[annotation_id] = annotation
+            annotations[annotation_id]['position'] = []
 
         # Get Reference sequence
         try:
@@ -136,7 +155,18 @@ class Command(BaseCommand):
             ))
 
         for position, vals in reference.items():
-            annotations[vals['annotation_id']]['position'].append(position)
+            annotations[int(vals['annotation_id'])]['position'].append(
+                int(position)
+            )
+
+        for annotation_id in annotations:
+            if annotation_id > 1:
+                annotations[annotation_id]['start'] = min(
+                    annotations[annotation_id]['position']
+                )
+                annotations[annotation_id]['end'] = max(
+                    annotations[annotation_id]['position']
+                )
 
         # Get Variants Per Sample
         snp_positions = get_variant_positions(reference_id, table='snp')
@@ -145,23 +175,22 @@ class Command(BaseCommand):
             # Parse through variants for each sample
             variants = get_variants(sample_id, snp_positions, indel_positions,
                                     reference_id, user.pk)
-            alternate_genome = self.generate_alternate_genome(
-                variants, reference
+            alternate_genome = generate_alternate_genome(
+                variants, reference, sample['name']
             )
-            print(len(alternate_genome), len(reference))
 
             # Get kmers of the variants
             total_kmers = {}
-            for position, vals in sorted(alternate_genome.items()):
-                if vals['is_variant'] or opts['printall']:
-                    kmers = self.build_kmer(position)
-                    alternate_genome[position]['kmers'] = kmers
-                    for kmer in kmers:
-                        if kmer == "SNP/InDel Overlap":
-                            total_kmers[kmer] = "NOT_FOUND"
-                        else:
-                            total_kmers[kmer] = "NOT_FOUND"
-                            total_kmers[self.reverse_complement(kmer)] = "NOT_FOUND"
+            for position, vals in alternate_genome.items():
+                kmers, is_cluster = self.build_kmer(alternate_genome, position)
+                alternate_genome[position]['is_variant_cluster'] = is_cluster
+                alternate_genome[position]['kmers'] = kmers
+                for kmer in kmers:
+                    if kmer == "SNP/InDel Overlap":
+                        total_kmers[kmer] = "NOT_FOUND"
+                    else:
+                        total_kmers[kmer] = "NOT_FOUND"
+                        total_kmers[reverse_complement(kmer)] = "NOT_FOUND"
 
             # verify kmers against jellyfish counts
             jf_database = "{0}/{1}/{2}/{2}/analyses/kmer/{2}.jf".format(
@@ -169,203 +198,227 @@ class Command(BaseCommand):
                 sample['name'][0:6],
                 sample['name']
             )
-            counted_kmers = self.verify_kmers(total_kmers, jf_database)
-            parsed = json.loads(alternate_genome)
-            print(json.dumps(parsed, indent=4, sort_keys=True))
-            sys.exit()
-            # Print the results
-            cols = ['sample_id', 'position', 'reference', 'alternate',
-                    'is_variant', 'is_snp', 'is_insertion', 'is_variant_cluster',
-                    'is_genic', 'annotation_id', 'coverage', 'genotype_quality',
-                    'qual_by_depth', 'raw_quality', 'variant_kmer', 'jf_counts',
-                    'total_jf_count', 'has_zero_count']
-            print("\t".join(cols))
-            for position, base in sorted(self.alternate_genome.items()):
+            kmer_counts = self.verify_kmers(total_kmers, jf_database)
+            self.print_summary(
+                sample, alternate_genome, kmer_counts, summary, annotations,
+                print_all=opts['printall'], skip_kmers=opts['nokmers']
+            )
+
+    @timeit
+    def print_summary(self, sample, alternate_genome, kmer_counts, summary,
+                      annotation, print_all=False, skip_kmers=False):
+        # Print the results
+        cols = ['sample_id', 'position', 'has_zero_count', 'reference',
+                'alternate', 'is_variant', 'is_snp', 'is_insertion',
+                'is_variant_cluster', 'is_genic', 'annotation_id',
+                'coverage', 'genotype_quality', 'qual_by_depth',
+                'raw_quality', 'variant_kmer', 'jf_counts',
+                'total_jf_count']
+        genome = []
+        annotation_sequence = OrderedDict()
+        results = OrderedDict()
+        with open(f'extract-genome/{sample["name"]}-details.txt', 'w') as fh:
+            fh.write("\t".join(cols))
+            fh.write("\n")
+            for position, base in alternate_genome.items():
+                genome.append(base['alternate_base'])
+                annotation_id = int(base['annotation_id'])
+                if annotation_id not in annotation_sequence:
+                    annotation_sequence[annotation_id] = OrderedDict()
+
+                annotation_sequence[annotation_id][position] = base['alternate_base']
+                if annotation_id not in results:
+                    results[annotation_id] = {
+                        'annotation_id': annotation_id,
+                        'has_zero_count': False,
+                        'total_snps': 0,
+                        'total_indels': 0,
+                        'total_variants': 0
+                    }
+
                 if base['is_variant']:
-                    counts, total, has_zero_count = self.process_kmers(position)
-                    kmers = ",".join(self.alternate_genome[position]['kmers'])
-                    if opts['nokmers']:
+                    results[annotation_id]['total_variants'] += 1
+                    if base['is_snp']:
+                        results[annotation_id]['total_snps'] += 1
+                    else:
+                        results[annotation_id]['total_indels'] += 1
+                    counts, total, has_zero_count = self.process_kmers(
+                        base['kmers'], kmer_counts
+                    )
+                    if has_zero_count:
+                        if not results[annotation_id]['has_zero_count']:
+                            results[annotation_id]['has_zero_count'] = True
+                    kmers = ",".join(base['kmers'])
+                    if skip_kmers:
                         kmers = "-"
-                    print(('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t'
-                           '{10}\t{11}\t{12}\t{13}\t{14}\t{15}\t{16}\t'
-                           '{17}').format(
-                        self.sample_id,
+                    fh.write('\t'.join([str(s) for s in [
+                        sample['sample_id'],
                         position,
+                        has_zero_count,
                         base['reference_base'],
                         base['alternate_base'],
                         base['is_variant'],
                         base['is_snp'],
                         base['is_insertion'],
                         base['is_variant_cluster'],
-                        self.is_genic[position],
-                        self.annotation_id[position],
-                        base['confidence']['DP'],
-                        base['confidence']['GQ'],
-                        base['confidence']['QD'],
-                        base['confidence']['quality'],
+                        True if annotation_id > 1 else False,
+                        annotation_id,
+                        base['DP'],
+                        base['GQ'],
+                        base['QD'],
+                        base['quality'],
                         kmers,
                         ",".join(counts),
-                        total,
-                        has_zero_count
-                    ))
-                elif opts['printall']:
-                    counts, total, has_zero_count = self.process_kmers(position)
-                    kmers = ",".join(self.alternate_genome[position]['kmers'])
-                    if opts['nokmers']:
+                        total
+                    ]]))
+                    fh.write("\n")
+                elif print_all:
+                    counts, total, has_zero_count = self.process_kmers(
+                        base['kmers'], kmer_counts
+                    )
+                    if has_zero_count:
+                        if not results[annotation_id]['has_zero_count']:
+                            results[annotation_id]['has_zero_count'] = True
+                    kmers = ",".join(alternate_genome[position]['kmers'])
+                    if skip_kmers:
                         kmers = "-"
-                    print(('{0}\t{1}\t{2}\t{3}\t{4}\tFalse\tFalse\tFalse\t{5}\t'
-                           '{6}\t-\t-\t-\t-\t{7}\t{8}\t{9}\t{10}').format(
-                        self.sample_id,
+                    fh.write('\t'.join([str(s) for s in [
+                        sample['sample_id'],
                         position,
+                        has_zero_count,
                         base['reference_base'],
                         base['alternate_base'],
                         base['is_variant'],
-                        self.is_genic[position],
-                        self.annotation_id[position],
+                        False,
+                        False,
+                        False,
+                        True if annotation_id > 1 else False,
+                        annotation_id,
+                        0,
+                        0,
+                        0,
+                        0,
                         kmers,
                         ",".join(counts),
-                        total,
-                        has_zero_count
+                        total
+                    ]]))
+                    fh.write("\n")
+
+        with open(f'extract-genome/{sample["name"]}-genome.fasta', 'w') as fh:
+            genome = ''.join(genome)
+            header = ">{0}|{1}|length={2}".format(
+                sample["sample_id"],
+                sample["name"],
+                len(genome)
+            )
+            fh.write(f'{header}\n')
+            for line in [genome[i:i+80] for i in range(0, len(genome), 80)]:
+                fh.write(f'{line}\n')
+
+        cols = ['sample_id', 'annotation_id', 'has_zero_count', 'total_snps',
+                'total_indels', 'total_variants']
+        with open(f'extract-genome/{sample["name"]}-annotation-details.txt', 'w') as fh:
+            fh.write("\t".join(cols))
+            fh.write("\n")
+            for annotation_id, vals in results.items():
+                if print_all or annotation_id in summary:
+                    fh.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(
+                        sample['sample_id'],
+                        annotation_id,
+                        vals['has_zero_count'],
+                        vals['total_snps'],
+                        vals['total_indels'],
+                        vals['total_variants']
                     ))
-            break
 
-    def generate_alternate_genome(self, variants, reference):
-        """Produce an alternate genome"""
-        alternate_genome = OrderedDict()
-        deleted_bases = []
-        deletion_is_next = False
-        is_deletion = False
-        for position, vals in reference.items():
-            base = vals['base']
-            reference_base = base
-            alternate_base = base
-            is_variant = False
-            is_snp = False
-            is_insertion = False
+        with open(f'extract-genome/{sample["name"]}-annotation.fasta', 'w') as fh:
+            for annotation_id, vals in annotation_sequence.items():
+                # Ignore intergenic regions
+                if annotation_id > 1:
+                    if print_all or annotation_id in summary:
+                        gene = []
+                        positions = []
+                        for position, base in vals.items():
+                            gene.append(base)
+                            positions.append(position)
 
-            if position in variants:
-                reference_base = variants[position]['reference_base']
-                alternate_base = variants[position]['alternate_base']
-                is_variant = True
-                if self.variants[position]['is_snp']:
-                    # SNP
-                    is_snp = True
-                    if base != reference_base:
-                        self.raise_reference_match_error(
-                            position, base, reference_base,
-                            variant_type='SNP'
-                        )
-                elif len(reference_base) > 1:
-                    # Deletion
-                    if base != reference_base[0]:
-                        self.raise_reference_match_error(
-                            position, base, reference_base,
-                            variant_type='Deletion'
-                        )
-                    if not is_deletion:
-                        deletion_is_next = True
-                    else:
-                        # Overlapping deletions, reset it and delete alt_base
-                        is_deletion = False
-                        alternate_base = '-'
-                    deleted_bases = reference_base[1:]
-                else:
-                    # Insertion
-                    is_insertion = True
-                    if base != alternate_base[0]:
-                        self.raise_reference_match_error(
-                            position, base, alternate_base,
-                            variant_type='Insert'
-                        )
+                        if (min(positions) == annotation[annotation_id]['start'] and
+                                max(positions) == annotation[annotation_id]['end']):
+                            gene = ''.join(gene)
+                            header = ">{0}|{1}|{2}|{3}|length={4}".format(
+                                sample["sample_id"],
+                                sample["name"],
+                                annotation_id,
+                                annotation[annotation_id]['locus_tag'],
+                                len(gene)
+                            )
+                            fh.write(f'{header}\n')
+                            for line in [gene[i:i+80]
+                                         for i in range(0, len(gene), 80)]:
+                                fh.write(f'{line}\n')
 
-            if is_deletion:
-                if base != deleted_bases[0]:
-                    self.raise_reference_match_error(
-                        position, base, deleted_bases[0],
-                        variant_type='Deletion2'
-                    )
-                else:
-                    alternate_base = '-'
-                    if len(deleted_bases) == 1:
-                        is_deletion = False
-                        deleted_bases = []
-                    else:
-                        deleted_bases = deleted_bases[1:]
+        return results
 
-            alternate_genome[position] = {
-                'reference_base': reference_base,
-                'alternate_base': alternate_base,
-                'is_variant': is_variant,
-                'is_snp': is_snp,
-                'is_insertion': is_insertion,
-                'is_variant_cluster': False,
-                'kmers': "",
-                'counts': "",
-            }
-
-            if deletion_is_next:
-                is_deletion = True
-                deletion_is_next = False
-
-        return alternate_genome
-
-    def process_kmers(self, position):
+    def process_kmers(self, kmers, kmer_counts):
         """Assess the counts for each kmer."""
         counts = []
         total = 0
         has_zero_count = False
-        for kmer in self.alternate_genome[position]['kmers']:
-            counts.append(str(self.kmers[kmer]))
-            if self.kmers[kmer] != "NOT_FOUND":
-                total += self.kmers[kmer]
-                if self.kmers[kmer] == 0:
+        for kmer in kmers:
+            count = kmer_counts[kmer]
+            counts.append(str(count))
+            if count != "NOT_FOUND":
+                total += count
+                if count == 0:
                     has_zero_count = True
 
         return [counts, total, has_zero_count]
 
-    def build_kmer(self, position, length=15):
+    def build_kmer(self, alternate_genome, position, length=15):
         """Build kmer with variant at center."""
-        start, start_cluster = self.build_start_seqeunce(position - 1, length)
-        end, end_cluster = self.build_end_sequence(position + 1, length)
+        is_variant_cluster = False
 
-        if start_cluster or end_cluster:
-            self.alternate_genome[position]['is_variant_cluster'] = True
-
-        if self.alternate_genome[position]['alternate_base'] == "-":
-            return ['SNP/InDel Overlap']
-        kmer = '{0}{1}{2}'.format(
-            start,
-            self.alternate_genome[position]['alternate_base'],
-            end
+        start, start_cluster = self.build_start_seqeunce(
+            alternate_genome, position - 1, length
+        )
+        end, end_cluster = self.build_end_sequence(
+            alternate_genome, position + 1, length
         )
 
+        if start_cluster or end_cluster:
+            is_variant_cluster = True
+
+        if alternate_genome[position]['alternate_base'] == "-":
+            return [['SNP/InDel Overlap'], is_variant_cluster]
+
+        kmer = '{0}{1}{2}'.format(
+            start,
+            alternate_genome[position]['alternate_base'],
+            end
+        )
         total = length + length + 1
         if len(kmer) > total:
+            # Insertions
             kmer = ["".join(i) for i in self.split_into_kmers(kmer, total)]
         elif len(kmer) < total:
             raise CommandError(
-               ('Kmer is less than the expected length of {0}'
-                '. position: {1} ... kmer: {2}').format(
-                    total,
-                    position,
-                    kmer
-                )
+                ('Kmer is less than the expected length of {0}'
+                 '. position: {1} ... kmer: {2}').format(total, position, kmer)
             )
         else:
             kmer = [kmer]
 
-        return kmer
+        return [kmer, is_variant_cluster]
 
     def verify_kmers(self, kmers, jf):
         """Get count of kmer via jellyfish."""
         jf_output = None
-        with tempfile.NamedTemporaryFile() as temp:
+        with tempfile.NamedTemporaryFile(dir='./') as temp:
             for kmer in kmers.keys():
                 if kmer.startswith('SNP/InDel'):
                     pass
                 else:
-                    temp.write('>{0}\n{0}\n'.format(kmer))
-
+                    temp.write('>{0}\n{0}\n'.format(kmer).encode())
             temp.flush()
             jf_output = jf_query(jf, temp.name)
 
@@ -374,14 +427,9 @@ class Command(BaseCommand):
                 continue
             kmer, count = line.rstrip().split(' ')
             count = int(count)
-            kmers[self.reverse_complement(kmer)] = count
+            kmers[reverse_complement(kmer)] = count
             kmers[kmer] = count
         return kmers
-
-    def reverse_complement(self, seq):
-        """Reverse complement a DNA sequence."""
-        complement = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G'}
-        return ''.join([complement[b] for b in seq[::-1]])
 
     def split_into_kmers(self, seq, k):
         """
@@ -398,15 +446,15 @@ class Command(BaseCommand):
             result = result[1:] + (elem,)
             yield result
 
-    def build_start_seqeunce(self, position, length):
+    def build_start_seqeunce(self, alternate_genome, position, length):
         seq = []
         is_variant_cluster = False
         if position == 0:
-            position = self.last_position
+            position = len(alternate_genome)
 
-        while len("".join(seq)) < length:
-            base = self.alternate_genome[position]['alternate_base']
-            if self.alternate_genome[position]['is_variant']:
+        while len(seq) < length:
+            base = alternate_genome[position]['alternate_base']
+            if alternate_genome[position]['is_variant']:
                 is_variant_cluster = True
 
             if base != '-':
@@ -414,75 +462,27 @@ class Command(BaseCommand):
             position -= 1
 
             if position == 0:
-                position = self.last_position
+                position = len(alternate_genome)
 
         seq.reverse()
         return ["".join(seq), is_variant_cluster]
 
-    def build_end_sequence(self, position, length):
+    def build_end_sequence(self, alternate_genome, position, length):
         seq = []
         is_variant_cluster = False
-        if position > self.last_position:
+        if position > len(alternate_genome):
             position = 1
 
-        while len("".join(seq)) < length:
-            base = self.alternate_genome[position]['alternate_base']
-            if self.alternate_genome[position]['is_variant']:
+        while len(seq) < length:
+            base = alternate_genome[position]['alternate_base']
+            if alternate_genome[position]['is_variant']:
                 is_variant_cluster = True
 
             if base != '-':
                 seq.append(base)
             position += 1
 
-            if position > self.last_position:
+            if position > len(alternate_genome):
                 position = 1
 
         return ["".join(seq), is_variant_cluster]
-
-
-    def raise_reference_match_error(self, position, ref, sample,
-                                    variant_type=None):
-        if variant_type:
-            raise CommandError(
-                   ('{3} ({4}): Reference bases do not match at position {0}'
-                    '. REF: {1} ... Sample: {2}').format(
-                        position,
-                        ref,
-                        sample,
-                        self.sample_tag,
-                        variant_type
-                    )
-                )
-        else:
-            raise CommandError(
-               ('{3}: Reference bases do not match at position {0}'
-                '. REF: {1} ... Sample: {2}').format(
-                    position,
-                    ref,
-                    sample,
-                    self.sample_tag
-                )
-            )
-
-    def build_reference(self, sequence):
-        self.sequence = {}
-        position = 1
-        for base in sequence:
-            self.sequence[position] = base
-            position += 1
-
-    def process_variants(self, variants, is_snp=True):
-        for variant in variants:
-            if variant['reference_position'] not in self.variants:
-                self.variants[variant['reference_position']] = {
-                    'reference_base': variant['reference_base'],
-                    'alternate_base': variant['alternate_base'],
-                    'confidence': variant['confidence'],
-                    'is_snp': is_snp
-                }
-            else:
-                raise CommandError(
-                    ('Duplicate variants at reference position {0}').format(
-                        variant['reference_position']
-                    )
-                )

@@ -238,6 +238,8 @@ def read_gff(gff, amino_acid, dna, blast_results):
                         note = attributes['note']
                     if 'Name' in attributes:
                         name = attributes['Name']
+                        if '_' in name:
+                            name = name.split('_')[0]
 
                     inference_key = f'{inference}'
                     if inference == 'hypothetical':
