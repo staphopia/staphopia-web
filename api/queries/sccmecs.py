@@ -52,10 +52,10 @@ def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
             for col in cols:
                 if col == 'title':
                     if '|' in row[col]:
-                        result['target'], result['title'] = row[col].split('|')
+                        result['target'], result['description'] = row[col].split('|')
                     else:
                         result['target'] = row[col]
-                        result['title'] = row[col]
+                        result['description'] = row[col]
                 else:
                     result[col] = row[col]
             results.append(result)
@@ -88,7 +88,7 @@ def get_sccmec_proteins_by_sample(sample_id, user_id):
         result = OrderedDict()
         for col in cols:
             if col == 'title':
-                result['target'], result['title'] = row[col].split('|')
+                result['target'], result['description'] = row[col].split('|')
             else:
                 result[col] = row[col]
         results.append(result)
@@ -99,10 +99,10 @@ def get_sccmec_proteins_by_sample(sample_id, user_id):
 
 def get_sccmec_coverage_by_sample(sample_id, user_id):
     """Return SCCmec coverages asscociated with a sample_id."""
-    sql = """SELECT cov.sample_id, cas.name, cov.total, cov.minimum, cov.mean,
-                    cov.median, cov.maximum, cov.meca_total, cov.meca_minimum,
-                    cov.meca_mean, cov.meca_median, cov.meca_maximum,
-                    cov.cassette_id
+    sql = """SELECT cov.sample_id, cas.name as cassette, cov.total,
+                    cov.minimum, cov.mean, cov.median, cov.maximum,
+                    cov.meca_total, cov.meca_minimum, cov.meca_mean,
+                    cov.meca_median, cov.meca_maximum
              FROM sccmec_coverage AS cov
              LEFT JOIN sccmec_cassette AS cas
              ON cov.cassette_id=cas.id
@@ -110,7 +110,7 @@ def get_sccmec_coverage_by_sample(sample_id, user_id):
              ON cov.sample_id=s.id
              WHERE cov.sample_id IN ({0})
                    AND (s.is_public=TRUE OR s.user_id={1})
-             ORDER BY cov.total DESC;""".format(
+             ORDER BY cov.sample_id ASC, cassette ASC;""".format(
         ','.join([str(i) for i in sample_id]),
         user_id
     )

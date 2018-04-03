@@ -5,7 +5,8 @@ from rest_framework.decorators import list_route
 from api.pagination import CustomReadOnlyModelViewSet
 from api.queries.sccmecs import (
     get_sccmec_primers_by_sample,
-    get_sccmec_proteins_by_sample
+    get_sccmec_proteins_by_sample,
+    get_sccmec_coverage_by_sample
 )
 from api.serializers.sccmecs import (
     SCCmecCassetteSerializer,
@@ -24,11 +25,38 @@ class SCCmecCassetteViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SCCmecCassetteSerializer
 
 
-class SCCmecCoverageViewSet(viewsets.ReadOnlyModelViewSet):
+class SCCmecCoverageViewSet(CustomReadOnlyModelViewSet):
     """A simple ViewSet for listing or retrieving SCCmec cassette coverage."""
 
     queryset = Coverage.objects.all()
     serializer_class = SCCmecCoverageSerializer
+
+    def list(self, request):
+        """
+        Stored SCCmec coverage hit information for a given sample.
+        """
+        urls = {
+            'msg': 'Must use bulk_by_sample to get SCCmec Coverages',
+        }
+
+        return Response(urls)
+
+    @list_route(methods=['post'])
+    def bulk_by_sample(self, request):
+        """Given a list of Sample IDs, return SCCmec subtype hits Sample."""
+        if request.method == 'POST':
+            hamming = True if 'hamming_distance' in request.GET else False
+            validator = validate_list_of_ids(request.data, max_query=500)
+            if validator['has_errors']:
+                return Response({
+                    "message": validator['message'],
+                    "data": request.data
+                })
+            else:
+                return self.formatted_response(get_sccmec_coverage_by_sample(
+                    request.data['ids'],
+                    request.user.pk
+                ))
 
 
 class SCCmecPrimerViewSet(CustomReadOnlyModelViewSet):
