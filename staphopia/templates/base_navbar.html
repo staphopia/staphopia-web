@@ -18,9 +18,7 @@
     <!-- Left Nav Section -->
     <ul class="navbar-nav mr-auto">
         <li class="nav-item {% active request home %}"><a class="nav-link" href="/">Home</a></li>
-        {% if user.is_authenticated %}
         <li class="nav-item {% active request samples %}"><a class="nav-link" href="/sample/">Samples</a></li>
-        {% endif %}
         <li class="nav-item {% active request top10 %}"><a class="nav-link" href="/top10/">Top 10</a></li>
         <li class="nav-item {% active request contact %}"><a class="nav-link" href="/contact/">Contact</a></li>
     </ul>

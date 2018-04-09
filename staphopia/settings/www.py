@@ -36,5 +36,6 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_EXEMPT_URLS = (
     r'^accounts/login/',
     r'^api/*',
+    r'^sample/*',
     r'^',
 )
