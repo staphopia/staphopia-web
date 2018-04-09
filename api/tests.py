@@ -123,17 +123,18 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
 
     @list_route(methods=['get'])
     def test_contig(self, request):
-        url = '/api/sample/{0}/contigs/'.format(self.samples[0])
+        url = '/api/sample/{0}/contigs/?contig=30'.format(
+            self.samples[0]
+        )
         data, status = self.__get(url)
-        return self.formatted_response(data['results'], status=status,
-                                       limit=2)
+        return self.formatted_response(data['results'], status=status)
 
     @list_route(methods=['get'])
     def test_gene(self, request):
         url = '/api/sample/{0}/genes/'.format(self.samples[0])
         data, status = self.__get(url)
         return self.formatted_response(data['results'], status=status,
-                                       limit=2)
+                                       limit=1)
 
     @list_route(methods=['get'])
     def test_indel(self, request):
