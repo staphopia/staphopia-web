@@ -203,8 +203,7 @@ def read_summary(files, clusters):
 
     summary = []
     for key, val in hits.items():
-        if val['match'] == 'yes':
-            summary.append(val)
+        summary.append(val)
     return summary
 
 

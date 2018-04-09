@@ -38,6 +38,9 @@ def get_variant_positions(reference_id, table='snp'):
             'alternate_base': row['alternate_base']
         }
 
+    with open(f'{table}-positions.json', 'w') as filehandle:
+        json.dump(variants, filehandle)
+
     return variants
 
 
@@ -53,7 +56,7 @@ def get_variants(sample, snp_position, indel_position, reference_id, user_id):
     )
     for row in query_database(sql):
         for snp in row['snp']:
-            snp_id = snp_position[snp['snp_id']]
+            snp_id = snp_position[str(snp['snp_id'])]
             pos = snp_id['reference_position']
             if pos not in variants:
                 snp['is_snp'] = True
@@ -66,7 +69,7 @@ def get_variants(sample, snp_position, indel_position, reference_id, user_id):
                 )
 
         for indel in row['indel']:
-            indel_id = indel_position[indel['indel_id']]
+            indel_id = indel_position[str(indel['indel_id'])]
             pos = indel_id['reference_position']
             if pos not in variants:
                 indel['is_snp'] = False
@@ -117,7 +120,6 @@ class Command(BaseCommand):
 
         # Read annotation summary
         summary = {}
-        genes = {}
         col_names = None
         with open(opts['summary'], 'r') as fh:
             for line in fh:
@@ -128,11 +130,10 @@ class Command(BaseCommand):
                     col_names = line.split('\t')
                 else:
                     row = dict(zip(col_names, line.split('\t')))
-                    # percent = float(row['snps']) / float(row['samples'])
                     annotation_id = int(row['annotation_id'])
                     if opts['printall']:
                         summary[annotation_id] = row
-                    elif row['has_indel'] == 'False' and int(row['snps']) > 0:
+                    elif row['has_indel'] == 'False':
                         summary[annotation_id] = row
 
         # Get annotations
@@ -169,8 +170,11 @@ class Command(BaseCommand):
                 )
 
         # Get Variants Per Sample
-        snp_positions = get_variant_positions(reference_id, table='snp')
-        indel_positions = get_variant_positions(reference_id, table='indel')
+        with open('snp-positions.json', 'r') as f_in:
+            snp_positions = json.load(f_in) #get_variant_positions(reference_id, table='snp')
+        with open('indel-positions.json', 'r') as f_in:
+            indel_positions = json.load(f_in) #get_variant_positions(reference_id, table='indel')
+
         for sample_id, sample in samples.items():
             # Parse through variants for each sample
             variants = get_variants(sample_id, snp_positions, indel_positions,
@@ -236,12 +240,13 @@ class Command(BaseCommand):
                         'total_variants': 0
                     }
 
-                if base['is_variant']:
-                    results[annotation_id]['total_variants'] += 1
-                    if base['is_snp']:
-                        results[annotation_id]['total_snps'] += 1
-                    else:
-                        results[annotation_id]['total_indels'] += 1
+                if annotation_id in summary:
+                    if base['is_variant']:
+                        results[annotation_id]['total_variants'] += 1
+                        if base['is_snp']:
+                            results[annotation_id]['total_snps'] += 1
+                        else:
+                            results[annotation_id]['total_indels'] += 1
                     counts, total, has_zero_count = self.process_kmers(
                         base['kmers'], kmer_counts
                     )
@@ -410,10 +415,11 @@ class Command(BaseCommand):
 
         return [kmer, is_variant_cluster]
 
+    @timeit
     def verify_kmers(self, kmers, jf):
         """Get count of kmer via jellyfish."""
         jf_output = None
-        with tempfile.NamedTemporaryFile(dir='./') as temp:
+        with tempfile.NamedTemporaryFile() as temp:
             for kmer in kmers.keys():
                 if kmer.startswith('SNP/InDel'):
                     pass
