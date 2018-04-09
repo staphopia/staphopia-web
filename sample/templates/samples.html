@@ -19,14 +19,14 @@
                 <thead>
                     <tr>
                         <th>Sample ID</th>
-                        <th>Sample Tag</th>
+                        <th>Name</th>
                         <th>Rank</th>
                         <th>Published</th>
                         <th>Sequence Type</th>
                         <th>BioSample</th>
                         <th>Strain</th>
-                        <th>Country</th>
-                        <th>Region</th>
+                        <th>Collection Date</th>
+                        <th>Location</th>
                         <th>Isolation Source</th>
                     </tr>
                 </thead>
@@ -50,7 +50,7 @@
             "scrollY": "700px",
             "scrollX": true,
             "autoWidth": true,
-            "searchDelay": 1000,
+            "searchDelay": 2000,
             "displayLength": 50,
             "ajax": "{% url 'samples_data' %}",
             "paginationType": "full_numbers",

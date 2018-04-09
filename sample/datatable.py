@@ -19,15 +19,15 @@ class DataTable(object):
     def filter_table(self, query, order_by, direction, limit="", offset=""):
         if query:
             self.objects = basic_search(
-                query, cols=self.cols, order_by=order_by, direction=direction,
-                limit=limit, offset=offset
+                query, order_by=order_by, direction=direction, limit=limit,
+                offset=offset
             )
             self.filtered_records = get_filtered_count(query)
             self.log_query(query)
         else:
             self.objects = basic_search(
-                query, cols=self.cols, order_by=order_by, direction=direction,
-                all_samples=True, limit=limit, offset=offset)
+                query, order_by=order_by, direction=direction, limit=limit,
+                offset=offset)
 
     def log_query(self, query):
         """Store the query for improvement purposes."""
@@ -40,7 +40,7 @@ class DataTable(object):
 
     def get_json_response(self):
         data = [
-            map(lambda field: obj[field], self.cols)
+            list(map(lambda field: obj[field], self.cols))
             for obj in self.objects
         ]
 

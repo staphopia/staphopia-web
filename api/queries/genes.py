@@ -17,7 +17,8 @@ COLUMNS = {
 }
 
 
-def get_genes_by_sample(sample_id, user_id, product_id=None):
+def get_genes_by_sample(sample_id, user_id, product_id=None,
+                        exclude_sequence=False):
     """Return genes associated with a sample."""
     sql = None
     inference = {}
@@ -55,24 +56,27 @@ def get_genes_by_sample(sample_id, user_id, product_id=None):
 
             if new['type'] == 'RNA':
                 new['length'] = len(row['rna'][info['locus_tag']])
-                new['dna'] = row['rna'][info['locus_tag']]
-                new['aa'] = ''
+                if not exclude_sequence:
+                    new['dna'] = row['rna'][info['locus_tag']]
+                    new['aa'] = ''
             else:
                 new['length'] = len(row['gene'][info['locus_tag']])
-                new['dna'] = row['gene'][info['locus_tag']]
-                new['aa'] = row['protein'][info['locus_tag']]
+                if not exclude_sequence:
+                    new['dna'] = row['gene'][info['locus_tag']]
+                    new['aa'] = row['protein'][info['locus_tag']]
 
-            new['header'] = (
-                "{0}|{1}|{2}|{3} [product={4}] [name={5}] [note={6}]"
-            ).format(
-                new['sample_id'],
-                new['locus_tag'],
-                new['product_id'],
-                new['inference'],
-                new['product'],
-                new['name'],
-                new['note']
-            )
+            if not exclude_sequence:
+                new['header'] = (
+                    "{0}|{1}|{2}|{3} [product={4}] [name={5}] [note={6}]"
+                ).format(
+                    new['sample_id'],
+                    new['locus_tag'],
+                    new['product_id'],
+                    new['inference'],
+                    new['product'],
+                    new['name'],
+                    new['note']
+                )
 
             if product_id:
                 if product_id == new['product_id']:

@@ -114,4 +114,10 @@ def get_sccmec_coverage_by_sample(sample_id, user_id):
         ','.join([str(i) for i in sample_id]),
         user_id
     )
-    return query_database(sql)
+
+    results = []
+    for row in query_database(sql):
+        if row['cassette'] not in ['IIb', 'IVd']:
+            results.append(row)
+
+    return results

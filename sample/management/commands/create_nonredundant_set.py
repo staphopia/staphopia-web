@@ -56,7 +56,10 @@ class Command(BaseCommand):
                  FROM sample_basic AS s
                  LEFT JOIN sample_metadata AS m
                  ON s.sample_id=m.sample_id
-                 WHERE user_id={0} and st>0 and rank>={1} {2}
+                 LEFT JOIN variant_variant AS v
+                 ON s.sample_id=v.sample_id
+                 WHERE user_id={0} and st>0 and rank>={1} AND
+                       v.snp_count <= 60000 {2}
                  ORDER BY st
                  {3};""".format(
             user.pk,

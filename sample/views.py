@@ -43,7 +43,7 @@ def top10(request):
 
 def sample(request, sample_id=None):
     if sample_id:
-        user_id = request.user.pk if request.user.pk else 0
+        user_id = request.user.pk if request.user.pk else 2
         row = query_database(
             """
             SELECT count(id)
@@ -94,8 +94,8 @@ def sample_summary(request):
 
     # Columns to include in table
     cols = [
-        'sample_id', 'sample_tag',  'rank', 'is_published', 'st_stripped',
-        'sample_accession', 'strain', 'country', 'region', 'isolation_source'
+        'sample_id', 'name', 'rank', 'is_published', 'st', 'sample_accession',
+        'strain', 'collection_date', 'location', 'isolation_source'
     ]
 
     # Initialize a DataTable

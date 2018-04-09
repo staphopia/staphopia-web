@@ -200,11 +200,16 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             else:
                 product = int(request.GET['product_id'])
 
+        exclude_sequence = False
+        if 'exclude_sequence' in request.GET:
+            exclude_sequence = True
+
         results, qt = timeit(
             get_genes_by_sample,
             [pk],
             request.user.pk,
             product_id=product,
+            exclude_sequence=exclude_sequence
         )
         return self.paginate(results, page_size=250, is_serialized=True,
                              query_time=qt)
@@ -265,30 +270,44 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
 
     @detail_route(methods=['get'])
     def resistance(self, request, pk=None):
+        include_all = False
+        if 'include_all' in request.GET:
+            include_all = True
+
+        mec_only = False
+        if 'mec_only' in request.GET:
+            mec_only = True
+
         if 'summary' in request.GET:
             result, qt = timeit(
                 get_ariba_resistance_summary,
                 [pk],
-                request.user.pk
+                request.user.pk,
+                mec_only=mec_only
             )
         elif 'report' in request.GET:
             result, qt = timeit(
                 get_ariba_resistance_report,
                 [pk],
-                request.user.pk
+                request.user.pk,
+                include_all=include_all,
+                mec_only=mec_only
             )
         elif 'cluster_report' in request.GET:
             result, qt = timeit(
                 get_ariba_resistance_report,
                 [pk],
                 request.user.pk,
-                by_cluster=True
+                by_cluster=True,
+                include_all=include_all,
+                mec_only=mec_only
             )
         else:
             result, qt = timeit(
                 get_ariba_resistance,
                 [pk],
-                request.user.pk
+                request.user.pk,
+                mec_only=mec_only
             )
         return self.formatted_response(result, query_time=qt)
 

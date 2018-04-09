@@ -18,8 +18,9 @@ def top10_sequencing_centers():
 @register.inclusion_tag('top10/sequence_types.html')
 def top10_sequence_types():
     cursor = connection.cursor()
-    q = "SELECT sequence_type, count FROM top_sequence_types(10)"
-    cursor.execute(q)
+    cursor.execute(
+        "SELECT sequence_type, count FROM top_sequence_types() LIMIT 10"
+    )
 
     return {
         'top_list': cursor.fetchall()

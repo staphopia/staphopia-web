@@ -57,11 +57,16 @@ class AnnotationViewSet(CustomReadOnlyModelViewSet):
                     else:
                         product = int(request.GET['product_id'])
 
+                exclude_sequence = False
+                if 'exclude_sequence' in request.GET:
+                    exclude_sequence = True
+
                 results, qt = timeit(
                     get_genes_by_sample,
                     request.data['ids'],
                     request.user.pk,
-                    product_id=product
+                    product_id=product,
+                    exclude_sequence=exclude_sequence
                 )
                 return self.formatted_response(results, query_time=qt)
 

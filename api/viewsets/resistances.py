@@ -31,29 +31,43 @@ class ResistanceAribaViewSet(CustomReadOnlyModelViewSet):
                     "data": request.data
                 })
             else:
+                include_all = False
+                if 'include_all' in request.GET:
+                    include_all = True
+
+                mec_only = False
+                if 'mec_only' in request.GET:
+                    mec_only = True
+
                 if 'summary' in request.GET:
                     result, qt = timeit(
                         get_ariba_resistance_summary,
                         request.data['ids'],
-                        request.user.pk
+                        request.user.pk,
+                        mec_only=mec_only
                     )
                 elif 'report' in request.GET:
                     result, qt = timeit(
                         get_ariba_resistance_report,
                         request.data['ids'],
-                        request.user.pk
+                        request.user.pk,
+                        include_all=include_all,
+                        mec_only=mec_only
                     )
                 elif 'cluster_report' in request.GET:
                     result, qt = timeit(
                         get_ariba_resistance_report,
                         request.data['ids'],
                         request.user.pk,
-                        by_cluster=True
+                        by_cluster=True,
+                        include_all=include_all,
+                        mec_only=mec_only
                     )
                 else:
                     result, qt = timeit(
                         get_ariba_resistance,
                         request.data['ids'],
-                        request.user.pk
+                        request.user.pk,
+                        mec_only=mec_only
                     )
                 return self.formatted_response(result, query_time=qt)

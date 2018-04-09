@@ -2,6 +2,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 
 
 class Sample(models.Model):
@@ -41,8 +43,12 @@ class Metadata(models.Model):
     Store metadata associated with each sample.
     """
     sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    document = SearchVectorField(null=True)
     metadata = JSONField()
     history = JSONField()
+
+    class Meta:
+        indexes = [GinIndex(fields=['document'])]
 
 
 class MetadataFields(models.Model):

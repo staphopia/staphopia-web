@@ -2,53 +2,81 @@
 {% load summary %}
 <h2 id="mlst">MLST</h2>
 <p>
-Multi-Locus sequence types (MLST) are determined in two ways. Processed reads
-are mapped to the 7 loci using SRST2. Gene sequences for each loci are also
-BLASTed against the assembled contigs.
+Multi-Locus sequence types (MLST) are determined in two or three ways. Sequence
+types are determined by local alignments using Ariba (if paired-end), k-mer
+votes using MentaLiST, and by BLASTing each loci against the assembled contigs.
 </p>
-<h5 id="mlst-srst2">SRST2 Results</h5>
+
 <div class="row">
-    <div class="col-lg-6 col-sm-12">
-        <table class="table table-striped">
+    <div class="col-lg-8 col-sm-12">
+        <table class="table table-responsive table-striped text-center">
             <thead>
                 <tr>
-                    <td>Locus</td>
-                    <td>Allele<sup>1</sup></td>
+                    <td>Consensus ST</td>
+                    <td>Ariba ST</td>
+                    <td>MentaLiST ST</td>
+                    <td>BLAST ST</td>
                 </tr>
             </thead>
             <tbody>
-                {% for k, v in srst2_hits.items %}
-                    <tr>
-                        <td><em>{{ k }}</em></td><td>{{ v }}</td>
-                    </tr>
+            <tr>
+                {% for col in st %}
+                    <td>{{ col }}</td>
                 {% endfor %}
-                <tr>
-                    <td class="footnote" colspan=2>
-                        1: '*' means the best allele had at least 1 mismatch.
-                           '?' means the best allele has areas of low coverage.
-                           '-' means no allele could be assigned.
-                    </td>
-                </tr>
-                <tr><td></td><td></td></tr>
-                <tr>
-                    <td class="text-center" colspan=2><strong>SRST2 Statistics<sup>2</sup></strong></td>
-                </tr>
-                {% for k, v in srst2_stats.items %}
-                    <tr>
-                        <td><em>{{ k }}</em></td><td>{{ v }}</td>
-                    </tr>
-                {% endfor %}
-                    <td class="footnote" colspan=2>
-        2: Brief note about SRST2 statistics.
-        <em>Mismatches</em> are the total number of mismatches for each loci (lower is better).
-        <em>Depth</em> is the mean coverage across each loci (higher is better).
-        <em>maxMAF</em> is the highest minor allele frequency across each loci (lower is better).
-        For more detailed information please see <a target="_blank" href="https://github.com/katholt/srst2#mlst-results">SRST2's documentation</a>.
-                    </td>
+            </tr>
             </tbody>
         </table>
     </div>
 </div>
+<br />
+
+{% if ariba %}
+<h5 id="mlst-ariba">Ariba Results</h5>
+<div class="row">
+    <div class="col-lg-8 col-sm-12">
+        <table class="table table-responsive table-striped text-center">
+            <thead>
+                <tr>
+                    <td>Locus</td>
+                    <td>Allele</td>
+                    <td>Locus Coverage (%)</td>
+                    <td>Percent Identical</td>
+                    <td>Total Contigs</td>
+                    <td>Read Depth</td>
+                    <td>Minimum Heterozygous SNP Depth<sup>1</sup></td>
+                    <td>Heterozygous SNPs<sup>2</sup></td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in ariba %}
+                <tr>
+                    {% for col in row %}
+                        {% if forloop.first %}
+                        <td><em>{{ col }}</em>.</td>
+                        {% else %}
+                        <td>{{ col }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            <td class="footnote text-left" colspan=20>
+            Taken from <a href="https://github.com/sanger-pathogens/ariba/wiki/MLST-calling-with-ARIBA" target="_blank">Ariba MLST results explanation</a>
+            <br />
+            1: minimum(max allele depth as a percent of total depth), across all
+               identified heterozygous SNPs. e.g. for the example below where the
+               hets column is 30,10.25,10,5, this would be 100 * min(30/(30+10),
+               25/(25+10+5)) = 62.5.
+            <br />
+            2: a list of the heterozygous SNP depths. For example 30,10.25,10,5
+               corresponds to two heterozygous SNPs, the first with read depths
+               30 and 10, and the second with depths 25, 10, and 5.
+            </td>
+            </tbody>
+        </table>
+    </div>
+</div>
+<br />
+{% endif %}
 
 <h5 id="mlst-blast">BLAST Results</h5>
 <div class="row">
@@ -82,3 +110,5 @@ BLASTed against the assembled contigs.
         </table>
     </div>
 </div>
+<br />
+

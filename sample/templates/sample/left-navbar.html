@@ -2,7 +2,7 @@
 <nav id="left-navbar" class="col-sm-4 col-md-4 col-lg-3 col-xl-2 d-none d-sm-block bg-light sidebar">
   <ul class="nav nav-stacked flex-column">
     <li class="nav-item" style="background-color: #d9edf7">
-      <h4 class="card-header text-center" style="background-color: #d9edf7">{{ sample_tag }}</h4>
+      <h4 class="card-header text-center" style="background-color: #d9edf7">{{ sample_name }}</h4>
     </li>
     <li class="nav-item text-center">
     {% if rank == 3 %}
@@ -36,7 +36,9 @@
     <li class="nav-item">
       <a class="nav-link" href="#mlst">MLST</a>
       <nav class="nav nav-stacked flex-column">
-        <a class="nav-link my-1" href="#mlst-srst2">SRST2 Results</a>
+        {% if ariba %}
+          <a class="nav-link my-1" href="#mlst-ariba">Ariba Results</a>
+        {% endif %}
         <a class="nav-link my-1" href="#mlst-blast">BLAST Results</a>
       </nav>
     </li>

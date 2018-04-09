@@ -3,7 +3,7 @@ from collections import OrderedDict
 from api.utils import query_database
 
 
-def get_ariba_resistance(sample_id, user_id):
+def get_ariba_resistance(sample_id, user_id, mec_only=False):
     """Return resistance results associated with a sample."""
     cluster = {}
     sql = """SELECT * FROM resistance_cluster"""
@@ -35,11 +35,17 @@ def get_ariba_resistance(sample_id, user_id):
                         result['database'] = cluster[val]['database']
                         result['headers'] = cluster[val]['headers']
                     result[key] = val
-                results.append(result)
+
+                if mec_only:
+                    if 'mec' in result['cluster'].lower() or 'pbp2' in result['cluster'].lower():
+                        results.append(result)
+                else:
+                    results.append(result)
     return results
 
 
-def get_ariba_resistance_report(sample_id, user_id, by_cluster=False):
+def get_ariba_resistance_report(sample_id, user_id, by_cluster=False,
+                                include_all=False, mec_only=False):
     """Return resistance report based on class associated with a sample."""
     resistance_class = []
     omit = [
@@ -55,22 +61,30 @@ def get_ariba_resistance_report(sample_id, user_id, by_cluster=False):
         for row in query_database(sql):
             if row['name'] not in omit:
                 if row['resistance_class']:
-                    name = f"{row['name']};{row['resistance_class']}"
-                    resistance_class.append(name)
-    else:
-        sql = """SELECT id, name
-                 FROM resistance_resistanceclass
-                 ORDER BY name"""
-        for row in query_database(sql):
-            if row['name'] not in omit:
-                if row['name'].title() not in resistance_class:
-                    if row['name'] == 'MLS':
-                        resistance_class.append(row['name'])
-                    elif row['name'] == 'betalactams':
-                        resistance_class.append(row['name'].title())
-                        resistance_class.append(f"{row['name'].title()} (mecA)")
+                    if mec_only:
+                        if 'mec' in row['name'].lower() or 'pbp2' in row['name'].lower():
+                            name = f"{row['name']};{row['resistance_class']}"
+                            resistance_class.append(name)
                     else:
-                        resistance_class.append(row['name'].title())
+                        name = f"{row['name']};{row['resistance_class']}"
+                        resistance_class.append(name)
+    else:
+        if mec_only:
+            resistance_class.append('mec')
+        else:
+            sql = """SELECT id, name
+                     FROM resistance_resistanceclass
+                     ORDER BY name"""
+            for row in query_database(sql):
+                if row['name'] not in omit:
+                    if row['name'].title() not in resistance_class:
+                        if row['name'] == 'MLS':
+                            resistance_class.append(row['name'])
+                        elif row['name'] == 'betalactams':
+                            resistance_class.append(row['name'].title())
+                            resistance_class.append(f"{row['name'].title()} (mec)")
+                        else:
+                            resistance_class.append(row['name'].title())
 
     sql = """SELECT sample_id, summary
              FROM resistance_ariba AS r
@@ -91,27 +105,35 @@ def get_ariba_resistance_report(sample_id, user_id, by_cluster=False):
 
         for r in row['summary']:
             if r['cluster'] not in omit:
-                if r['match'] == 'yes':
-                    if by_cluster:
-                        name = f"{r['cluster']};{r['resistance_class']}"
-                        sample[name] = True
+                if r['match'] == 'yes' or include_all:
+                    if mec_only:
+                        if 'mec' in r['cluster'].lower() or 'pbp2' in r['cluster'].lower():
+                            if by_cluster:
+                                name = f"{r['cluster']};{r['resistance_class']}"
+                                sample[name] = True
+                            else:
+                                sample['mec'] = True
                     else:
-                        rclass = r['resistance_class']
-                        if rclass == 'MLS':
-                            sample[rclass] = True
-                        elif rclass == 'betalactams':
-                            sample[rclass.title()] = True
-                            if 'mec' in r['cluster'].lower():
-                                sample[f'{rclass.title()} (mecA)'] = True
+                        if by_cluster:
+                            name = f"{r['cluster']};{r['resistance_class']}"
+                            sample[name] = True
                         else:
-                            sample[rclass.title()] = True
+                            rclass = r['resistance_class']
+                            if rclass == 'MLS':
+                                sample[rclass] = True
+                            elif rclass == 'betalactams':
+                                sample[rclass.title()] = True
+                                if 'mec' in r['cluster'].lower() or 'pbp2' in r['cluster'].lower():
+                                    sample[f'{rclass.title()} (mec)'] = True
+                            else:
+                                sample[rclass.title()] = True
 
         results.append(sample)
 
     return results
 
 
-def get_ariba_resistance_summary(sample_id, user_id):
+def get_ariba_resistance_summary(sample_id, user_id, mec_only=False):
     """Return resistance summary based on class associated with a sample."""
     sql = """SELECT sample_id, summary
              FROM resistance_ariba AS r
@@ -130,6 +152,11 @@ def get_ariba_resistance_summary(sample_id, user_id):
             sample['sample_id'] = row['sample_id']
             for key, val in r.items():
                 sample[key] = val
-            results.append(sample)
+
+            if mec_only:
+                if 'mec' in sample['cluster'].lower() or 'pbp2' in sample['cluster'].lower():
+                    results.append(sample)
+            else:
+                results.append(sample)
 
     return results
