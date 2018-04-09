@@ -129,7 +129,13 @@ class InfoViewSet(CustomReadOnlyModelViewSet):
         """
         Submission counts based on year samples were first public.
         """
-        return self.formatted_response(get_submission_by_year())
+        all_submissions = False
+        if 'all' in request.GET:
+            all_submissions = True
+
+        return self.formatted_response(
+            get_submission_by_year(all_submissions=all_submissions)
+        )
 
     @list_route(methods=['get'])
     def assembly_by_year(self, request):

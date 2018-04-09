@@ -97,18 +97,30 @@ def get_publication_links():
     return [results]
 
 
-def get_submission_by_year():
+def get_submission_by_year(all_submissions=False):
     """Return the published submissions by year."""
+    sql = None
+    if all_submissions:
+        sql = "SELECT * FROM submission_by_year;"
+    else:
+        sql = """SELECT metadata->'first_public' AS first_public,
+                        s.is_published
+                 FROM sample_metadata AS m
+                 LEFT JOIN sample_sample AS s
+                 ON m.sample_id=s.id
+                 WHERE s.is_public=TRUE AND s.is_flagged=FALSE
+                 ORDER BY first_public;"""
+
     results = []
-    sql = """SELECT metadata->'first_public' AS first_public, s.is_published
-             FROM sample_metadata AS m
-             LEFT JOIN sample_sample AS s
-             ON m.sample_id=s.id
-             WHERE s.is_public=TRUE AND s.is_flagged=FALSE
-             ORDER BY first_public;"""
     years = {}
     for row in query_database(sql):
-        year = int(row['first_public'][0:4])
+        year = None
+        if all_submissions:
+            year = int(row['year'])
+            row['is_published'] = False
+        else:
+            year = int(row['first_public'][0:4])
+
         if year not in years:
             years[year] = {'published': 0, 'unpublished': 0, 'total': 0}
 
@@ -117,7 +129,12 @@ def get_submission_by_year():
         else:
             years[year]['unpublished'] += 1
 
-        years[year]['total'] += 1
+        if all_submissions:
+            years[year]['published'] = 0
+            years[year]['unpublished'] = 0
+            years[year]['total'] = row['count']
+        else:
+            years[year]['total'] += 1
 
     overall = [0, 0, 0]
     for key, val in sorted(years.items()):
