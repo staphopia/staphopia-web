@@ -42,7 +42,7 @@ class Command(BaseCommand):
                     st = query_database(
                         f'SELECT * FROM sample_basic WHERE sample_id={sample}'
                     )[0]['st']
-                    sample_name = f'{sample}|{name}|ST{st}'
+                    sample_name = f'{sample}_{name}_ST{st}'
 
                 if annotation_id in valid:
                     merged_sequence.append(sequence)
