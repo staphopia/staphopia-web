@@ -17,11 +17,9 @@ def get_cgmlst_patterns():
 
     sql = """SELECT mentalist
              FROM cgmlst_cgmlst AS m
-             LEFT JOIN sample_sample AS s
-             ON m.sample_id=s.id
-             LEFT JOIN auth_user AS u
-             on u.id=s.user_id
-             WHERE s.is_public=TRUE AND s.is_flagged=FALSE AND u.username='ena'
+             LEFT JOIN sample_basic AS s
+             ON m.sample_id=s.sample_id
+             WHERE s.sample_id > 0 USER_PERMISSION
              ORDER BY m.sample_id ASC;"""
 
     patterns = {}
@@ -106,9 +104,9 @@ def get_submission_by_year(all_submissions=False):
         sql = """SELECT metadata->'first_public' AS first_public,
                         s.is_published
                  FROM sample_metadata AS m
-                 LEFT JOIN sample_sample AS s
-                 ON m.sample_id=s.id
-                 WHERE s.is_public=TRUE AND s.is_flagged=FALSE
+                 LEFT JOIN sample_basic AS s
+                 ON m.sample_id=s.sample_id
+                 WHERE s.sample_id > 0 USER_PERMISSION
                  ORDER BY first_public;"""
 
     results = []
@@ -161,14 +159,9 @@ def get_rank_by_year(is_original=False):
 
     sql = """SELECT metadata->'first_public' AS first_public, rank
              FROM sample_metadata AS m
-             LEFT JOIN sample_sample AS s
-             ON m.sample_id=s.id
-             LEFT JOIN sequence_summary AS t
-             ON m.sample_id=t.sample_id
-             LEFT JOIN sequence_stage AS u
-             ON t.stage_id=u.id
-             WHERE s.is_public=TRUE AND u.name='{0}'
-                   AND s.is_flagged = FALSE
+             LEFT JOIN sample_basic AS s
+             ON m.sample_id=s.sample_id
+             WHERE s.sample_id > 0 USER_PERMISSION
              ORDER BY first_public;""".format(
         name
     )
@@ -214,18 +207,18 @@ def get_rank_by_year(is_original=False):
 def get_st_by_year():
     """Return the published submissions by year."""
     results = []
-    sql = """SELECT metadata->'first_public' AS first_public, st,
+    sql = """SELECT metadata->'first_public' AS first_public, t.st,
                     predicted_novel, ariba, mentalist, blast, is_paired
              FROM sample_metadata AS m
-             LEFT JOIN sample_sample AS s
-             ON m.sample_id=s.id
+             LEFT JOIN sample_basic AS s
+             ON m.sample_id=s.sample_id
              LEFT JOIN mlst_mlst AS t
              ON m.sample_id=t.sample_id
              LEFT JOIN sequence_summary AS q
              ON m.sample_id=q.sample_id
              LEFT JOIN sequence_stage AS w
              ON w.id=q.stage_id
-             WHERE s.is_public=TRUE AND s.is_flagged=FALSE AND w.name='cleanup'
+             WHERE w.name='cleanup' USER_PERMISSION
              ORDER BY first_public;"""
 
     years = {}

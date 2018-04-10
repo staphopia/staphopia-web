@@ -1,7 +1,7 @@
 """API utilities for MLST related viewsets."""
 from collections import OrderedDict
 import json
-from api.utils import query_database, get_sample_permisions
+from api.utils import query_database
 
 
 def get_unique_st_samples():
@@ -15,10 +15,9 @@ def get_sequence_type(sample_id, user):
              FROM mlst_mlst AS m
              LEFT JOIN sample_sample AS s
              ON m.sample_id=s.id
-             WHERE m.sample_id IN ({0}) AND ({1})
+             WHERE m.sample_id IN ({0}) USER_PERMISSION
              ORDER BY m.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        get_sample_permisions(user)
+        ','.join([str(i) for i in sample_id])
     )
 
     return query_database(sql)
@@ -30,10 +29,9 @@ def get_mlst_blast_results(sample_id, user):
              FROM mlst_report AS m
              LEFT JOIN sample_sample AS s
              ON m.sample_id=s.id
-             WHERE m.sample_id IN ({0}) AND ({1})
+             WHERE m.sample_id IN ({0}) USER_PERMISSION
              ORDER BY m.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        get_sample_permisions(user)
+        ','.join([str(i) for i in sample_id])
     )
 
     results = []
@@ -60,10 +58,9 @@ def get_mlst_allele_matches(sample_id, user):
              ON m.sample_id=s.id
              LEFT JOIN mlst_support AS d
              ON m.support_id=d.id
-             WHERE m.sample_id IN ({0}) AND ({1})
+             WHERE m.sample_id IN ({0}) USER_PERMISSION
              ORDER BY m.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        get_sample_permisions(user)
+        ','.join([str(i) for i in sample_id])
     )
 
     results = []
@@ -87,10 +84,9 @@ def get_cgmlst(sample_id, user):
              FROM cgmlst_cgmlst AS m
              LEFT JOIN sample_sample AS s
              ON m.sample_id=s.id
-             WHERE m.sample_id IN ({0}) AND ({1})
+             WHERE m.sample_id IN ({0}) USER_PERMISSION
              ORDER BY m.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        get_sample_permisions(user)
+        ','.join([str(i) for i in sample_id])
     )
     results = []
     for row in query_database(sql):

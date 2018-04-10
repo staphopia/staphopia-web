@@ -10,14 +10,13 @@ def get_ariba_resistance(sample_id, user_id, mec_only=False):
     for row in query_database(sql):
         cluster[row['id']] = row
 
-    sql = """SELECT sample_id, results
+    sql = """SELECT r.sample_id, results
              FROM resistance_ariba AS r
-             LEFT JOIN sample_sample AS s
-             ON r.sample_id=s.id
-             WHERE r.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
+             LEFT JOIN sample_basic AS s
+             ON r.sample_id=s.sample_id
+             WHERE r.sample_id IN ({0}) USER_PERMISSION
              ORDER BY r.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        user_id
+        ','.join([str(i) for i in sample_id])
     )
 
     results = []
@@ -86,14 +85,13 @@ def get_ariba_resistance_report(sample_id, user_id, by_cluster=False,
                         else:
                             resistance_class.append(row['name'].title())
 
-    sql = """SELECT sample_id, summary
+    sql = """SELECT r.sample_id, summary
              FROM resistance_ariba AS r
-             LEFT JOIN sample_sample AS s
-             ON r.sample_id=s.id
-             WHERE r.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
+             LEFT JOIN sample_basic AS s
+             ON r.sample_id=s.sample_id
+             WHERE r.sample_id IN ({0}) USER_PERMISSION
              ORDER BY r.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        user_id
+        ','.join([str(i) for i in sample_id])
     )
 
     results = []
@@ -135,14 +133,13 @@ def get_ariba_resistance_report(sample_id, user_id, by_cluster=False,
 
 def get_ariba_resistance_summary(sample_id, user_id, mec_only=False):
     """Return resistance summary based on class associated with a sample."""
-    sql = """SELECT sample_id, summary
+    sql = """SELECT r.sample_id, summary
              FROM resistance_ariba AS r
-             LEFT JOIN sample_sample AS s
-             ON r.sample_id=s.id
-             WHERE r.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
+             LEFT JOIN sample_basic AS s
+             ON r.sample_id=s.sample_id
+             WHERE r.sample_id IN ({0}) USER_PERMISSION
              ORDER BY r.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        user_id
+        ','.join([str(i) for i in sample_id])
     )
 
     results = []

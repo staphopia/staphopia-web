@@ -13,10 +13,9 @@ def get_ariba_virulence(sample_id, user_id):
              FROM virulence_ariba AS r
              LEFT JOIN sample_sample AS s
              ON r.sample_id=s.id
-             WHERE r.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
+             WHERE r.sample_id IN ({0}) USER_PERMISSION
              ORDER BY r.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        user_id
+        ','.join([str(i) for i in sample_id])
     )
 
     results = []

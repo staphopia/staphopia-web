@@ -7,7 +7,8 @@ from api.queries.tags import (
     get_samples_by_tag,
     get_all_tags,
     get_user_tags,
-    get_public_tags
+    get_public_tags,
+    get_tag
 )
 
 from api.utils import timeit
@@ -22,6 +23,17 @@ class TagViewSet(CustomReadOnlyModelViewSet):
     """
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+
+    def retrieve(self, request, pk=None):
+        validator = validate_positive_integer(pk)
+        if validator['has_errors']:
+            return Response(validator)
+        else:
+            results, qt = timeit(
+                get_tag,
+                pk
+            )
+            return self.formatted_response(results, query_time=qt)
 
     def list(self, request):
         tags = None

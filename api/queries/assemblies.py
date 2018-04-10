@@ -20,15 +20,14 @@ def get_assembly_stats(sample_id, user_id, is_plasmids=None):
 
     table = 'plasmid_summary' if is_plasmids else 'assembly_summary'
     sql = """SELECT {0}
-             FROM {3} AS a
+             FROM {1} AS a
              LEFT JOIN sample_sample as s
              ON s.id=a.sample_id
-             WHERE sample_id IN ({1}) AND (s.is_public=TRUE OR user_id={2})
+             WHERE sample_id IN ({2}) USER_PERMISSION
              ORDER BY sample_id;""".format(
         ','.join(cols),
-        ','.join([str(i) for i in sample_id]),
-        user_id,
-        table
+        table,
+        ','.join([str(i) for i in sample_id])
     )
 
     return query_database(sql)
@@ -39,14 +38,13 @@ def get_assembly_contigs(sample_id, user_id, is_plasmids=False, contig=None):
     # Get contigs
     table = 'plasmid_sequence' if is_plasmids else 'assembly_sequence'
     sql = """SELECT c.sample_id, c.fasta
-             FROM {2} AS c
+             FROM {0} AS c
              LEFT JOIN sample_sample as s
              ON s.id=c.sample_id
-             WHERE c.sample_id IN ({0}) AND (s.is_public=TRUE OR user_id={1})
+             WHERE c.sample_id IN ({1}) USER_PERMISSION
              ORDER BY sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        user_id,
-        table
+        table,
+        ','.join([str(i) for i in sample_id])
     )
     results = []
     contigs = {}
@@ -57,14 +55,13 @@ def get_assembly_contigs(sample_id, user_id, is_plasmids=False, contig=None):
     names = {}
     table = 'plasmid_contig' if is_plasmids else 'assembly_contig'
     sql = """SELECT sample_id, spades, staphopia
-             FROM {2} AS c
+             FROM {0} AS c
              LEFT JOIN sample_sample as s
              ON s.id=c.sample_id
-             WHERE c.sample_id IN ({0}) AND (s.is_public=TRUE OR user_id={1})
+             WHERE c.sample_id IN ({1}) USER_PERMISSION
              ORDER BY sample_id ASC, c.id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        user_id,
-        table
+        table,
+        ','.join([str(i) for i in sample_id])
     )
     for row in query_database(sql):
         # Spades: NODE_37_length_341_cov_381.897727

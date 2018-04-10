@@ -25,12 +25,10 @@ def get_sequencing_stats(sample_id, user_id, stage=None,
              ON a.sample_id=s.id
              LEFT JOIN sequence_stage as p
              ON a.stage_id=p.id
-             WHERE sample_id IN ({1})
-                   AND (s.is_public=TRUE OR s.user_id={2}) {3}
+             WHERE sample_id IN ({1}) {2} USER_PERMISSION
              ORDER BY sample_id;""".format(
         ','.join(cols),
         ','.join([str(i) for i in sample_id]),
-        user_id,
         stage_sql
     )
     return query_database(sql)

@@ -17,14 +17,13 @@ def get_sccmec_primers_by_sample(sample_id, user_id, is_subtypes=False,
              FROM {0} AS p
              LEFT JOIN staphopia_blastquery AS b
              ON p.query_id=b.id
-             LEFT JOIN sample_sample AS s
-             ON p.sample_id=s.id
-             WHERE p.sample_id IN ({1}) AND (s.is_public=TRUE OR s.user_id={2})
-                   AND p.hamming_distance{3}0
-             ORDER BY sample_id;""" .format(
+             LEFT JOIN sample_basic AS s
+             ON p.sample_id=s.sample_id
+             WHERE p.sample_id IN ({1}) USER_PERMISSION
+                   AND p.hamming_distance{2}0
+             ORDER BY p.sample_id;""" .format(
         'sccmec_subtypes' if is_subtypes else 'sccmec_primers',
         ','.join([str(i) for i in sample_id]),
-        user_id,
         '=' if exact_hits and not predict else '>='
     )
 
@@ -72,10 +71,10 @@ def get_sccmec_proteins_by_sample(sample_id, user_id):
              FROM sccmec_proteins AS p
              LEFT JOIN staphopia_blastquery AS b
              ON p.query_id=b.id
-             LEFT JOIN sample_sample AS s
-             ON p.sample_id=s.id
-             WHERE p.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
-             ORDER BY sample_id;""" .format(
+             LEFT JOIN sample_basic AS s
+             ON p.sample_id=s.sample_id
+             WHERE p.sample_id IN ({0}) USER_PERMISSION
+             ORDER BY p.sample_id;""" .format(
         ','.join([str(i) for i in sample_id]),
         user_id,
     )
@@ -106,10 +105,9 @@ def get_sccmec_coverage_by_sample(sample_id, user_id):
              FROM sccmec_coverage AS cov
              LEFT JOIN sccmec_cassette AS cas
              ON cov.cassette_id=cas.id
-             LEFT JOIN sample_sample AS s
-             ON cov.sample_id=s.id
-             WHERE cov.sample_id IN ({0})
-                   AND (s.is_public=TRUE OR s.user_id={1})
+             LEFT JOIN sample_basic AS s
+             ON cov.sample_id=s.sample_id
+             WHERE cov.sample_id IN ({0}) USER_PERMISSION
              ORDER BY cov.sample_id ASC, cassette ASC;""".format(
         ','.join([str(i) for i in sample_id]),
         user_id

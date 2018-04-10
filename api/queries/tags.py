@@ -2,6 +2,19 @@
 from api.utils import query_database
 
 
+def get_tag(tag_id):
+    """Return samples associated with a tag."""
+    sql = """SELECT DISTINCT ON (t.id)
+                  t.id, t.tag, t.comment, t.is_public, t.user_id
+             FROM tag_tag AS t
+             LEFT JOIN sample_basic AS s
+             ON t.user_id=s.user_id
+             WHERE t.id = {0} USER_PERMISSION
+             ORDER BY t.id ASC;""".format(tag_id)
+
+    return query_database(sql, ambiguous=True)
+
+
 def get_samples_by_tag(tag, is_id=True):
     """Return samples associated with a tag."""
     sql = """SELECT s.sample_id, s.name, s.is_public, s.is_published, s.st,
@@ -11,27 +24,25 @@ def get_samples_by_tag(tag, is_id=True):
              ON t.sample_id=s.sample_id
              LEFT JOIN tag_tag AS n
              ON t.tag_id=n.id
-             WHERE {0}
+             WHERE {0} USER_PERMISSION
              ORDER BY s.name ASC;""".format(
         f"t.tag_id={tag}" if is_id else f"n.tag='{tag}'"
     )
-    return query_database(sql)
+    return query_database(sql, ambiguous=True)
 
 
 def get_tags_by_sample(sample_id, user_id):
     """Return tags associated with a sample."""
-    sql = """SELECT s.sample_id, s.tag_id, t.tag, t.comment
-             FROM tag_tosample AS s
+    sql = """SELECT s.sample_id, a.tag_id, t.tag, t.comment
+             FROM tag_tosample AS a
              LEFT JOIN tag_tag AS t
-             ON s.tag_id=t.id
-             LEFT JOIN sample_sample AS a
-             ON s.sample_id=a.id
-             WHERE s.sample_id={0}
-                   AND (a.is_public=TRUE OR a.user_id={1});""".format(
-        sample_id,
-        user_id
+             ON a.tag_id=t.id
+             LEFT JOIN sample_basic AS s
+             ON s.sample_id=a.sample_id
+             WHERE s.sample_id={0} USER_PERMISSION;""".format(
+        sample_id
     )
-    return query_database(sql)
+    return query_database(sql, ambiguous=True)
 
 
 def get_all_tags(tag=None):

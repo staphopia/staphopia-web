@@ -30,8 +30,7 @@ def get_genes_by_sample(sample_id, user_id, product_id=None,
              FROM annotation_annotation as a
              LEFT JOIN sample_sample as s
              ON a.sample_id=s.id
-             WHERE a.sample_id IN ({0})
-                   AND (s.is_public=TRUE OR s.user_id={1});""".format(
+             WHERE a.sample_id IN ({0}) USER_PERMISSION;""".format(
         ','.join([str(i) for i in sample_id]),
         user_id
     )
@@ -122,7 +121,7 @@ def get_clusters_by_samples(sample_id, user_id):
              ON c.id = a.cluster_id
              LEFT JOIN sample_sample as s
              ON g.sample_id=s.id
-             WHERE sample_id IN ({1}) AND (s.is_public=TRUE OR s.user_id={2})
+             WHERE sample_id IN ({1}) USER_PERMISSION
                                       AND g."is_tRNA"=FALSE;""".format(
         ','.join(columns),
         ','.join([str(i) for i in sample_id]),
@@ -139,9 +138,6 @@ def get_cluster_counts_by_samples(ids):
     )
 
     return query_database(sql)
-
-
-
 
 
 def get_gene_feature(feature_id):

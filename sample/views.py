@@ -43,13 +43,12 @@ def top10(request):
 
 def sample(request, sample_id=None):
     if sample_id:
-        user_id = request.user.pk if request.user.pk else 2
         row = query_database(
             """
             SELECT count(id)
             FROM sample_sample
-            WHERE id={0} AND (is_public=TRUE OR user_id={1});""".format(
-            sample_id, user_id
+            WHERE id={0} USER_PERMISSION;""".format(
+            sample_id
         ))[0]
 
         return render(request, 'sample/results.html',

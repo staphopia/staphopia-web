@@ -13,6 +13,7 @@ from assembly.models import Summary
 from api.queries.assemblies import get_assembly_stats
 from api.queries.samples import get_sample_metadata, get_samples
 from api.queries.sequences import get_sequencing_stats
+from api.utils import query_database
 
 register = template.Library()
 
@@ -20,14 +21,6 @@ register = template.Library()
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
-
-
-def query_database(sql):
-    """Submit SQL query to the database."""
-    cursor = connection.cursor()
-    cursor.execute(sql)
-    cols = [d[0] for d in cursor.description]
-    return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
 
 def get_ena_link(accession):
@@ -135,7 +128,7 @@ def get_mlst(sample_id):
         row['blast'] if int(row['blast']) else '-'
     ]
     stats['ariba'] = []
-    if row['ariba']:
+    if row['ariba_report']:
         for result in row['ariba_report']:
             stats['ariba'].append([
                 result['gene'], result['allele'], result['cov'], result['pc'],
@@ -143,16 +136,17 @@ def get_mlst(sample_id):
                 result['hets']
             ])
 
-    for loci, blast in row['blast_report'].items():
-        coverage = "{0:.1f}".format(
-            float(blast['slen']) / float(blast['length']) * 100
-        )
-        stats['blast'].append([
-            loci, blast['sseqid'].split('.')[1], blast['evalue'],
-            blast['bitscore'], coverage,
-            "{0:.1f}".format(float(blast['pident'])), blast['gaps'],
-            blast['mismatch']
-        ])
+    if row['blast_report']:
+        for loci, blast in row['blast_report'].items():
+            coverage = "{0:.1f}".format(
+                float(blast['slen']) / float(blast['length']) * 100
+            )
+            stats['blast'].append([
+                loci, blast['sseqid'].split('.')[1], blast['evalue'],
+                blast['bitscore'], coverage,
+                "{0:.1f}".format(float(blast['pident'])), blast['gaps'],
+                blast['mismatch']
+            ])
 
     return stats
 

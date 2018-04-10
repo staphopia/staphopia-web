@@ -14,36 +14,27 @@ def get_samples(user_id, sample_id=None, sample_ids=None, user_only=False,
     if user_only:
         sql = """SELECT sample_id, name, is_public, is_published, st, rank
                  FROM sample_basic
-                 WHERE s.user_id={0} {1}
-                 ORDER BY s.id DESC""".format(user_id, st_sql)
+                 WHERE user_id={0} {1}
+                 ORDER BY sample_id DESC""".format(user_id, st_sql)
     elif name:
         sql = """SELECT sample_id, name, is_public, is_published, st, rank
                  FROM sample_basic
-                 WHERE s.name='{0}'
-                       AND (is_public=TRUE OR user_id={1})""".format(
-            name,
-            user_id
-        )
+                 WHERE name='{0}' USER_PERMISSION""".format(name)
     elif sample_id:
         sql = """SELECT sample_id, name, is_public, is_published, st, rank
                  FROM sample_basic
-                 WHERE sample_id={0}
-                       AND (is_public=TRUE OR user_id={1})""".format(
-            sample_id,
-            user_id
-        )
+                 WHERE sample_id={0} USER_PERMISSION""".format(sample_id)
     elif sample_ids:
         sql = """SELECT sample_id, name, is_public, is_published, st, rank
                  FROM sample_basic
-                 WHERE sample_id IN ({0}) AND (is_public=TRUE OR user_id={1})
+                 WHERE sample_id IN ({0}) USER_PERMISSION
                  ORDER BY sample_id""".format(
-            ','.join([str(i) for i in sample_ids]),
-            user_id
+            ','.join([str(i) for i in sample_ids])
         )
     else:
         sql = """SELECT sample_id, name, is_public, is_published, st, rank
                  FROM sample_basic
-                 WHERE (is_public=TRUE OR user_id={0}) {1}""".format(
+                 WHERE sample_id > 0 {1} USER_PERMISSION""".format(
             user_id, st_sql
         )
 
@@ -75,46 +66,38 @@ def get_public_samples(is_published=False, include_location=False, limit=None):
         return query_database(sql)
 
 
-def get_resistance_by_samples(sample_ids, resistance_id=None):
-    """Return snps associated with a sample."""
-    optional = ""
-    if resistance_id:
-        optional = "AND resistance_id={0}".format(resistance_id)
-    sql = """SELECT sample_id, value as mic, phenotype
-             FROM sample_toresistance
-             WHERE sample_id IN ({0}) {1};""".format(
-        ','.join([str(i) for i in sample_ids]), optional
-    )
-
-    return query_database(sql)
-
-
 def get_sample_metadata(sample_id, user_id):
     """Return metadata associated with a sample."""
     fields = []
     for row in query_database("SELECT field FROM sample_metadatafields;"):
         fields.append(row['field'])
 
-    sql = """SELECT s.id AS sample_id, metadata
-             FROM sample_sample as s
+    sql = """SELECT s.sample_id, metadata
+             FROM sample_basic as s
              LEFT JOIN sample_metadata as m
-             ON s.id = m.sample_id
-             WHERE s.id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
-             ORDER BY s.id""".format(
-        ','.join([str(i) for i in sample_id]),
-        user_id
+             ON s.sample_id = m.sample_id
+             WHERE s.sample_id IN ({0}) USER_PERMISSION
+             ORDER BY s.sample_id""".format(
+        ','.join([str(i) for i in sample_id])
     )
 
     results = []
     for row in query_database(sql):
+        result = OrderedDict()
         if 'metadata' in row:
-            result = OrderedDict()
-            result['sample_id'] = row['sample_id']
-            for field in sorted(fields):
-                if field in row['metadata']:
-                    result[field] = row['metadata'][field]
-                else:
-                    result[field] = ''
-            results.append(result)
+            if row['metadata']:
+                result['sample_id'] = row['sample_id']
+                for field in sorted(fields):
+                    if field in row['metadata']:
+                        result[field] = row['metadata'][field]
+                    else:
+                        result[field] = ''
+                results.append(result)
 
-    return results
+    if results:
+        return results
+
+    result = OrderedDict()
+    for field in sorted(fields):
+        result[field] = ''
+    return [result]

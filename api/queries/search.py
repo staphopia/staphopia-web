@@ -15,7 +15,7 @@ def basic_search(q, order_by='sample_id', direction='ASC', limit="",
              FROM sample_basic AS s
              LEFT JOIN sample_metadata AS m
              ON s.sample_id=m.sample_id
-             WHERE is_public=TRUE {0}
+             WHERE s.sample_id > 0 {0} USER_PERMISSION
              ORDER BY {1} {2}
              {3} {4};""".format(
         "AND document @@ to_tsquery('english', %s)" if q else '',
@@ -40,7 +40,7 @@ def get_filtered_count(q):
              FROM sample_basic  AS s
              LEFT JOIN sample_metadata AS m
              ON s.sample_id=m.sample_id
-             WHERE is_public=TRUE {0};""".format(
+             WHERE s.sample_id > 0 {0} USER_PERMISSION;""".format(
         "AND document @@ to_tsquery('english', %s)" if q else ''
     )
     return sanitized_query(sql, [q])[0]['count']
@@ -50,5 +50,5 @@ def total_samples():
     """Get total number of samples."""
     sql = """SELECT count(*)
              FROM sample_basic
-             WHERE is_public=TRUE;"""
+             WHERE sample_id > 0 USER_PERMISSION;"""
     return query_database(sql)[0]['count']

@@ -9,7 +9,6 @@ from api.serializers.samples import SampleSerializer, MetadataSerializer
 
 from api.queries.assemblies import get_assembly_stats, get_assembly_contigs
 from api.queries.samples import (
-    get_resistance_by_samples,
     get_samples,
     get_public_samples,
     get_sample_metadata

@@ -10,10 +10,9 @@ def get_pmids(sample_id, user_id):
              ON p.sample_id=s.sample_id
              LEFT JOIN publication_publication as q
              ON p.publication_id=q.id
-             WHERE s.sample_id IN ({0}) AND (s.is_public=TRUE OR s.user_id={1})
+             WHERE s.sample_id IN ({0}) USER_PERMISSION
              ORDER BY s.sample_id ASC;""".format(
-        ','.join([str(i) for i in sample_id]),
-        user_id
+        ','.join([str(i) for i in sample_id])
     )
 
     results = []

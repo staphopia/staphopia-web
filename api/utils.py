@@ -2,6 +2,7 @@
 import time
 from collections import OrderedDict
 
+from django.conf import settings
 from django.db import connection
 
 
@@ -35,17 +36,24 @@ def format_results(results, query_time=None, limit=None):
         ))
 
 
-def get_sample_permisions(user):
-    if user.username == 'demo':
-        return f's.user_id={user.pk}'
+def get_sample_permisions(sql, ambiguous=False):
+    """Determine which samples to show."""
+    if settings.VIEW_ALL_SAMPLES:
+        # On Dev site, all samples viewable
+        sql = sql.replace('USER_PERMISSION', '')
     else:
-        return f's.is_public=TRUE OR s.user_id={user.pk}'
+        # Only ENA data available
+        if ambiguous:
+            sql = sql.replace('USER_PERMISSION', 'AND s.user_id=2')
+        else:
+            sql = sql.replace('USER_PERMISSION', 'AND user_id=2')
+    return sql
 
 
-def query_database(sql):
+def query_database(sql, ambiguous=False):
     """Submit SQL query to the database."""
     cursor = connection.cursor()
-    cursor.execute(sql)
+    cursor.execute(get_sample_permisions(sql, ambiguous=ambiguous))
     cols = [d[0] for d in cursor.description]
     return [OrderedDict(zip(cols, row)) for row in cursor.fetchall()]
 
@@ -53,7 +61,7 @@ def query_database(sql):
 def sanitized_query(sql, values):
     """Submit SQL query to the database."""
     cursor = connection.cursor()
-    cursor.execute(sql, values)
+    cursor.execute(get_sample_permisions(sql), values)
     cols = [d[0] for d in cursor.description]
     return [OrderedDict(zip(cols, row)) for row in cursor.fetchall()]
 
