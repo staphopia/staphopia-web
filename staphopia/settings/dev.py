@@ -6,7 +6,7 @@ SECURITY WARNING: don't run with debug turned on in production
 ----------------------------------------------------------------------------'''
 DEBUG = True
 ALLOWED_HOSTS = ['*']
-VIEW_ALL_SAMPLES = False
+VIEW_ALL_SAMPLES = True
 
 
 '''----------------------------------------------------------------------------
