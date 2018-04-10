@@ -27,6 +27,7 @@ class Command(BaseCommand):
                  FROM sample_basic AS s
                  LEFT JOIN sample_metadata as m
                  ON s.sample_id=m.sample_id
+                 WHERE s.user_id=2
                  ORDER BY s.sample_id;"""
         for sample in query_database(sql):
             document = []

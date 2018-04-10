@@ -3,8 +3,7 @@
 import json
 
 from django.db import transaction
-from django.core.management.base import BaseCommand
-from django.core.management.base import CommandError
+from django.core.management.base import BaseCommand, CommandError
 
 from sample.tools import prep_insert
 from annotation.tools import insert_annotation

@@ -163,6 +163,7 @@ def delete_features(sample):
     print("\tForce used, emptying Annotation related results.")
     Features.objects.filter(sample=sample).delete()
 
+
 @transaction.atomic
 def insert_features(features):
     """Bulk insert a list of features."""
@@ -318,7 +319,7 @@ def read_gff(gff_file, sample, contigs, genes, proteins, preload=False):
                 product = "none"
                 note = "none"
 
-                attributes = dict( a.split('=') for a in cols[8].split(';'))
+                attributes = dict(a.split('=') for a in cols[8].split(';'))
                 prokka_id = attributes['ID']
                 if 'inference' in attributes:
                     if 'UniRef50_' in attributes['inference']:
