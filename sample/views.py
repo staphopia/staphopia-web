@@ -1,7 +1,6 @@
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, render
-from django.template import RequestContext
+from django.shortcuts import render, redirect
 from django.db import transaction
 
 from sample.datatable import DataTable
@@ -90,22 +89,23 @@ def sample(request, sample_id=None):
 
 
 def sample_summary(request):
-
-    # Columns to include in table
-    cols = [
-        'sample_id', 'name', 'rank', 'is_published', 'st', 'sample_accession',
-        'strain', 'collection_date', 'location', 'isolation_source'
-    ]
-
-    # Initialize a DataTable
-    dt = DataTable(cols)
-
     # Filter the based on query
-    order_by = cols[int(request.GET['order[0][column]'])]
-    direction = request.GET['order[0][dir]']
-    query = request.GET['search[value]'].lower().strip(' ')
-    dt.filter_table(query, order_by, direction, limit=request.GET['length'],
-                    offset=request.GET['start'])
+    if 'order[0][column]' in request.GET:
+        # Columns to include in table
+        cols = [
+            'sample_id', 'name', 'rank', 'is_published', 'st', 'sample_accession',
+            'strain', 'collection_date', 'location', 'isolation_source'
+        ]
 
-    # Return JSON output
-    return HttpResponse(dt.get_json_response())
+        # Initialize a DataTable
+        dt = DataTable(cols)
+        order_by = cols[int(request.GET['order[0][column]'])]
+        direction = request.GET['order[0][dir]']
+        query = request.GET['search[value]'].lower().strip(' ')
+        dt.filter_table(query, order_by, direction, limit=request.GET['length'],
+                        offset=request.GET['start'])
+
+        # Return JSON output
+        return HttpResponse(dt.get_json_response())
+    else:
+        return redirect('/sample/')
