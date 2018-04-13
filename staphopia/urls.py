@@ -4,16 +4,23 @@ from django.views.generic import RedirectView
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
+from django.views.generic.base import TemplateView
 
 # Thrid Party Apps
 # from django_email_changer.views import (
 #     ActivateUserEmailModification,
 #     ActivationEmailSentSuccessView
 # )
+from registration.backends.default.views import (
+    ActivationView,
+    RegistrationView
+)
+
 # from organizations.backends import invitation_backend
 
 # Staphopia
 from staphopia.settings.common import *
+from staphopia.forms import RegistrationFormWithName
 
 # Views
 import staphopia.views
@@ -57,10 +64,20 @@ urlpatterns = [
     #     name="django_email_changer_change_view"),
 
     # django-registration
-    url(r'^accounts/register/$', staphopia.views.RegistrationView.as_view(),
+    url(r'^accounts/register/$',
+        RegistrationView.as_view(form_class=RegistrationFormWithName),
         name='registration_register'),
     url(r'^accounts/logout/$', logout, {'next_page': '/'}),
-    url(r'^accounts/', include('registration.backends.default.urls')),
+    url(r'^accounts/', include(
+        ('registration.backends.default.urls', 'registration'),
+        namespace='registration'
+    )),
+    url(r'^register/complete/$',
+        TemplateView.as_view(template_name='registration/registration_complete.html'),
+        name='registration_complete'),
+    url(r'^activate/complete/$',
+        TemplateView.as_view(template_name='registration/activation_complete.html'),
+        name='registration_activation_complete'),
     # django-organizations
     # url(r'^groups/', include('organizations.urls')),
     # url(r'^invitations/', include(invitation_backend().get_urls())),

@@ -22,10 +22,16 @@
                 <div class="alert alert-warning" role="alert">
                 <strong>Whoops! One or more fields has a problem!</strong>
                     {% for field,error in form.errors.items %}
-                        {% if field == "email1" %}
-                            <p>Email Address: {{ error|join:"" }}</p>
-                        {% elif field == "username" or field == "first_name" or field == "last_name" %}
-                            <p>{{ field|title }}: {{ error|join:"" }}</p>
+                        {% if field == "password1" %}
+                            <p class="indent">Password: {{ error|join:"" }}</p>
+                        {% elif field == "password2" %}
+                            <p class="indent">Repeat Password: {{ error|join:"" }}</p>
+                        {% elif field == "email" %}
+                            <p class="indent">Email Address: {{ error|join:"" }}</p>
+                        {% elif field == "username" or field == "fisrt_name" or field == "last_name" %}
+                            <p class="indent">{{ field|title }}: {{ error|join:"" }}</p>
+                        {% else %}
+                            <p class="indent">Passwords: {{ error|join:"" }}</p>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -56,15 +62,23 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label" for="id_email1">Email Address </label>
+                    <label class="control-label" for="id_email">Email Address </label>
                     <div class="">
-                        <input id="id_email1" name="email1" type="email" class="form-control input-md">
+                        <input id="id_email" name="email" type="email" class="form-control input-md">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label" for="id_email2">Verify Email Address </label>
+                    <label class="control-label" for="id_password1">Password </label>
                     <div class="">
-                        <input id="id_email2" name="email2" type="email" class="form-control input-md">
+                        <input id="id_password1" name="password1" type="password" class="form-control input-md"
+                               pattern="^.{8,}$" title="Must be at least 6 characters in length.">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label" for="id_password2">Repeat Password </label>
+                    <div class="">
+                        <input id="id_password2" name="password2" type="password" class="form-control input-md"
+                               pattern="^.{8,}$" title="Must be at least 6 characters in length.">
                     </div>
                 </div>
                 <div class="form-group">

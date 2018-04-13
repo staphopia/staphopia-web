@@ -4,7 +4,7 @@
 
 Dear {{ user }},
 
-Your Staphopia account was successfully activated! Please click the following url to login. http://{{ site.domain }}{% url 'login' %}
+Your Staphopia account was successfully activated! Please click the following url to login. http://{{ site.domain }}{% url 'registration:auth_login' %}
 
 Your account information:
 Username: {{ user }}

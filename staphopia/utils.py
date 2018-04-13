@@ -61,6 +61,12 @@ def gziplines(fname):
         yield byte_to_string(line)
 
 
+def gzip_file(fname):
+    """Use zcat to deliver lines from gzipped input."""
+    import subprocess
+    subprocess.call(['pigz', '--best', '-p', '10', fname])
+
+
 def file_exists(input):
     """Test to make sure the file exists."""
     if os.path.exists(input):

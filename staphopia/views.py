@@ -2,6 +2,7 @@ from django.core.mail import EmailMessage, send_mail
 from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
+from django.contrib.auth import get_backends
 from django.views.generic import FormView
 from django.views.generic.edit import ProcessFormView, FormMixin
 from django.views.generic.base import TemplateResponseMixin
@@ -72,7 +73,7 @@ class RegistrationView(FormMixin, TemplateResponseMixin, ProcessFormView):
     template_name = r'registration/registration_form.html'
 
     def __init__(self, *args, **kwargs):
-        #self.backend = get_backend()
+        self.backend = get_backends()[0]
         super(RegistrationView, self).__init__(*args, **kwargs)
 
     def get_success_url(self):
