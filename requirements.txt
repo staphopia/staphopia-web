@@ -12,7 +12,7 @@ beautifulsoup4==4.6.0
 lxml==4.1.1
 djangorestframework==3.7.3
 markdown==2.6.9
-git+https://github.com/staphopia/scholarly.git
+git+https://github.com/rpetit3/scholarly.git
 numpy==1.13.3
 pandas==0.21.1
 requests
