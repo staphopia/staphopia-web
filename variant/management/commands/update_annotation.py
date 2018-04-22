@@ -35,7 +35,7 @@ class Command(BaseCommand):
             gb.name,
             gb.annotations['sequence_version']
         )
-        reference = Reference.objects.filter(name=ref_name)
+        reference = Reference.objects.get(name=ref_name)
 
         # Loop through Annotation objects
         for obj in Annotation.objects.filter(reference=reference):

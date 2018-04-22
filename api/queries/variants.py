@@ -3,8 +3,10 @@ from collections import OrderedDict
 
 from api.utils import query_database
 from api.queries.samples import get_samples
+
 from staphopia.utils import reverse_complement
 
+from variant.models import ReferenceGenome
 
 def get_variant_count_by_position(ids, is_annotation=False):
     sql = """SELECT id, position, reference_id, annotation_id,
@@ -88,10 +90,13 @@ def get_indels_by_sample(sample_id, user_id, annotation_id=None):
     if indel_id:
         indel_info = {}
         if annotation_id:
+            if isinstance(annotation_id, str):
+                annotation_id = [annotation_id]
             sql = """SELECT *
                      FROM variant_indel
-                     WHERE id IN ({0}) AND annotation_id={1}""".format(
-                ','.join([str(i) for i in indel_id]), annotation_id
+                     WHERE id IN ({0}) AND annotation_id IN ({1})""".format(
+                ','.join([str(i) for i in indel_id]),
+                ','.join([str(i) for i in annotation_id])
             )
         else:
             sql = "SELECT * FROM variant_indel WHERE id IN ({0})".format(
@@ -176,10 +181,14 @@ def get_snps_by_sample(sample_id, user_id, annotation_id=None, start=None,
     if snp_id:
         snp_info = {}
         if annotation_id:
+            if isinstance(annotation_id, str):
+                annotation_id = [annotation_id]
+
             sql = """SELECT *
                      FROM variant_snp
-                     WHERE id IN ({0}) AND annotation_id={1}""".format(
-                ','.join([str(i) for i in snp_id]), annotation_id
+                     WHERE id IN ({0}) AND annotation_id IN ({1})""".format(
+                ','.join([str(i) for i in snp_id]),
+                ','.join([str(i) for i in annotation_id])
             )
         elif start and end:
             sql = """SELECT *
@@ -237,34 +246,6 @@ def get_snps_by_sample(sample_id, user_id, annotation_id=None, start=None,
     return results
 
 
-def get_annotated_indels_by_sample(sample_id):
-    """Return indels associated with a sample."""
-    sql = """SELECT t.sample_id, t.indel_id, t.confidence, s.reference_position,
-                    s.reference_base, s.alternate_base
-             FROM variant_toindel AS t
-             LEFT JOIN variant_indel as s
-             ON t.indel_id=s.id
-             WHERE sample_id={0}
-             ORDER BY s.reference_position;""".format(
-        sample_id
-    )
-    return query_database(sql)
-
-
-def get_annotated_snps_by_sample(sample_id):
-    """Return snps associated with a sample."""
-    sql = """SELECT t.sample_id, t.snp_id, t.confidence, s.reference_position,
-                    s.reference_base, s.alternate_base
-             FROM variant_tosnp AS t
-             LEFT JOIN variant_snp as s
-             ON t.snp_id=s.id
-             WHERE sample_id={0}
-             ORDER BY s.reference_position;""".format(
-        sample_id
-    )
-    return query_database(sql)
-
-
 def get_reference_genome_sequence(reference_id):
     """Return snps associated with a sample."""
     sql = """SELECT position, base
@@ -282,16 +263,6 @@ def get_variant_counts_by_samples(sample_ids):
              FROM variant_counts
              WHERE sample_id IN ({0});""".format(
         ','.join([str(i) for i in sample_ids])
-    )
-
-    return query_database(sql)
-
-
-def get_annotation_strand(annotation_ids):
-    """Get the strand info for a set of annotation ids."""
-    sql = """SELECT id, strand FROM variant_annotation
-             WHERE id IN ({0});""".format(
-        ','.join([str(i) for i in annotation_ids])
     )
 
     return query_database(sql)
@@ -354,83 +325,99 @@ def get_snps_by_annotation(annotation_ids):
     return query_database(sql)
 
 
-def get_representative_sequence(sample_ids, annotation_ids,
-                                save_reference=True):
+def get_annotation_strand(annotation_ids):
+    """Get the strand info for a set of annotation ids."""
+    sql = """SELECT id, reference_id, strand FROM variant_annotation
+             WHERE id IN ({0});""".format(
+        ','.join([str(i) for i in annotation_ids])
+    )
+
+    return query_database(sql)
+
+
+def get_representative_sequence(sample_ids, user_id, annotation_ids):
     """Return fasta formatted sequence."""
     # Get annotation info
     strand = {}
+    reference = None
     for row in get_annotation_strand(annotation_ids):
+        if not reference:
+            reference = ReferenceGenome.objects.get(
+                reference_id=row['reference_id']
+            ).sequence
         strand[row['id']] = row['strand']
 
+    annotations = {}
+    indels = {'reference': {}}
+    for annotation_id in annotation_ids:
+        annotations[annotation_id] = OrderedDict()
+        indels['reference'][annotation_id] = False
+        for sample_id in sample_ids:
+            if sample_id not in indels:
+                indels[sample_id] = {}
+            indels[sample_id][annotation_id] = False
+
+    sequences = OrderedDict()
+    sequences['reference'] = OrderedDict()
+    for position, vals in reference.items():
+        if vals['annotation_id'] in annotations:
+            if vals['annotation_id'] not in sequences['reference']:
+                sequences['reference'][vals['annotation_id']] = []
+            annotations[vals['annotation_id']][position] = vals['base'].lower()
+            sequences['reference'][vals['annotation_id']].append(
+                vals['base'].lower()
+            )
     # Get snp_ids with annotation id
     snps = {}
-    reference = OrderedDict()
-    for row in get_snps_by_annotation(annotation_ids):
-        reference[row['reference_position']] = {
-            'base': row['reference_base'].lower(),
-            'annotation_id': row['annotation_id']
-        }
-        snps[row['id']] = {
-            'reference_position': row['reference_position'],
-            'alternate_base': row['alternate_base'],
-        }
+    for snp in get_snps_by_sample(sample_ids, user_id,
+                                  annotation_id=annotation_ids):
+        sample_id = snp['sample_id']
+        if snp['sample_id'] not in snps:
+            snps[sample_id] = {}
 
-    # Get snp_ids in sample
-    samples = OrderedDict()
-    for sample in sample_ids:
-        samples[sample] = {}
+        position = str(snp['reference_position'])
+        if snp['reference_position'] not in snps[sample_id]:
+            snps[sample_id][position] = snp['alternate_base']
 
-    if snps.keys():
-        sql = """SELECT sample_id, snp_id
-                 FROM variant_tosnp
-                 WHERE sample_id IN ({0}) AND snp_id IN ({1})
-                 ORDER BY sample_id, snp_id ASC""".format(
-            ','.join([str(i) for i in sample_ids]),
-            ','.join([str(i) for i in snps])
-        )
-        for row in query_database(sql):
-            if row['sample_id'] not in samples:
-                samples[row['sample_id']] = {}
+    for indel in get_indels_by_sample(sample_ids, user_id,
+                                      annotation_id=annotation_ids):
+        indels[indel['sample_id']][indel["annotation_id"]] = True
 
-            position = snps[row['snp_id']]['reference_position']
-            alternate_base = snps[row['snp_id']]['alternate_base']
-            samples[row['sample_id']][position] = alternate_base
-
+    """
+    {"ids":[5000,5001,5002],"extra":{"annotation_ids":[6]}}
+    """
     # Substitute sequence
-    sequences = OrderedDict()
-    for sample, sample_snps in samples.items():
-        annotation = None
-        if save_reference:
-            sequences['reference'] = OrderedDict()
-        sequences[sample] = OrderedDict()
-        for position, base in reference.items():
-            if annotation != base['annotation_id']:
-                annotation = base['annotation_id']
-                if save_reference:
-                    sequences['reference'][annotation] = []
-                sequences[sample][annotation] = []
-
-            if position in sample_snps:
-                sequences[sample][annotation].append(sample_snps[position])
-            else:
-                sequences[sample][annotation].append(base['base'])
-
-            if save_reference:
-                sequences['reference'][annotation].append(base['base'])
+    for sample_id in sample_ids:
+        sequences[sample_id] = OrderedDict()
+        for annotation_id, vals in annotations.items():
+            sequences[sample_id][annotation_id] = []
+            for position, base in vals.items():
+                if sample_id in snps:
+                    if position in snps[sample_id]:
+                        sequences[sample_id][annotation_id].append(
+                            snps[sample_id][position]
+                        )
+                    else:
+                        sequences[sample_id][annotation_id].append(base)
+                else:
+                    sequences[sample_id][annotation_id].append(base)
 
     # Generate Sequences
     concatenated = []
     for sample, annotation in sequences.items():
-        sequence = []
         for annotation_id, seq in annotation.items():
+            sequence = None
             if strand[annotation_id]:
-                sequence.append(''.join(seq))
+                sequence = ''.join(seq)
             else:
-                sequence.append(''.join(reverse_complement(seq)))
+                sequence = ''.join(reverse_complement(seq))
 
-        concatenated.append(OrderedDict([
-            ('sample_id', sample),
-            ('sequence', ''.join(sequence))
-        ]))
+            concatenated.append(OrderedDict([
+                ('sample_id', sample),
+                ('annotation_id', annotation_id),
+                ('total_snps', sum(1 for s in sequence if s.isupper())),
+                ('has_indel', indels[sample][annotation_id]),
+                ('sequence', sequence)
+            ]))
 
     return concatenated

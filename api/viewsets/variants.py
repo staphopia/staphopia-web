@@ -458,12 +458,12 @@ class VariantAnnotationViewSet(CustomReadOnlyModelViewSet):
 
             results = get_representative_sequence(
                 sample_ids,
-                annotation_ids,
-                save_reference=request.data['extra']['save_reference']
+                request.user.pk,
+                annotation_ids
             )
-            time = '{0}ms'.format(int((time.time() - start) * 1000.0))
+            time = int((time.time() - start) * 1000.0)
 
-            return self.formatted_response(results, time=time)
+            return self.formatted_response(results, query_time=time)
 
 
 class CommentViewSet(viewsets.ReadOnlyModelViewSet):
