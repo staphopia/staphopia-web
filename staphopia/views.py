@@ -21,6 +21,9 @@ from staphopia.forms import (
 def index(request):
     return render(request, 'index.html')
 
+def server_error(request):
+    return render(request, 'server_error.html')
+
 
 def account_settings(request):
     return render(request, 'settings/settings.html')

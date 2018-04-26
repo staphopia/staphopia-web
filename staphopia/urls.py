@@ -32,6 +32,8 @@ from api.routers import router
 
 admin.autodiscover()
 
+handler500 = 'staphopia.views.server_error'
+
 urlpatterns = [
     # Django REST Framework
     url(r'^api/', include(router.urls)),
