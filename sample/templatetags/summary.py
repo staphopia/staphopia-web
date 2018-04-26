@@ -138,9 +138,11 @@ def get_mlst(sample_id):
 
     if row['blast_report']:
         for loci, blast in row['blast_report'].items():
-            coverage = "{0:.1f}".format(
-                float(blast['slen']) / float(blast['length']) * 100
-            )
+            coverage = '0.0'
+            if float(blast['length']):
+                coverage = "{0:.1f}".format(
+                    float(blast['slen']) / float(blast['length']) * 100
+                )
             stats['blast'].append([
                 loci, blast['sseqid'].split('.')[1], blast['evalue'],
                 blast['bitscore'], coverage,
