@@ -21,6 +21,7 @@ from staphopia.forms import (
 def index(request):
     return render(request, 'index.html')
 
+
 def server_error(request):
     return render(request, 'server_error.html')
 
