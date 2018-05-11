@@ -46,9 +46,7 @@ def sample(request, sample_id=None):
             """
             SELECT count(id)
             FROM sample_sample
-            WHERE id={0} USER_PERMISSION;""".format(
-            sample_id
-        ))[0]
+            WHERE id={0} USER_PERMISSION;""".format(sample_id))[0]
 
         return render(request, 'sample/results.html',
                       context={'sample_id': sample_id,

@@ -24,7 +24,6 @@ def index(request):
 def server_error(request):
     return render(request, 'server_error.html')
 
-
 def account_settings(request):
     return render(request, 'settings/settings.html')
 

@@ -128,7 +128,7 @@ def get_mlst(sample_id):
         row['blast'] if int(row['blast']) else '-'
     ]
     stats['ariba'] = []
-    if row['ariba_report']:
+    if row['ariba_report'] and row['ariba_report'] != 'empty':
         for result in row['ariba_report']:
             stats['ariba'].append([
                 result['gene'], result['allele'], result['cov'], result['pc'],
