@@ -374,6 +374,7 @@ def get_file_list(is_paired):
             'virulence_summary': '{0}/virulence/summary.csv',
             'virulence_assembled_seqs': '{0}/virulence/assembled_seqs.fa.gz',
             'virulence_debug_report': '{0}/virulence/debug.report.tsv',
+            'virulence_agr_primers': '{0}/agr/primers.json',
 
             'timeline': '{0}/staphopia-timeline.html',
             'version': '{0}/staphopia-version.txt'
@@ -428,6 +429,8 @@ def get_file_list(is_paired):
             'sccmec_subtypes': '{0}/sccmec/subtypes.json',
 
             'variants': '{0}/variants/{1}.variants.vcf.gz',
+
+            'virulence_agr_primers': '{0}/agr/primers.json',
 
             'timeline': '{0}/staphopia-timeline.html',
             'version': '{0}/staphopia-version.txt'

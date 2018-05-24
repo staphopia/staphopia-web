@@ -8,6 +8,7 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 
 from sample.models import Sample
+from staphopia.models import BlastQuery
 from version.models import Version
 
 
@@ -40,3 +41,31 @@ class AribaSequence(models.Model):
 
     class Meta:
         unique_together = ('sample', 'version')
+
+
+class AgrPrimers(models.Model):
+    """BLAST hits against SCCmec primers."""
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    version = models.ForeignKey(Version, on_delete=models.CASCADE,
+                                related_name='agr_primers_version')
+    query = models.ForeignKey(BlastQuery, on_delete=models.CASCADE)
+    contig = models.PositiveIntegerField()
+
+    bitscore = models.PositiveSmallIntegerField()
+    evalue = models.DecimalField(max_digits=7, decimal_places=2)
+    identity = models.PositiveSmallIntegerField()
+    mismatch = models.PositiveSmallIntegerField()
+    gaps = models.PositiveSmallIntegerField()
+    hamming_distance = models.PositiveSmallIntegerField()
+    query_from = models.PositiveSmallIntegerField()
+    query_to = models.PositiveSmallIntegerField()
+    hit_from = models.PositiveIntegerField()
+    hit_to = models.PositiveIntegerField()
+    align_len = models.PositiveSmallIntegerField()
+
+    qseq = models.TextField()
+    hseq = models.TextField()
+    midline = models.TextField()
+
+    class Meta:
+        unique_together = ('sample', 'version', 'query')

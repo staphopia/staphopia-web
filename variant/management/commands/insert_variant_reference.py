@@ -198,11 +198,11 @@ class Command(BaseCommand):
 
             reference_codon=(
                 '.' if record.INFO['RefCodon'][0] is None
-                else record.INFO['RefCodon'][0]
+                else record.INFO['RefCodon']
             ),
             alternate_codon=(
                 '.' if record.INFO['AltCodon'][0] is None
-                else record.INFO['AltCodon'][0]
+                else record.INFO['AltCodon']
             ),
             reference_amino_acid=(
                 record.INFO['RefAminoAcid'] if record.INFO['RefAminoAcid']
@@ -222,7 +222,7 @@ class Command(BaseCommand):
             ),
             amino_acid_change=(
                 '.' if record.INFO['AminoAcidChange'][0] is None
-                else record.INFO['AminoAcidChange'][0]
+                else record.INFO['AminoAcidChange']
             ),
             is_synonymous=record.INFO['IsSynonymous'],
             is_transition=record.INFO['IsTransition'],

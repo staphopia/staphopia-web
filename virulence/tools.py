@@ -10,8 +10,10 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
 
+from assembly.tools import get_contigs
+from sccmec.tools import insert_blast
 from staphopia.utils import read_fasta, timeit
-from virulence.models import Ariba, AribaSequence, Cluster
+from virulence.models import Ariba, AribaSequence, Cluster, AgrPrimers
 
 
 @timeit
@@ -22,6 +24,13 @@ def insert_virulence(sample, version, files, force=False):
         delete_resistance(sample, version)
 
     results, sequences = read_report(files)
+
+    contigs = {}
+    for contig in get_contigs(sample, version):
+        contigs[contig.spades] = int(contig.spades.split('_')[1])
+
+    insert_blast(sample, version, files['virulence_agr_primers'], AgrPrimers,
+                 contigs)
 
     try:
         Ariba.objects.create(sample=sample, version=version, results=results)
