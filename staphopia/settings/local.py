@@ -15,10 +15,10 @@ https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'staphopia',
-        'USER': 'staphopia',
-        'PASSWORD': DEV_PASS,
-        'HOST': 'staphopia.genetics.emory.edu',
+        'NAME': 'temp_staphopia',
+        'USER': 'test_staphopia',
+        'PASSWORD': 'test_staphopia',
+        'HOST': 'chlamy.genetics.emory.edu',
         'PORT': '29466',
     }
 }

@@ -47,22 +47,28 @@ class ContigViewSet(CustomReadOnlyModelViewSet):
     serializer_class = ContigSerializer
 
     def retrieve(self, request, pk=None):
-        queryset = None
-        serializer = None
         if pk:
-            queryset = Contig.objects.get(pk=pk)
-            serializer = ContigFullSerializer(queryset)
+            results, qt = timeit(
+                get_assembly_contigs,
+                [pk],
+                request.user.pk,
+                is_plasmids=True if 'plasmids' in request.GET else False,
+                exclude_sequence=True if 'exclude_sequence' in request.GET else False,
+            )
+            return self.formatted_response(results, query_time=qt)
         else:
             queryset = Contig.objects.all()
             serializer = ContigSerializer(queryset)
-
-        return Response(serializer.data)
+            return Response(serializer.data)
 
     @list_route(methods=['post'])
     def bulk_by_sample(self, request):
         """Given a list of Sample IDs, return assembly info for each Sample."""
         if request.method == 'POST':
             validator = validate_list_of_ids(request.data, max_query=500)
+            exclude_sequence = False
+            if 'exclude_sequence' in request.GET:
+                exclude_sequence = True
             if validator['has_errors']:
                 return Response({
                     "message": validator['message'],
@@ -73,6 +79,7 @@ class ContigViewSet(CustomReadOnlyModelViewSet):
                     get_assembly_contigs,
                     request.data['ids'],
                     request.user.pk,
-                    is_plasmids=True if 'plasmids' in request.GET else False
+                    is_plasmids=True if 'plasmids' in request.GET else False,
+                    exclude_sequence=exclude_sequence
                 )
                 return self.formatted_response(results, query_time=qt)

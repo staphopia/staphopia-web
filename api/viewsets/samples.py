@@ -184,10 +184,10 @@ class SampleViewSet(CustomReadOnlyModelViewSet):
             [pk],
             request.user.pk,
             is_plasmids=True if 'plasmids' in request.GET else False,
-            contig=contig
+            contig=contig,
+            exclude_sequence=True if 'exclude_sequence' in request.GET else False
         )
-        return self.paginate(results, page_size=30, is_serialized=True,
-                             query_time=qt)
+        return self.formatted_response(results, query_time=qt)
 
     @detail_route(methods=['get'])
     def genes(self, request, pk=None):

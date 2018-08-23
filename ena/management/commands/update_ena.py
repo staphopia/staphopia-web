@@ -112,7 +112,6 @@ class Command(BaseCommand):
         url = '{0}?query={1}&{2}&{3}&{4}&fields={5}'.format(
             address, query, result, display, limit, ','.join(self.fields)
         )
-        raise CommandError(url)
 
         response = requests.get(url)
         if not response.text:

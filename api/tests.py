@@ -19,7 +19,7 @@ class TestsViewSet(CustomReadOnlyModelViewSet):
     permission_classes = ()
     throttle_classes = ()
     client = APIClient()
-    user = User.objects.get(username='test')
+    user = User.objects.get(username='ena')
     queryset = ''
 
     def __init__(self, *args, **kwargs):

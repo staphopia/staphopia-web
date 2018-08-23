@@ -3,16 +3,25 @@ from django.db import transaction
 from django.core.management.base import BaseCommand, CommandError
 
 from sample.models import (
-    ToTag, Sample, ToResistance, ToPublication, EnaMetaData
+    Sample, Metadata
 )
 
-from assembly.models import Stats, Contigs
+from assembly.models import Contig, Sequence, Summary
+from cgmlst.models import CGMLST, Report as CGMLSTreport
 from gene.models import Features, BlastResults
-from kmer.models import Total
-from mlst.models import Blast, Srst2
-from sccmec.models import Coverage, Primers, Proteins
-from sequence.models import Stat
-from variant.models import ToIndel, ToSNP, Counts
+from mlst.models import MLST, Report as MLSTreport
+from plasmid.models import (
+    Contig as PlasmidContig,
+    Sequence as PlasmidSequence,
+    Summary as PlasmidSummary
+)
+from resistance.models import Ariba, AribaSequence
+from sccmec.models import Coverage, Primers, Proteins, Subtypes
+from sequence.models import Summary as SequenceSummary
+from variant.models import Variant
+from virulence.models import (
+    Ariba as VirulenceAriba, AribaSequence as VirulenceSequence
+)
 
 
 class Command(BaseCommand):
@@ -36,14 +45,17 @@ class Command(BaseCommand):
             ))
 
         analysis_models = [
-            Stats, Contigs, Features, BlastResults, Total, Blast, Srst2,
-            Coverage, Primers, Proteins, Stat, ToIndel, ToSNP, Counts
+            Contig, Sequence, Summary, Features, BlastResults,
+            CGMLSTreport, CGMLST, MLSTreport, MLST, PlasmidSummary,
+            PlasmidSequence, PlasmidContig, Subtypes, Coverage, Primers,
+            Proteins, Ariba, AribaSequence, SequenceSummary, Variant,
+            VirulenceAriba, VirulenceSequence
         ]
-        sample_models = [ToTag, ToResistance, ToPublication, EnaMetaData]
-        print('Working on {0}...'.format(sample.sample_tag))
+        sample_models = [Metadata]
+        print('Working on {0}...'.format(sample.name))
         self.delete_rows(analysis_models, sample)
         self.delete_rows(sample_models, sample)
-        print('\tDeleting Sample {0}'.format(sample.sample_tag))
+        print('\tDeleting Sample {0}'.format(sample.name))
         sample.delete()
 
     @transaction.atomic
@@ -51,6 +63,6 @@ class Command(BaseCommand):
         """Delete all rows from amodel associated with a sample."""
         for model in models:
             print('\tDeleteing rows from {0} associated with {1}'.format(
-                model.__name__, sample.sample_tag
+                model.__name__, sample.name
             ))
             model.objects.filter(sample=sample).delete()

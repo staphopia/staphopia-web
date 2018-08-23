@@ -34,7 +34,6 @@ class Command(BaseCommand):
         if options['empty']:
             print("Deleting existing EnaMetaData...")
             self.empty_table('sample_metadata')
-            sys.exit()
 
         fields = [
             'contains_ena_metadata', 'study_accession', 'study_title',
@@ -54,7 +53,8 @@ class Command(BaseCommand):
             'environment_feature', 'environment_material', 'project_name',
             'host', 'host_tax_id', 'host_status', 'host_sex',
             'submitted_host_sex', 'host_body_site', 'investigation_type',
-            'sequencing_method', 'broker_name', 'is_public', 'is_published'
+            'sequencing_method', 'broker_name', 'is_public', 'is_published',
+            'is_paired'
         ]
 
         # Add the fields to the database
@@ -94,7 +94,6 @@ class Command(BaseCommand):
             run = Run.objects.filter(
                 experiment_accession=sample.name
             )
-
             center_name = exp.center_name
             center_link = ''
             try:
@@ -195,7 +194,8 @@ class Command(BaseCommand):
                     'sequencing_method': bs.sequencing_method,
                     'broker_name': bs.broker_name,
                     'is_public': sample.is_public,
-                    'is_published': sample.is_published
+                    'is_published': sample.is_published,
+                    'is_paired': run[0].is_paired
                 }
             else:
                 metadata = {
@@ -221,7 +221,8 @@ class Command(BaseCommand):
                     'center_link': center_link,
                     'first_public': run[0].first_public,
                     'is_public': sample.is_public,
-                    'is_published': sample.is_published
+                    'is_published': sample.is_published,
+                    'is_paired': run[0].is_paired
                 }
 
             cleaned_up = {}
@@ -244,7 +245,7 @@ class Command(BaseCommand):
     def empty_table(self, table):
         """Empty Table and Reset id counters to 1."""
         print("Emptying {0}...".format(table))
-        query = "DELETE FROM {0} WHERE contains_ena_metadata=TRUE;".format(
+        query = "DELETE FROM {0}".format(
             table
         )
         cursor = connection.cursor()

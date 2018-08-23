@@ -33,7 +33,8 @@ def get_assembly_stats(sample_id, user_id, is_plasmids=None):
     return query_database(sql)
 
 
-def get_assembly_contigs(sample_id, user_id, is_plasmids=False, contig=None):
+def get_assembly_contigs(sample_id, user_id, is_plasmids=False, contig=None,
+                         exclude_sequence=False):
     """Return assembled contigs for a set of sample ids."""
     # Get contigs
     table = 'plasmid_sequence' if is_plasmids else 'assembly_sequence'
@@ -74,6 +75,9 @@ def get_assembly_contigs(sample_id, user_id, is_plasmids=False, contig=None):
             sequence = contigs[row['sample_id']][row['staphopia']]
         else:
             sequence = contigs[row['sample_id']][cols[1]]
+
+        if exclude_sequence:
+            sequence = ''
 
         results.append({
             'sample_id': row['sample_id'],
