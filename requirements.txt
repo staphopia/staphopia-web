@@ -10,7 +10,7 @@ python-magic==0.4.15
 urllib3==1.22
 beautifulsoup4==4.6.0
 lxml==4.1.1
-djangorestframework==3.7.3
+djangorestframework==3.11.2
 markdown==2.6.9
 git+https://github.com/rpetit3/scholarly.git
 numpy==1.13.3
