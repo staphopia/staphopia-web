@@ -7,54 +7,6 @@ SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 ALLOWED_HOSTS = ['*']
 VIEW_ALL_SAMPLES = False
-USE_API = True
-
-'''----------------------------------------------------------------------------
-Applications
-----------------------------------------------------------------------------'''
-INSTALLED_APPS = (
-    'rest_framework',
-    'rest_framework.authtoken',
-
-    'django.contrib.sites',
-    'django.contrib.admin',
-    'registration',
-    'django.contrib.auth',
-    # 'django_email_changer',
-
-    'django.contrib.contenttypes',
-    'django.contrib.humanize',
-    'django.contrib.messages',
-    'django.contrib.sessions',
-    'django.contrib.staticfiles',
-
-    'crispy_forms',
-    'django_extensions',
-    'django_datatables_view',
-
-    # Staphopia Related
-    'staphopia',
-    'autofill',
-    'annotation',
-    'assembly',
-    'cgmlst',
-    'ena',
-    'gene',
-    'kmer',
-    'metadata',
-    'mlst',
-    'plasmid',
-    'publication',
-    'resistance',
-    'sample',
-    'sccmec',
-    'search',
-    'sequence',
-    'tag',
-    'variant',
-    'version',
-    'virulence'
-)
 
 '''----------------------------------------------------------------------------
 Database
@@ -75,11 +27,6 @@ DATABASES = {
 REST API
 ----------------------------------------------------------------------------'''
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    # ],
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),

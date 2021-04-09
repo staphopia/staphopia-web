@@ -26,9 +26,7 @@ INSTALLED_APPS = (
 
     'django.contrib.sites',
     'django.contrib.admin',
-    'registration',
     'django.contrib.auth',
-    # 'django_email_changer',
 
     'django.contrib.contenttypes',
     'django.contrib.humanize',
@@ -38,7 +36,6 @@ INSTALLED_APPS = (
 
     'crispy_forms',
     'django_extensions',
-    'django_datatables_view',
 
     # Staphopia Related
     'staphopia',
@@ -64,20 +61,7 @@ INSTALLED_APPS = (
     'virulence'
 )
 
-# django-registration
-SIMPLE_BACKEND_REDIRECT_URL = "/logout/"
-ACCOUNT_ACTIVATION_DAYS = 7
-REGISTRATION_SUPPLEMENT_CLASS = None
-DEFAULT_FROM_EMAIL = 'usa300@staphopia.com'
-REGISTRATION_FROM_EMAIL = ("Staphopia's Friendly Robot <usa300@staphopia.com>")
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
-
-# django_email_changer
-EMAIL_CHANGE_NOTIFICATION_SUBJECT = ('[Email Update] - Please verify '
-                                     'Staphopia email update')
-EMAIL_CHANGE_NOTIFICATION_FROM = ("Staphopia's Friendly Robot "
-                                  "<usa300@staphopia.com>")
-
 ORGS_SLUGFIELD = 'django_extensions.db.fields.AutoSlugField'
 ADMINS = [
     ('Robert Petit', 'rpetit@emory.edu')
@@ -86,11 +70,6 @@ ADMINS = [
 REST API
 ----------------------------------------------------------------------------'''
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    # ],
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
@@ -133,7 +112,6 @@ APPEND_SLASH = True
 Static
 ----------------------------------------------------------------------------'''
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
@@ -164,7 +142,6 @@ Staphopia
 ----------------------------------------------------------------------------'''
 ROOT_URLCONF = 'staphopia.urls'
 WSGI_APPLICATION = 'staphopia.wsgi.application'
-DEFAULT_FROM_EMAIL = "Staphopia's Friendly Robot <usa300@staphopia.com>"
 
 '''----------------------------------------------------------------------------
 Internationalization
