@@ -39,7 +39,6 @@ INSTALLED_APPS = (
 
     # Staphopia Related
     'staphopia',
-    'autofill',
     'annotation',
     'assembly',
     'cgmlst',
