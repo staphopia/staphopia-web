@@ -38,11 +38,10 @@ def get_mlst_blast_results(sample_id, user):
     for row in query_database(sql):
         result = OrderedDict()
         result['sample_id'] = row['sample_id']
-        blast = json.loads(row['blast'].replace("'", '"'))
         unassigned = 0
-        for loci, vals in sorted(blast.items()):
+        for loci, vals in sorted(row['blast'].items()):
             allele = int(vals['sseqid'].split('.')[1])
-            result[loci] = allele
+            result[loci] = str(allele)
             if not allele:
                 unassigned += 1
         result['unassigned'] = unassigned

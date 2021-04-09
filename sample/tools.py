@@ -317,9 +317,9 @@ def get_file_list(is_paired):
             'assembly_scaffolds': '{0}/assembly/{1}.scaffolds.fasta.gz',
             'assembly_scaffold_stats': '{0}/assembly/{1}.scaffolds.json',
 
-            'cgmlst_mentalist': '{0}/mlst/mentalist/cgmlst.txt',
-            'cgmlst_mentalist_ties': '{0}/mlst/mentalist/mlst.txt.ties.txt',
-            'cgmlst_mentalist_votes': '{0}/mlst/mentalist/mlst.txt.votes.txt',
+            #'cgmlst_mentalist': '{0}/mlst/mentalist/cgmlst.txt',
+            #'cgmlst_mentalist_ties': '{0}/mlst/mentalist/mlst.txt.ties.txt',
+            #'cgmlst_mentalist_votes': '{0}/mlst/mentalist/mlst.txt.votes.txt',
 
             'fastq_adapter': '{0}/illumina-cleanup/{1}.adapter.fastq.json',
             'fastq_cleanup': '{0}/illumina-cleanup/{1}.cleanup.fastq.json',
@@ -342,9 +342,9 @@ def get_file_list(is_paired):
             'mlst_ariba_debug_report': '{0}/mlst/ariba/debug.report.tsv',
             'mlst_ariba_details': '{0}/mlst/ariba/mlst_report.details.tsv',
             'mlst_blastn': '{0}/mlst/mlst-blastn.json',
-            'mlst_mentalist': '{0}/mlst/mentalist/mlst.txt',
-            'mlst_mentalist_ties': '{0}/mlst/mentalist/mlst.txt.ties.txt',
-            'mlst_mentalist_votes': '{0}/mlst/mentalist/mlst.txt.votes.txt',
+            #'mlst_mentalist': '{0}/mlst/mentalist/mlst.txt',
+            #'mlst_mentalist_ties': '{0}/mlst/mentalist/mlst.txt.ties.txt',
+            #'mlst_mentalist_votes': '{0}/mlst/mentalist/mlst.txt.votes.txt',
 
             'plasmid_contigs': '{0}/plasmids/{1}.contigs.fasta.gz',
             'plasmid_contig_stats': '{0}/plasmids/{1}.contigs.json',

@@ -180,11 +180,13 @@ def insert_mlst(sample, version, files, force=False):
             files['mlst_ariba_details']
         )
 
-    st['mentalist'], report['mentalist'], mentalist_assigned = parse_mentalist(
-        files['mlst_mentalist'],
-        files['mlst_mentalist_ties'],
-        files['mlst_mentalist_votes']
-    )
+    #st['mentalist'], report['mentalist'], mentalist_assigned = parse_mentalist(
+    #    files['mlst_mentalist'],
+    #    files['mlst_mentalist_ties'],
+    #    files['mlst_mentalist_votes']
+    #)
+    mentalist_assigned = 0
+    report['mentalist'] = {}
 
     st['blast'], report['blast'], blast_assigned = parse_blast(
         files['mlst_blastn']
@@ -217,7 +219,7 @@ def insert_mlst_results(sample, version, results, novel):
         'st': 0,
         'ariba': int(results['ariba']['ST']) if results['ariba'] else 0,
         'blast': int(results['blast']['ST']),
-        'mentalist': int(results['mentalist']['ST']),
+        'mentalist': 0  # int(results['mentalist']['ST']),
     }
 
     ariba = results['ariba']
@@ -242,14 +244,14 @@ def insert_mlst_results(sample, version, results, novel):
     # If ST still not determined, check if predicted to be novel
     predicted_novel = False
     if not st['st']:
-        if novel['blast'] == 7 or novel['mentalist'] == 7:
+        if novel['blast'] == 7:  # or novel['mentalist'] == 7:
             predicted_novel = True
         elif st['ariba'] == 10000:
             predicted_novel = True
 
     # Get support
     ariba_support = novel['ariba']
-    mentalist_support = novel['mentalist']
+    mentalist_support = 0  #novel['mentalist']
     blast_support = novel['blast']
 
     support = Support.objects.get_or_create(

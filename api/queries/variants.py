@@ -1,12 +1,12 @@
 """API utilities for variant related viewsets."""
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 
 from api.utils import query_database
 from api.queries.samples import get_samples
 
-from staphopia.utils import reverse_complement
+from staphopia.utils import reverse_complement, complement
 
-from variant.models import ReferenceGenome
+from variant.models import Reference, ReferenceGenome
 
 def get_variant_count_by_position(ids, is_annotation=False):
     sql = """SELECT id, position, reference_id, annotation_id,
@@ -340,48 +340,48 @@ def get_representative_sequence(sample_ids, user_id, annotation_ids):
     # Get annotation info
     strand = {}
     reference = None
-    for row in get_annotation_strand(annotation_ids):
-        if not reference:
-            reference = ReferenceGenome.objects.get(
-                reference_id=row['reference_id']
-            ).sequence
-        strand[row['id']] = row['strand']
-
-    annotations = {}
-    indels = {'reference': {}}
-    for annotation_id in annotation_ids:
-        annotations[annotation_id] = OrderedDict()
-        indels['reference'][annotation_id] = False
-        for sample_id in sample_ids:
-            if sample_id not in indels:
-                indels[sample_id] = {}
-            indels[sample_id][annotation_id] = False
+    annotations = get_variant_annotation(annotation_ids)
+    reference = OrderedDict()
+    for position, base in enumerate(Reference.objects.get(id=annotations[0]['reference_id']).sequence):
+        reference[position + 1] = base.lower()
 
     sequences = OrderedDict()
     sequences['reference'] = OrderedDict()
-    for position, vals in reference.items():
-        if vals['annotation_id'] in annotations:
-            if vals['annotation_id'] not in sequences['reference']:
-                sequences['reference'][vals['annotation_id']] = []
-            annotations[vals['annotation_id']][position] = vals['base'].lower()
-            sequences['reference'][vals['annotation_id']].append(
-                vals['base'].lower()
-            )
+    indels = {'reference': {}}
+    for annotation in annotations:
+        annotation_id = annotation['id']
+        indels['reference'][annotation_id] = 0
+        for sample_id in sample_ids:
+            if sample_id not in indels:
+                indels[sample_id] = {}
+            indels[sample_id][annotation_id] = 0
+
+        reference_seq = []
+        step = 1 if annotation['strand'] else -1
+        for position in range(annotation['start'], annotation['end'] + 1, step):
+            reference_seq.append(reference[position])
+
+        if not annotation['strand']:
+            reference_seq = complement(reference_seq)
+
+        sequences['reference'][annotation_id] = reference_seq
+
     # Get snp_ids with annotation id
     snps = {}
-    for snp in get_snps_by_sample(sample_ids, user_id,
-                                  annotation_id=annotation_ids):
+    for snp in get_snps_by_sample(sample_ids, user_id):
         sample_id = snp['sample_id']
-        if snp['sample_id'] not in snps:
+        if sample_id not in snps:
             snps[sample_id] = {}
+        snps[sample_id][snp['reference_position']] = snp['alternate_base']
 
-        position = str(snp['reference_position'])
-        if snp['reference_position'] not in snps[sample_id]:
-            snps[sample_id][position] = snp['alternate_base']
+    for indel in get_indels_by_sample(sample_ids, user_id):
+        sample_id = indel['sample_id']
+        annotation_id = indel["annotation_id"]
 
-    for indel in get_indels_by_sample(sample_ids, user_id,
-                                      annotation_id=annotation_ids):
-        indels[indel['sample_id']][indel["annotation_id"]] = True
+        if annotation_id not in indels[sample_id]:
+            indels[sample_id][annotation_id] = 0
+
+        indels[sample_id][annotation_id] += 1
 
     """
     {"ids":[5000,5001,5002],"extra":{"annotation_ids":[6]}}
@@ -389,35 +389,37 @@ def get_representative_sequence(sample_ids, user_id, annotation_ids):
     # Substitute sequence
     for sample_id in sample_ids:
         sequences[sample_id] = OrderedDict()
-        for annotation_id, vals in annotations.items():
-            sequences[sample_id][annotation_id] = []
-            for position, base in vals.items():
+        for annotation in annotations:
+            sample_seq = []
+            step = 1 if annotation['strand'] else -1
+            for position in range(annotation['start'], annotation['end'] + 1, step):
                 if sample_id in snps:
                     if position in snps[sample_id]:
-                        sequences[sample_id][annotation_id].append(
-                            snps[sample_id][position]
-                        )
+                        sample_seq.append(snps[sample_id][position])
                     else:
-                        sequences[sample_id][annotation_id].append(base)
+                        sample_seq.append(reference[position])
                 else:
-                    sequences[sample_id][annotation_id].append(base)
+                    sample_seq.append(reference[position])
+            sequences[sample_id][annotation['id']] = sample_seq
 
     # Generate Sequences
     concatenated = []
     for sample, annotation in sequences.items():
         for annotation_id, seq in annotation.items():
-            sequence = None
-            if strand[annotation_id]:
-                sequence = ''.join(seq)
-            else:
-                sequence = ''.join(reverse_complement(seq))
-
+            sequence = ''.join(seq)
+            message = ''
+            if indels[sample][annotation_id]:
+                message = 'Indels not substituted.'
             concatenated.append(OrderedDict([
                 ('sample_id', sample),
                 ('annotation_id', annotation_id),
                 ('total_snps', sum(1 for s in sequence if s.isupper())),
-                ('has_indel', indels[sample][annotation_id]),
-                ('sequence', sequence)
+                ('total_indels', indels[sample][annotation_id]),
+                ('has_indels', True if indels[sample][annotation_id] else False),
+                ('sequence', sequence),
+                ('length', len(sequence)),
+                ('codons', len(sequence) / 3),
+                ('message', message)
             ]))
 
     return concatenated

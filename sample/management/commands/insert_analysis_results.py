@@ -81,7 +81,7 @@ class Command(BaseCommand):
 
         print(f'{sample.name}: Inserting MLST/cgMLST Results...')
         insert_mlst(sample, version, files, force=opts['force'])
-        insert_cgmlst(sample, version, files, force=opts['force'])
+        #insert_cgmlst(sample, version, files, force=opts['force'])
 
         print(f'{sample.name}: Inserting Resistance/Virulence Results...')
         if 'resistance_report' in files:

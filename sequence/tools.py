@@ -60,6 +60,8 @@ def insert_sequence_stats(sample, version, files, force=False):
         if not rank and stat == 'fastq_cleanup':
             flag_sample = True
 
+        json_data["qc_stats"].pop('qual_min', None)
+        json_data["qc_stats"].pop('qual_max', None)
         stat_objects.append(Summary(
             sample=sample,
             version=version,

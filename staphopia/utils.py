@@ -13,6 +13,13 @@ from django.core.management.base import CommandError
 from staphopia.models import BlastQuery
 
 
+def generate_random_password():
+    """Generates a random string to be used a default password for new users."""
+    import random
+    import string
+    return ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(20))
+
+
 def timeit(method):
     """Return total runtime (in seconds) of a given method."""
     import time
@@ -155,3 +162,11 @@ def reverse_complement(seq):
         'a': 't', 't': 'a', 'g': 'c', 'c': 'g'
     }
     return ''.join([complement[b] for b in seq[::-1]])
+
+def complement(seq):
+    """Reverse complement a DNA sequence."""
+    complement = {
+        'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G',
+        'a': 't', 't': 'a', 'g': 'c', 'c': 'g'
+    }
+    return [complement[b] for b in seq]

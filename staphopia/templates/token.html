@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block container %}
+    {% if not honeypot %}
+        <div class="row">
+            <div>
+                <h3>Generate or Retrieve API Token</h3>
+                <p class="indent">
+                    API tokens are read only and associated with an email address. If you have not registered
+                    before you will need to fill out each field, otherwise only an email address is needed. After
+                    creating a token check out our 
+                    <a href="https://www.github.com/staphopia/staphopia-r" target="_blank">R package</a> to access the API.
+                </p>
+                <hr />
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-sm-12 col-md-6 ">
+                {% if token %}
+                    <div class="alert alert-info" role="alert">
+                        Your API token is {{ token }}
+                    </div>
+                {% elif form.errors %}
+                    <div class="alert alert-warning" role="alert">
+                    <strong>Whoops! One or more fields has a problem!</strong>
+                        {% for field, error in form.errors.items %}
+                            {% if field == "email" %}
+                                <p class="indent">Email Address: {{ error|join:"" }}</p>
+                            {% elif field == "first_name" or field == "last_name" %}
+                                <p class="indent">{{ field|title }}: {{ error|join:"" }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% elif has_error %}
+                    <div class="alert alert-warning" role="alert">
+                        {{ has_error }}
+                    </div>
+                {% endif %}
+                {% crispy form %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

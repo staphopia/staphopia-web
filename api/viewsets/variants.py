@@ -429,6 +429,7 @@ class VariantAnnotationViewSet(CustomReadOnlyModelViewSet):
                 request.data['ids']
             ))
 
+
     @list_route(methods=['post'])
     def generate_variant_sequence(self, request):
         """Return a list of samples with a given snp."""

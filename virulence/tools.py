@@ -21,16 +21,16 @@ from virulence.models import Ariba, AribaSequence, Cluster, AgrPrimers
 def insert_virulence(sample, version, files, force=False):
     """Insert the Ariba virulence results to the database."""
     if force:
-        delete_resistance(sample, version)
+        delete_virulence(sample, version)
 
     results, sequences = read_report(files)
 
-    contigs = {}
-    for contig in get_contigs(sample, version):
-        contigs[contig.spades] = int(contig.spades.split('_')[1])
-
-    insert_blast(sample, version, files['virulence_agr_primers'], AgrPrimers,
-                 contigs)
+    if files['virulence_agr_primers']:
+        contigs = {}
+        for contig in get_contigs(sample, version):
+            contigs[contig.spades] = int(contig.spades.split('_')[1])
+        insert_blast(sample, version, files['virulence_agr_primers'], AgrPrimers,
+                     contigs)
 
     try:
         Ariba.objects.create(sample=sample, version=version, results=results)
@@ -141,8 +141,9 @@ def read_report(files):
 
 
 @transaction.atomic
-def delete_resistance(sample, version):
+def delete_virulence(sample, version):
     """Force update, so remove from table."""
     print(f'{sample.name}: Force used, emptying resistance related results.')
     Ariba.objects.filter(sample=sample, version=version).delete()
     AribaSequence.objects.filter(sample=sample, version=version).delete()
+    AgrPrimers.objects.filter(sample=sample, version=version).delete()

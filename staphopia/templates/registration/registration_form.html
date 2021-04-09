@@ -5,12 +5,11 @@
 {% block container %}
     <div class="row justify-content-center">
         <div class="col-sm-8 col-md-6">
-            <h3 class="text-center">Sign up for a Staphopia account</h3>
+            <h3 class="text-center">Generate API Token</h3>
             <p class="text-justify">
                 To register an account with Staphopia, please fill out the form
-                to the below (all fields are required). Once completed you will
-                receive an email with instructions on how to finish your
-                registration.
+                to the below (all fields are required). Once completed an API Token
+                will be generated for you.
             </p>
             <hr />
         </div>
@@ -22,16 +21,10 @@
                 <div class="alert alert-warning" role="alert">
                 <strong>Whoops! One or more fields has a problem!</strong>
                     {% for field,error in form.errors.items %}
-                        {% if field == "password1" %}
-                            <p class="indent">Password: {{ error|join:"" }}</p>
-                        {% elif field == "password2" %}
-                            <p class="indent">Repeat Password: {{ error|join:"" }}</p>
-                        {% elif field == "email" %}
+                        {% if field == "email" %}
                             <p class="indent">Email Address: {{ error|join:"" }}</p>
-                        {% elif field == "username" or field == "fisrt_name" or field == "last_name" %}
+                        {% elif field == "first_name" or field == "last_name" %}
                             <p class="indent">{{ field|title }}: {{ error|join:"" }}</p>
-                        {% else %}
-                            <p class="indent">Passwords: {{ error|join:"" }}</p>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -54,31 +47,9 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label" for="id_username">Username</label>
-                    <div class="">
-                        <input id="id_username" pattern="^[A-Za-z0-9_]{3,32}$" maxlength="30"
-                               name="username" type="text" class="form-control input-md"
-                               title="Alpha-Numeric (and underscores). Length between 3 and 30 characters.">
-                    </div>
-                </div>
-                <div class="form-group">
                     <label class="control-label" for="id_email">Email Address </label>
                     <div class="">
                         <input id="id_email" name="email" type="email" class="form-control input-md">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="control-label" for="id_password1">Password </label>
-                    <div class="">
-                        <input id="id_password1" name="password1" type="password" class="form-control input-md"
-                               pattern="^.{8,}$" title="Must be at least 6 characters in length.">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="control-label" for="id_password2">Repeat Password </label>
-                    <div class="">
-                        <input id="id_password2" name="password2" type="password" class="form-control input-md"
-                               pattern="^.{8,}$" title="Must be at least 6 characters in length.">
                     </div>
                 </div>
                 <div class="form-group">
