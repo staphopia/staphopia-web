@@ -9,7 +9,7 @@ django-registration-redux==2.4
 python-magic==0.4.15
 urllib3>=1.24.2
 beautifulsoup4==4.6.0
-lxml==4.6.3
+lxml==4.6.5
 djangorestframework>=3.9.1
 markdown==2.6.9
 git+https://github.com/rpetit3/scholarly.git
